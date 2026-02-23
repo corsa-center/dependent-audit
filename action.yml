@@ -1,0 +1,138 @@
+name: 'Dependency Audit Crawler'
+description: 'Crawls Sourcegraph to find dependents and generates a UDG Graph + SPDX Snippets'
+author: 'SupplyChainBot'
+inputs:
+  root_repo:
+    description: 'The root repository to audit'
+    required: true
+    default: ${{ github.repository }}
+  project_name:
+    description: 'The short name of the project'
+    required: true
+  sourcegraph_token:
+    description: 'Your Sourcegraph Access Token'
+    required: true
+  github_token:
+    description: 'GitHub token to pull deep repository metrics'
+    required: true
+    default: ${{ github.token }}
+  max_depth:
+    description: 'How deep to crawl the dependency tree'
+    required: false
+    default: '1'
+  include_forks:
+    description: 'Set to true to search forks'
+    required: false
+    default: 'false'
+  output_file:
+    description: 'The name of the generated JSON file'
+    required: false
+    default: 'dependency_graph.json'
+  upload_artifact:
+    description: 'If true, uploads the results as build artifacts'
+    required: false
+    default: 'false'
+  artifact_name:
+    description: 'The base name of the artifact to upload'
+    required: false
+    default: 'dependency-graph'
+  separate_artifacts:
+    description: 'If true, uploads the JSON and SPDX snippets as two separate ZIPs'
+    required: false
+    default: 'false'
+  custom_search_string:
+    description: 'A custom regex or string to search for'
+    required: false
+  custom_filename:
+    description: 'Limit search to this filename'
+    required: false
+  use_defaults:
+    description: 'If false, disables standard C++ header/pragma searching'
+    required: false
+    default: 'true'
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install Dependencies
+      shell: bash
+      run: pip install requests argparse
+
+    - name: Run Audit Script
+      shell: bash
+      run: |
+        CMD="python ${{ github.action_path }}/audit_dependents.py \
+          --repo '${{ inputs.root_repo }}' \
+          --name '${{ inputs.project_name }}' \
+          --depth ${{ inputs.max_depth }} \
+          --out '${{ inputs.output_file }}' \
+          --token '${{ inputs.sourcegraph_token }}' \
+          --gh-token '${{ inputs.github_token }}'"
+        
+        if [ "${{ inputs.include_forks }}" == "true" ]; then
+          CMD="$CMD --forks"
+        fi
+        
+        if [ -n "${{ inputs.custom_search_string }}" ]; then
+           CMD="$CMD --custom-string '${{ inputs.custom_search_string }}'"
+        fi
+        if [ -n "${{ inputs.custom_filename }}" ]; then
+           CMD="$CMD --custom-file '${{ inputs.custom_filename }}'"
+        fi
+        if [ "${{ inputs.use_defaults }}" == "false" ]; then
+           CMD="$CMD --no-defaults"
+        fi
+        
+        eval $CMD
+
+    - name: Upload Combined Artifact
+      if: inputs.upload_artifact == 'true' && inputs.separate_artifacts == 'false'
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.artifact_name }}
+        path: |
+          ${{ inputs.output_file }}
+          spdx_snippets/
+
+    - name: Upload JSON Graph (Separated)
+      if: inputs.upload_artifact == 'true' && inputs.separate_artifacts == 'true'
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.artifact_name }}-json
+        path: ${{ inputs.output_file }}
+
+    - name: Upload SPDX Snippets (Separated)
+      if: inputs.upload_artifact == 'true' && inputs.separate_artifacts == 'true'
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.artifact_name }}-spdx
+        path: spdx_snippets/
+
+    - name: Generate Job Summary
+      shell: bash
+      run: |
+        VIZ_TOOL="https://corsa-center.github.io/dashboard/explore/dependents"
+        echo "### Dependency Audit Complete" >> $GITHUB_STEP_SUMMARY
+        echo "- **Root:** ${{ inputs.root_repo }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Depth:** ${{ inputs.max_depth }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        if [ "${{ inputs.upload_artifact }}" == "true" ]; then
+          if [ "${{ inputs.separate_artifacts }}" == "true" ]; then
+            echo "#### Artifacts Generated (Separated)" >> $GITHUB_STEP_SUMMARY
+            echo "- **${{ inputs.artifact_name }}-json:** Contains the graph data for the visualizer." >> $GITHUB_STEP_SUMMARY
+            echo "- **${{ inputs.artifact_name }}-spdx:** Contains purely the SBOM manifests." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "#### Artifact Generated (Combined)" >> $GITHUB_STEP_SUMMARY
+            echo "1. Download the **${{ inputs.artifact_name }}** artifact." >> $GITHUB_STEP_SUMMARY
+            echo "2. Go to the [**Visualizer Tool**]($VIZ_TOOL) and upload the ZIP to view the graph and SPDX data." >> $GITHUB_STEP_SUMMARY
+          fi
+        else
+          echo "#### Next Steps" >> $GITHUB_STEP_SUMMARY
+          echo "Results have been generated locally in the workspace." >> $GITHUB_STEP_SUMMARY
+        fi

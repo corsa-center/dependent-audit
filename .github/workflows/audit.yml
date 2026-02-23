@@ -1,0 +1,38 @@
+name: Monthly Supply Chain Audit
+
+on:
+  schedule:
+    - cron: '0 0 1 * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Run Dependency Audit
+        uses: ./ 
+        with:
+          root_repo: ${{ github.repository }}
+          project_name: 'zfp'
+          sourcegraph_token: ${{ secrets.SOURCEGRAPH_TOKEN }}
+
+      - name: Commit Graph and Snippets
+        run: |
+          git config --global user.name "Audit Bot"
+          git config --global user.email "bot@noreply.github.com"
+          
+          git add dependency_graph.json
+          git add spdx_snippets/
+          
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: update dependency graph and snippets [skip ci]"
+            git push
+          else
+            echo "No changes detected."
+          fi

@@ -1,0 +1,7 @@
+.pyi
+.pyc
+
+spdx_*/**
+
+sg_*
+gh_*
