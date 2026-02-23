@@ -319,7 +319,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--repo", required=True)
     parser.add_argument("--name", required=True)
-    parser.add_argument("--depth", type=int, default=1)
+    parser.add_argument("--depth", type=int, default=2)
     parser.add_argument("--out", default="dependency_graph.json")
     parser.add_argument("--token", required=True)
     parser.add_argument("--gh-token", required=False, help="GitHub Token for deep repository metrics")
