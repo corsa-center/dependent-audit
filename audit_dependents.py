@@ -57,8 +57,12 @@ def parse_repo_info(repo_full_name):
     return (parts[0], parts[1]) if len(parts) >= 2 else ("unknown", clean)
 
 def get_github_metadata(repo_full_name, gh_token):
-    if not gh_token or "github.com/" not in repo_full_name:
+    if not gh_token: 
         return {}
+        
+    if "gitlab.com" in repo_full_name or "bitbucket.org" in repo_full_name:
+        return {}
+        
     owner, name = parse_repo_info(repo_full_name)
     if owner == "unknown": return {}
     
@@ -79,7 +83,7 @@ def get_github_metadata(repo_full_name, gh_token):
     """
     headers = {"Authorization": f"bearer {gh_token}"}
     try:
-        resp = requests.post("https://api.github.com/graphql", headers=headers, json={"query": query, "variables": {"owner": owner, "name": name}}, timeout=10)
+        resp = requests.post("https://api.github.com/graphql", headers=headers, json={"query": query, "variables": {"owner": owner, "name": name}}, timeout=15)
         if resp.status_code == 200:
             data = resp.json().get("data", {}).get("repository")
             if data:
@@ -99,15 +103,24 @@ def get_github_metadata(repo_full_name, gh_token):
         print(f"GH API Error for {repo_full_name}: {e}")
     return {}
 
-def graphql_query(query, variables, token):
+def graphql_query(query, variables, token, timeout=60):
     headers = {"Authorization": f"token {token}", "Content-Type": "application/json"}
     full_variables = {**variables, "patternType": "regexp"}
-    for _ in range(3):
+    for attempt in range(3):
         try:
-            resp = requests.post(SOURCEGRAPH_URL, headers=headers, json={"query": query, "variables": full_variables}, timeout=15)
-            if resp.status_code == 200: return resp.json()
-            time.sleep(1)
-        except: time.sleep(1)
+            resp = requests.post(SOURCEGRAPH_URL, headers=headers, json={"query": query, "variables": full_variables}, timeout=timeout)
+            if resp.status_code == 200: 
+                return resp.json()
+            elif resp.status_code == 429:
+                print("Rate limited by Sourcegraph. Backing off for 10 seconds...")
+                time.sleep(10)
+            else:
+                time.sleep(2)
+        except requests.exceptions.Timeout:
+            print(f"Query timed out on attempt {attempt + 1}. Retrying...")
+            time.sleep(2)
+        except Exception as e:
+            time.sleep(2)
     return None
 
 def get_public_search_tokens(repo_name, project_short_name, token):
@@ -157,19 +170,31 @@ def find_consumers(search_tokens, lib_name, token, include_forks, custom_string,
     fork_filter = "fork:yes" if include_forks else "fork:no"
     file_filter = f'file:{custom_file}' if custom_file else ""
     
-    full_query = f'{full_regex} {fork_filter} {file_filter} archived:yes count:500'
+    full_query = f'context:global {full_regex} {fork_filter} {file_filter} archived:yes count:500 timeout:2m'
     
     query = """
     query($query: String!) {
       search(query: $query) {
-        results { results { ... on FileMatch { repository { name url } file { commit { oid } } } } }
+        results { 
+          limitHit
+          results { 
+            ... on FileMatch { 
+              repository { name url } 
+              file { commit { oid } }
+            } 
+          } 
+        }
       }
     }
     """
-    data = graphql_query(query, {"query": full_query}, token)
+    data = graphql_query(query, {"query": full_query}, token, timeout=60)
     consumers = {}
     if data:
-        for hit in data.get("data", {}).get("search", {}).get("results", {}).get("results", []):
+        search_data = data.get("data", {}).get("search", {}).get("results", {})
+        if search_data.get("limitHit"):
+            print("WARNING: Sourcegraph hit an internal limit and returned partial results.")
+            
+        for hit in search_data.get("results", []):
             if "repository" in hit: 
                 repo_name = hit["repository"]["name"]
                 if repo_name not in consumers:
@@ -181,8 +206,8 @@ def find_consumers(search_tokens, lib_name, token, include_forks, custom_string,
     return list(consumers.values())
 
 def generate_spdx_snippet(consumer_repo, provider_repo, consumer_sha, provider_sha):
-    _, consumer_name = parse_repo_info(consumer_repo)
-    _, provider_name = parse_repo_info(provider_repo)
+    consumer_owner, consumer_name = parse_repo_info(consumer_repo)
+    provider_owner, provider_name = parse_repo_info(provider_repo)
     c_safe = consumer_repo.replace("/", "-").replace(".", "-")
     p_safe = provider_repo.replace("/", "-").replace(".", "-")
     
@@ -319,7 +344,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--repo", required=True)
     parser.add_argument("--name", required=True)
-    parser.add_argument("--depth", type=int, default=2)
+    parser.add_argument("--depth", type=int, default=1)
     parser.add_argument("--out", default="dependency_graph.json")
     parser.add_argument("--token", required=True)
     parser.add_argument("--gh-token", required=False, help="GitHub Token for deep repository metrics")
