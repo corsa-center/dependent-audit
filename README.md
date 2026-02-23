@@ -75,3 +75,4 @@ your dependency graph json file.
 
 * **Heuristics:** This tool relies on source code scraping. It may return false positives if the project name is commonly used elsewhere.
 * **API Limits:** Large crawls might occasionally hit API rate limits. The tool implements automatic backoff, but massive graphs may take longer to generate.
+* **Tools:** This tool searches sourcegraph for `#include` and `#pragma comment` stanzas referencing the project name to indicate usage. This breaks down for tool usage where the tool isn't typically used as a library, i.e. CMake, Godot, clang-tidy. For tools like these, this tool will not report sufficient usage information. This is an area of current development.
