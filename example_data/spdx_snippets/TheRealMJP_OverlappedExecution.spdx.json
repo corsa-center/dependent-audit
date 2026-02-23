@@ -1,0 +1,30 @@
+{
+  "spdxVersion": "SPDX-2.3",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "OverlappedExecution Dependency Manifest",
+  "documentNamespace": "https://github.com/TheRealMJP/OverlappedExecution/spdx/ae8c64315228e38b13b7be59e97db8996507eaee",
+  "packages": [
+    {
+      "name": "OverlappedExecution",
+      "SPDXID": "SPDXRef-Package-TheRealMJP-OverlappedExecution",
+      "versionInfo": "ae8c64315228e38b13b7be59e97db8996507eaee",
+      "downloadLocation": "git+https://github.com/TheRealMJP/OverlappedExecution.git@ae8c64315228e38b13b7be59e97db8996507eaee",
+      "filesAnalyzed": false
+    },
+    {
+      "name": "tinyexr",
+      "SPDXID": "SPDXRef-Package-syoyo-tinyexr",
+      "versionInfo": "3ffe5f9d5e673e6e8c378d59b306b2824993e705",
+      "downloadLocation": "git+https://github.com/syoyo/tinyexr.git@3ffe5f9d5e673e6e8c378d59b306b2824993e705",
+      "filesAnalyzed": false
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-Package-TheRealMJP-OverlappedExecution",
+      "relatedSpdxElement": "SPDXRef-Package-syoyo-tinyexr",
+      "relationshipType": "DEPENDS_ON"
+    }
+  ]
+}

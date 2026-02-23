@@ -1,0 +1,30 @@
+{
+  "spdxVersion": "SPDX-2.3",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "Joint-HDRDN Dependency Manifest",
+  "documentNamespace": "https://github.com/shuaizhengliu/Joint-HDRDN/spdx/f84424d05f70f32d53bc99661c276f9ec2929749",
+  "packages": [
+    {
+      "name": "Joint-HDRDN",
+      "SPDXID": "SPDXRef-Package-shuaizhengliu-Joint-HDRDN",
+      "versionInfo": "f84424d05f70f32d53bc99661c276f9ec2929749",
+      "downloadLocation": "git+https://github.com/shuaizhengliu/Joint-HDRDN.git@f84424d05f70f32d53bc99661c276f9ec2929749",
+      "filesAnalyzed": false
+    },
+    {
+      "name": "tinyexr",
+      "SPDXID": "SPDXRef-Package-syoyo-tinyexr",
+      "versionInfo": "3ffe5f9d5e673e6e8c378d59b306b2824993e705",
+      "downloadLocation": "git+https://github.com/syoyo/tinyexr.git@3ffe5f9d5e673e6e8c378d59b306b2824993e705",
+      "filesAnalyzed": false
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-Package-shuaizhengliu-Joint-HDRDN",
+      "relatedSpdxElement": "SPDXRef-Package-syoyo-tinyexr",
+      "relationshipType": "DEPENDS_ON"
+    }
+  ]
+}

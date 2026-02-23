@@ -1,0 +1,30 @@
+{
+  "spdxVersion": "SPDX-2.3",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "psdr-cuda Dependency Manifest",
+  "documentNamespace": "https://github.com/uiuc-graphics/psdr-cuda/spdx/4625b8c9df47dbee97525a48bdd1ee2f8c0ef735",
+  "packages": [
+    {
+      "name": "psdr-cuda",
+      "SPDXID": "SPDXRef-Package-uiuc-graphics-psdr-cuda",
+      "versionInfo": "4625b8c9df47dbee97525a48bdd1ee2f8c0ef735",
+      "downloadLocation": "git+https://github.com/uiuc-graphics/psdr-cuda.git@4625b8c9df47dbee97525a48bdd1ee2f8c0ef735",
+      "filesAnalyzed": false
+    },
+    {
+      "name": "tinyexr",
+      "SPDXID": "SPDXRef-Package-syoyo-tinyexr",
+      "versionInfo": "3ffe5f9d5e673e6e8c378d59b306b2824993e705",
+      "downloadLocation": "git+https://github.com/syoyo/tinyexr.git@3ffe5f9d5e673e6e8c378d59b306b2824993e705",
+      "filesAnalyzed": false
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-Package-uiuc-graphics-psdr-cuda",
+      "relatedSpdxElement": "SPDXRef-Package-syoyo-tinyexr",
+      "relationshipType": "DEPENDS_ON"
+    }
+  ]
+}

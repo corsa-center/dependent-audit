@@ -1,0 +1,30 @@
+{
+  "spdxVersion": "SPDX-2.3",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "optix-toolkit Dependency Manifest",
+  "documentNamespace": "https://github.com/NVIDIA/optix-toolkit/spdx/958b5e332b025c1cdbaa85e524404e0d1f348227",
+  "packages": [
+    {
+      "name": "optix-toolkit",
+      "SPDXID": "SPDXRef-Package-NVIDIA-optix-toolkit",
+      "versionInfo": "958b5e332b025c1cdbaa85e524404e0d1f348227",
+      "downloadLocation": "git+https://github.com/NVIDIA/optix-toolkit.git@958b5e332b025c1cdbaa85e524404e0d1f348227",
+      "filesAnalyzed": false
+    },
+    {
+      "name": "tinyexr",
+      "SPDXID": "SPDXRef-Package-syoyo-tinyexr",
+      "versionInfo": "3ffe5f9d5e673e6e8c378d59b306b2824993e705",
+      "downloadLocation": "git+https://github.com/syoyo/tinyexr.git@3ffe5f9d5e673e6e8c378d59b306b2824993e705",
+      "filesAnalyzed": false
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-Package-NVIDIA-optix-toolkit",
+      "relatedSpdxElement": "SPDXRef-Package-syoyo-tinyexr",
+      "relationshipType": "DEPENDS_ON"
+    }
+  ]
+}

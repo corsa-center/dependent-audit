@@ -1,0 +1,30 @@
+{
+  "spdxVersion": "SPDX-2.3",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "opentoonz Dependency Manifest",
+  "documentNamespace": "https://github.com/opentoonz/opentoonz/spdx/ed4aa37c8954655b3aaac04cb50b5ef4e1de9d9d",
+  "packages": [
+    {
+      "name": "opentoonz",
+      "SPDXID": "SPDXRef-Package-opentoonz-opentoonz",
+      "versionInfo": "ed4aa37c8954655b3aaac04cb50b5ef4e1de9d9d",
+      "downloadLocation": "git+https://github.com/opentoonz/opentoonz.git@ed4aa37c8954655b3aaac04cb50b5ef4e1de9d9d",
+      "filesAnalyzed": false
+    },
+    {
+      "name": "tinyexr",
+      "SPDXID": "SPDXRef-Package-syoyo-tinyexr",
+      "versionInfo": "3ffe5f9d5e673e6e8c378d59b306b2824993e705",
+      "downloadLocation": "git+https://github.com/syoyo/tinyexr.git@3ffe5f9d5e673e6e8c378d59b306b2824993e705",
+      "filesAnalyzed": false
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-Package-opentoonz-opentoonz",
+      "relatedSpdxElement": "SPDXRef-Package-syoyo-tinyexr",
+      "relationshipType": "DEPENDS_ON"
+    }
+  ]
+}

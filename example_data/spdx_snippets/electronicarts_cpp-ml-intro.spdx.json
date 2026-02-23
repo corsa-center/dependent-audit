@@ -1,0 +1,30 @@
+{
+  "spdxVersion": "SPDX-2.3",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "cpp-ml-intro Dependency Manifest",
+  "documentNamespace": "https://github.com/electronicarts/cpp-ml-intro/spdx/c46a47b4fcee5ec48dbda7321210b1287b262b06",
+  "packages": [
+    {
+      "name": "cpp-ml-intro",
+      "SPDXID": "SPDXRef-Package-electronicarts-cpp-ml-intro",
+      "versionInfo": "c46a47b4fcee5ec48dbda7321210b1287b262b06",
+      "downloadLocation": "git+https://github.com/electronicarts/cpp-ml-intro.git@c46a47b4fcee5ec48dbda7321210b1287b262b06",
+      "filesAnalyzed": false
+    },
+    {
+      "name": "tinyexr",
+      "SPDXID": "SPDXRef-Package-syoyo-tinyexr",
+      "versionInfo": "3ffe5f9d5e673e6e8c378d59b306b2824993e705",
+      "downloadLocation": "git+https://github.com/syoyo/tinyexr.git@3ffe5f9d5e673e6e8c378d59b306b2824993e705",
+      "filesAnalyzed": false
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-Package-electronicarts-cpp-ml-intro",
+      "relatedSpdxElement": "SPDXRef-Package-syoyo-tinyexr",
+      "relationshipType": "DEPENDS_ON"
+    }
+  ]
+}

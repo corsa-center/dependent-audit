@@ -1,0 +1,30 @@
+{
+  "spdxVersion": "SPDX-2.3",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "Scotty3D Dependency Manifest",
+  "documentNamespace": "https://github.com/cmu462/Scotty3D/spdx/c09214dd050842bc0bb9e1e0c72afdb72584f79d",
+  "packages": [
+    {
+      "name": "Scotty3D",
+      "SPDXID": "SPDXRef-Package-cmu462-Scotty3D",
+      "versionInfo": "c09214dd050842bc0bb9e1e0c72afdb72584f79d",
+      "downloadLocation": "git+https://github.com/cmu462/Scotty3D.git@c09214dd050842bc0bb9e1e0c72afdb72584f79d",
+      "filesAnalyzed": false
+    },
+    {
+      "name": "tinyexr",
+      "SPDXID": "SPDXRef-Package-syoyo-tinyexr",
+      "versionInfo": "3ffe5f9d5e673e6e8c378d59b306b2824993e705",
+      "downloadLocation": "git+https://github.com/syoyo/tinyexr.git@3ffe5f9d5e673e6e8c378d59b306b2824993e705",
+      "filesAnalyzed": false
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-Package-cmu462-Scotty3D",
+      "relatedSpdxElement": "SPDXRef-Package-syoyo-tinyexr",
+      "relationshipType": "DEPENDS_ON"
+    }
+  ]
+}

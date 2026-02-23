@@ -1,0 +1,30 @@
+{
+  "spdxVersion": "SPDX-2.3",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "hdf5plugin Dependency Manifest",
+  "documentNamespace": "https://github.com/silx-kit/hdf5plugin/spdx/2bffcfeb29075dccc31cb0789fc36a9e23d783e6",
+  "packages": [
+    {
+      "name": "hdf5plugin",
+      "SPDXID": "SPDXRef-Package-silx-kit-hdf5plugin",
+      "versionInfo": "2bffcfeb29075dccc31cb0789fc36a9e23d783e6",
+      "downloadLocation": "git+https://github.com/silx-kit/hdf5plugin.git@2bffcfeb29075dccc31cb0789fc36a9e23d783e6",
+      "filesAnalyzed": false
+    },
+    {
+      "name": "zfp",
+      "SPDXID": "SPDXRef-Package-llnl-zfp",
+      "versionInfo": "HEAD",
+      "downloadLocation": "git+https://github.com/llnl/zfp.git@HEAD",
+      "filesAnalyzed": false
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-Package-silx-kit-hdf5plugin",
+      "relatedSpdxElement": "SPDXRef-Package-llnl-zfp",
+      "relationshipType": "DEPENDS_ON"
+    }
+  ]
+}

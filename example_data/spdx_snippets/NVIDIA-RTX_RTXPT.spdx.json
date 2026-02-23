@@ -1,0 +1,30 @@
+{
+  "spdxVersion": "SPDX-2.3",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "RTXPT Dependency Manifest",
+  "documentNamespace": "https://github.com/NVIDIA-RTX/RTXPT/spdx/2f53323ab7a8f443c477a64cd7d3e177b48998a3",
+  "packages": [
+    {
+      "name": "RTXPT",
+      "SPDXID": "SPDXRef-Package-NVIDIA-RTX-RTXPT",
+      "versionInfo": "2f53323ab7a8f443c477a64cd7d3e177b48998a3",
+      "downloadLocation": "git+https://github.com/NVIDIA-RTX/RTXPT.git@2f53323ab7a8f443c477a64cd7d3e177b48998a3",
+      "filesAnalyzed": false
+    },
+    {
+      "name": "tonemapper",
+      "SPDXID": "SPDXRef-Package-tizian-tonemapper",
+      "versionInfo": "dd9f7c8650a5f86f6c62e9cae63b877ecf5e2e64",
+      "downloadLocation": "git+https://github.com/tizian/tonemapper.git@dd9f7c8650a5f86f6c62e9cae63b877ecf5e2e64",
+      "filesAnalyzed": false
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-Package-NVIDIA-RTX-RTXPT",
+      "relatedSpdxElement": "SPDXRef-Package-tizian-tonemapper",
+      "relationshipType": "DEPENDS_ON"
+    }
+  ]
+}

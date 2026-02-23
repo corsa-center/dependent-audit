@@ -1,0 +1,30 @@
+{
+  "spdxVersion": "SPDX-2.3",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "android_frameworks_base-uvite Dependency Manifest",
+  "documentNamespace": "https://github.com/AOSPA/android_frameworks_base-uvite/spdx/0362e635a608387735d5d65b11102773328c9030",
+  "packages": [
+    {
+      "name": "android_frameworks_base-uvite",
+      "SPDXID": "SPDXRef-Package-AOSPA-android_frameworks_base-uvite",
+      "versionInfo": "0362e635a608387735d5d65b11102773328c9030",
+      "downloadLocation": "git+https://github.com/AOSPA/android_frameworks_base-uvite.git@0362e635a608387735d5d65b11102773328c9030",
+      "filesAnalyzed": false
+    },
+    {
+      "name": "tonemapper",
+      "SPDXID": "SPDXRef-Package-tizian-tonemapper",
+      "versionInfo": "dd9f7c8650a5f86f6c62e9cae63b877ecf5e2e64",
+      "downloadLocation": "git+https://github.com/tizian/tonemapper.git@dd9f7c8650a5f86f6c62e9cae63b877ecf5e2e64",
+      "filesAnalyzed": false
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-Package-AOSPA-android_frameworks_base-uvite",
+      "relatedSpdxElement": "SPDXRef-Package-tizian-tonemapper",
+      "relationshipType": "DEPENDS_ON"
+    }
+  ]
+}

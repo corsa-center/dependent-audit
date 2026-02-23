@@ -1,0 +1,30 @@
+{
+  "spdxVersion": "SPDX-2.3",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "HIPRT-Path-Tracer Dependency Manifest",
+  "documentNamespace": "https://github.com/TomClabault/HIPRT-Path-Tracer/spdx/d114ed0d4c1d4ff9ea4e2511841819ed9aa59e6e",
+  "packages": [
+    {
+      "name": "HIPRT-Path-Tracer",
+      "SPDXID": "SPDXRef-Package-TomClabault-HIPRT-Path-Tracer",
+      "versionInfo": "d114ed0d4c1d4ff9ea4e2511841819ed9aa59e6e",
+      "downloadLocation": "git+https://github.com/TomClabault/HIPRT-Path-Tracer.git@d114ed0d4c1d4ff9ea4e2511841819ed9aa59e6e",
+      "filesAnalyzed": false
+    },
+    {
+      "name": "tinyexr",
+      "SPDXID": "SPDXRef-Package-syoyo-tinyexr",
+      "versionInfo": "3ffe5f9d5e673e6e8c378d59b306b2824993e705",
+      "downloadLocation": "git+https://github.com/syoyo/tinyexr.git@3ffe5f9d5e673e6e8c378d59b306b2824993e705",
+      "filesAnalyzed": false
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-Package-TomClabault-HIPRT-Path-Tracer",
+      "relatedSpdxElement": "SPDXRef-Package-syoyo-tinyexr",
+      "relationshipType": "DEPENDS_ON"
+    }
+  ]
+}

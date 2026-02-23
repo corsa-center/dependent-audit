@@ -1,0 +1,30 @@
+{
+  "spdxVersion": "SPDX-2.3",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "Reservoir-Splatting Dependency Manifest",
+  "documentNamespace": "https://github.com/Jebbly/Reservoir-Splatting/spdx/a911d9b264f0af1e93368647a47abd93aeaa2a91",
+  "packages": [
+    {
+      "name": "Reservoir-Splatting",
+      "SPDXID": "SPDXRef-Package-Jebbly-Reservoir-Splatting",
+      "versionInfo": "a911d9b264f0af1e93368647a47abd93aeaa2a91",
+      "downloadLocation": "git+https://github.com/Jebbly/Reservoir-Splatting.git@a911d9b264f0af1e93368647a47abd93aeaa2a91",
+      "filesAnalyzed": false
+    },
+    {
+      "name": "tonemapper",
+      "SPDXID": "SPDXRef-Package-tizian-tonemapper",
+      "versionInfo": "dd9f7c8650a5f86f6c62e9cae63b877ecf5e2e64",
+      "downloadLocation": "git+https://github.com/tizian/tonemapper.git@dd9f7c8650a5f86f6c62e9cae63b877ecf5e2e64",
+      "filesAnalyzed": false
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-Package-Jebbly-Reservoir-Splatting",
+      "relatedSpdxElement": "SPDXRef-Package-tizian-tonemapper",
+      "relationshipType": "DEPENDS_ON"
+    }
+  ]
+}

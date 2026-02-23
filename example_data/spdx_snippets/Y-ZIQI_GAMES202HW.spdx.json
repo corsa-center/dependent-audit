@@ -1,0 +1,30 @@
+{
+  "spdxVersion": "SPDX-2.3",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "GAMES202HW Dependency Manifest",
+  "documentNamespace": "https://github.com/Y-ZIQI/GAMES202HW/spdx/13e7e02593c8578708d99e46d9c88c932d264540",
+  "packages": [
+    {
+      "name": "GAMES202HW",
+      "SPDXID": "SPDXRef-Package-Y-ZIQI-GAMES202HW",
+      "versionInfo": "13e7e02593c8578708d99e46d9c88c932d264540",
+      "downloadLocation": "git+https://github.com/Y-ZIQI/GAMES202HW.git@13e7e02593c8578708d99e46d9c88c932d264540",
+      "filesAnalyzed": false
+    },
+    {
+      "name": "tinyexr",
+      "SPDXID": "SPDXRef-Package-syoyo-tinyexr",
+      "versionInfo": "3ffe5f9d5e673e6e8c378d59b306b2824993e705",
+      "downloadLocation": "git+https://github.com/syoyo/tinyexr.git@3ffe5f9d5e673e6e8c378d59b306b2824993e705",
+      "filesAnalyzed": false
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-Package-Y-ZIQI-GAMES202HW",
+      "relatedSpdxElement": "SPDXRef-Package-syoyo-tinyexr",
+      "relationshipType": "DEPENDS_ON"
+    }
+  ]
+}

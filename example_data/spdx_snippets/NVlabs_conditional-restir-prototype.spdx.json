@@ -1,0 +1,30 @@
+{
+  "spdxVersion": "SPDX-2.3",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "conditional-restir-prototype Dependency Manifest",
+  "documentNamespace": "https://github.com/NVlabs/conditional-restir-prototype/spdx/2188c2049aaa27b2576ce6486a51785d74db7bff",
+  "packages": [
+    {
+      "name": "conditional-restir-prototype",
+      "SPDXID": "SPDXRef-Package-NVlabs-conditional-restir-prototype",
+      "versionInfo": "2188c2049aaa27b2576ce6486a51785d74db7bff",
+      "downloadLocation": "git+https://github.com/NVlabs/conditional-restir-prototype.git@2188c2049aaa27b2576ce6486a51785d74db7bff",
+      "filesAnalyzed": false
+    },
+    {
+      "name": "tonemapper",
+      "SPDXID": "SPDXRef-Package-tizian-tonemapper",
+      "versionInfo": "dd9f7c8650a5f86f6c62e9cae63b877ecf5e2e64",
+      "downloadLocation": "git+https://github.com/tizian/tonemapper.git@dd9f7c8650a5f86f6c62e9cae63b877ecf5e2e64",
+      "filesAnalyzed": false
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-Package-NVlabs-conditional-restir-prototype",
+      "relatedSpdxElement": "SPDXRef-Package-tizian-tonemapper",
+      "relationshipType": "DEPENDS_ON"
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "spdxVersion": "SPDX-2.3",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "Area-ReSTIR Dependency Manifest",
+  "documentNamespace": "https://github.com/guiqi134/Area-ReSTIR/spdx/c705a82bfc805d8451e0aa93999f0156d5dbd952",
+  "packages": [
+    {
+      "name": "Area-ReSTIR",
+      "SPDXID": "SPDXRef-Package-guiqi134-Area-ReSTIR",
+      "versionInfo": "c705a82bfc805d8451e0aa93999f0156d5dbd952",
+      "downloadLocation": "git+https://github.com/guiqi134/Area-ReSTIR.git@c705a82bfc805d8451e0aa93999f0156d5dbd952",
+      "filesAnalyzed": false
+    },
+    {
+      "name": "tonemapper",
+      "SPDXID": "SPDXRef-Package-tizian-tonemapper",
+      "versionInfo": "dd9f7c8650a5f86f6c62e9cae63b877ecf5e2e64",
+      "downloadLocation": "git+https://github.com/tizian/tonemapper.git@dd9f7c8650a5f86f6c62e9cae63b877ecf5e2e64",
+      "filesAnalyzed": false
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-Package-guiqi134-Area-ReSTIR",
+      "relatedSpdxElement": "SPDXRef-Package-tizian-tonemapper",
+      "relationshipType": "DEPENDS_ON"
+    }
+  ]
+}

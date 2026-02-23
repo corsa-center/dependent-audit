@@ -1,0 +1,30 @@
+{
+  "spdxVersion": "SPDX-2.3",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "real_time_glint Dependency Manifest",
+  "documentNamespace": "https://github.com/ASTex-ICube/real_time_glint/spdx/96c08fdff986e9eb83509850770b4946d829bcea",
+  "packages": [
+    {
+      "name": "real_time_glint",
+      "SPDXID": "SPDXRef-Package-ASTex-ICube-real_time_glint",
+      "versionInfo": "96c08fdff986e9eb83509850770b4946d829bcea",
+      "downloadLocation": "git+https://github.com/ASTex-ICube/real_time_glint.git@96c08fdff986e9eb83509850770b4946d829bcea",
+      "filesAnalyzed": false
+    },
+    {
+      "name": "tinyexr",
+      "SPDXID": "SPDXRef-Package-syoyo-tinyexr",
+      "versionInfo": "3ffe5f9d5e673e6e8c378d59b306b2824993e705",
+      "downloadLocation": "git+https://github.com/syoyo/tinyexr.git@3ffe5f9d5e673e6e8c378d59b306b2824993e705",
+      "filesAnalyzed": false
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-Package-ASTex-ICube-real_time_glint",
+      "relatedSpdxElement": "SPDXRef-Package-syoyo-tinyexr",
+      "relationshipType": "DEPENDS_ON"
+    }
+  ]
+}

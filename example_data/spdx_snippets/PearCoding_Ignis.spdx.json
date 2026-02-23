@@ -1,0 +1,30 @@
+{
+  "spdxVersion": "SPDX-2.3",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "Ignis Dependency Manifest",
+  "documentNamespace": "https://github.com/PearCoding/Ignis/spdx/c209e5b75a7095fd8fc27003cb066911db8159e3",
+  "packages": [
+    {
+      "name": "Ignis",
+      "SPDXID": "SPDXRef-Package-PearCoding-Ignis",
+      "versionInfo": "c209e5b75a7095fd8fc27003cb066911db8159e3",
+      "downloadLocation": "git+https://github.com/PearCoding/Ignis.git@c209e5b75a7095fd8fc27003cb066911db8159e3",
+      "filesAnalyzed": false
+    },
+    {
+      "name": "tinyexr",
+      "SPDXID": "SPDXRef-Package-syoyo-tinyexr",
+      "versionInfo": "3ffe5f9d5e673e6e8c378d59b306b2824993e705",
+      "downloadLocation": "git+https://github.com/syoyo/tinyexr.git@3ffe5f9d5e673e6e8c378d59b306b2824993e705",
+      "filesAnalyzed": false
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-Package-PearCoding-Ignis",
+      "relatedSpdxElement": "SPDXRef-Package-syoyo-tinyexr",
+      "relationshipType": "DEPENDS_ON"
+    }
+  ]
+}

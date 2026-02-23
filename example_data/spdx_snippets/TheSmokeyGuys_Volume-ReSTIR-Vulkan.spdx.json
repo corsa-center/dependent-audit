@@ -1,0 +1,30 @@
+{
+  "spdxVersion": "SPDX-2.3",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "Volume-ReSTIR-Vulkan Dependency Manifest",
+  "documentNamespace": "https://github.com/TheSmokeyGuys/Volume-ReSTIR-Vulkan/spdx/ef866a76638af45e74cdb5522b84167754d73309",
+  "packages": [
+    {
+      "name": "Volume-ReSTIR-Vulkan",
+      "SPDXID": "SPDXRef-Package-TheSmokeyGuys-Volume-ReSTIR-Vulkan",
+      "versionInfo": "ef866a76638af45e74cdb5522b84167754d73309",
+      "downloadLocation": "git+https://github.com/TheSmokeyGuys/Volume-ReSTIR-Vulkan.git@ef866a76638af45e74cdb5522b84167754d73309",
+      "filesAnalyzed": false
+    },
+    {
+      "name": "tinyexr",
+      "SPDXID": "SPDXRef-Package-syoyo-tinyexr",
+      "versionInfo": "3ffe5f9d5e673e6e8c378d59b306b2824993e705",
+      "downloadLocation": "git+https://github.com/syoyo/tinyexr.git@3ffe5f9d5e673e6e8c378d59b306b2824993e705",
+      "filesAnalyzed": false
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-Package-TheSmokeyGuys-Volume-ReSTIR-Vulkan",
+      "relatedSpdxElement": "SPDXRef-Package-syoyo-tinyexr",
+      "relationshipType": "DEPENDS_ON"
+    }
+  ]
+}

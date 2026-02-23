@@ -1,0 +1,5681 @@
+{
+  "meta": {
+    "root": "github.com/llnl/zfp"
+  },
+  "nodes": [
+    {
+      "id": "llnl/zfp",
+      "label": "zfp",
+      "type": "library",
+      "data": {
+        "packageName": "zfp",
+        "packageOwner": "llnl",
+        "originUrl": "https://github.com/llnl/zfp",
+        "commitSha": "HEAD",
+        "depth": 0,
+        "snippetPath": "",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "fountainment/cherrysoda-engine",
+      "label": "cherrysoda-engine",
+      "type": "consumer",
+      "data": {
+        "packageName": "cherrysoda-engine",
+        "packageOwner": "fountainment",
+        "originUrl": "/github.com/fountainment/cherrysoda-engine",
+        "commitSha": "d274cce00e408f2ec65adceeb97b131ff1f2106c",
+        "depth": 1,
+        "snippetPath": "spdx_snippets/fountainment_cherrysoda-engine.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "godotengine/godot",
+      "label": "godot",
+      "type": "consumer",
+      "data": {
+        "packageName": "godot",
+        "packageOwner": "godotengine",
+        "originUrl": "/github.com/godotengine/godot",
+        "commitSha": "a3e84cc2af14aa4cffbefd8e13492e59567a64e3",
+        "depth": 1,
+        "snippetPath": "spdx_snippets/godotengine_godot.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "JanThorbecke/OpenSource",
+      "label": "OpenSource",
+      "type": "consumer",
+      "data": {
+        "packageName": "OpenSource",
+        "packageOwner": "JanThorbecke",
+        "originUrl": "/github.com/JanThorbecke/OpenSource",
+        "commitSha": "a156046a3e11fa160775acb8256c0ac596de0422",
+        "depth": 1,
+        "snippetPath": "spdx_snippets/JanThorbecke_OpenSource.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "NVIDIA/optix-toolkit",
+      "label": "optix-toolkit",
+      "type": "consumer",
+      "data": {
+        "packageName": "optix-toolkit",
+        "packageOwner": "NVIDIA",
+        "originUrl": "/github.com/NVIDIA/optix-toolkit",
+        "commitSha": "958b5e332b025c1cdbaa85e524404e0d1f348227",
+        "depth": 1,
+        "snippetPath": "spdx_snippets/NVIDIA_optix-toolkit.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "MaSzyna-EU07/maszyna",
+      "label": "maszyna",
+      "type": "consumer",
+      "data": {
+        "packageName": "maszyna",
+        "packageOwner": "MaSzyna-EU07",
+        "originUrl": "/github.com/MaSzyna-EU07/maszyna",
+        "commitSha": "01bcadff8cfe8512130b2ac2b731dc23a84a90f9",
+        "depth": 1,
+        "snippetPath": "spdx_snippets/MaSzyna-EU07_maszyna.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "retronx-team/love-nx",
+      "label": "love-nx",
+      "type": "consumer",
+      "data": {
+        "packageName": "love-nx",
+        "packageOwner": "retronx-team",
+        "originUrl": "/github.com/retronx-team/love-nx",
+        "commitSha": "289e646a3ea439568796580665215a58044bb498",
+        "depth": 1,
+        "snippetPath": "spdx_snippets/retronx-team_love-nx.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "elliahu/atmosphere",
+      "label": "atmosphere",
+      "type": "consumer",
+      "data": {
+        "packageName": "atmosphere",
+        "packageOwner": "elliahu",
+        "originUrl": "/github.com/elliahu/atmosphere",
+        "commitSha": "294bc3a1625d281f17c05c87a350bc90eec16043",
+        "depth": 1,
+        "snippetPath": "spdx_snippets/elliahu_atmosphere.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "eu07/maszyna",
+      "label": "maszyna",
+      "type": "consumer",
+      "data": {
+        "packageName": "maszyna",
+        "packageOwner": "eu07",
+        "originUrl": "/github.com/eu07/maszyna",
+        "commitSha": "c78b5aea65413e62cb0a3226c6406ddaf693895d",
+        "depth": 1,
+        "snippetPath": "spdx_snippets/eu07_maszyna.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "tizian/tonemapper",
+      "label": "tonemapper",
+      "type": "consumer",
+      "data": {
+        "packageName": "tonemapper",
+        "packageOwner": "tizian",
+        "originUrl": "/github.com/tizian/tonemapper",
+        "commitSha": "dd9f7c8650a5f86f6c62e9cae63b877ecf5e2e64",
+        "depth": 1,
+        "snippetPath": "spdx_snippets/tizian_tonemapper.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "anikau31/systemc-clang",
+      "label": "systemc-clang",
+      "type": "consumer",
+      "data": {
+        "packageName": "systemc-clang",
+        "packageOwner": "anikau31",
+        "originUrl": "/github.com/anikau31/systemc-clang",
+        "commitSha": "f014deff24c6ffc2c479d39e1eeeb47809e5f372",
+        "depth": 1,
+        "snippetPath": "spdx_snippets/anikau31_systemc-clang.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "intel/riggingtools",
+      "label": "riggingtools",
+      "type": "consumer",
+      "data": {
+        "packageName": "riggingtools",
+        "packageOwner": "intel",
+        "originUrl": "/github.com/intel/riggingtools",
+        "commitSha": "501c2d1a57523515db59e3c8b17df40f2eb3cef6",
+        "depth": 1,
+        "snippetPath": "spdx_snippets/intel_riggingtools.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "lvjiahui/PRT",
+      "label": "PRT",
+      "type": "consumer",
+      "data": {
+        "packageName": "PRT",
+        "packageOwner": "lvjiahui",
+        "originUrl": "/github.com/lvjiahui/PRT",
+        "commitSha": "a229351792947db277cc838585031a401b27bc2c",
+        "depth": 1,
+        "snippetPath": "spdx_snippets/lvjiahui_PRT.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "uzh-rpg/vilib",
+      "label": "vilib",
+      "type": "consumer",
+      "data": {
+        "packageName": "vilib",
+        "packageOwner": "uzh-rpg",
+        "originUrl": "/github.com/uzh-rpg/vilib",
+        "commitSha": "7a12fe1db78ca755876469979394076f10fe577c",
+        "depth": 1,
+        "snippetPath": "spdx_snippets/uzh-rpg_vilib.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "septag/termite",
+      "label": "termite",
+      "type": "consumer",
+      "data": {
+        "packageName": "termite",
+        "packageOwner": "septag",
+        "originUrl": "/github.com/septag/termite",
+        "commitSha": "cf3a26597f0a34f4b9c59c48d2e23adf439e89ab",
+        "depth": 1,
+        "snippetPath": "spdx_snippets/septag_termite.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "uiuc-graphics/psdr-cuda",
+      "label": "psdr-cuda",
+      "type": "consumer",
+      "data": {
+        "packageName": "psdr-cuda",
+        "packageOwner": "uiuc-graphics",
+        "originUrl": "/github.com/uiuc-graphics/psdr-cuda",
+        "commitSha": "4625b8c9df47dbee97525a48bdd1ee2f8c0ef735",
+        "depth": 1,
+        "snippetPath": "spdx_snippets/uiuc-graphics_psdr-cuda.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "Mob-FGSR/MobFGSR",
+      "label": "MobFGSR",
+      "type": "consumer",
+      "data": {
+        "packageName": "MobFGSR",
+        "packageOwner": "Mob-FGSR",
+        "originUrl": "/github.com/Mob-FGSR/MobFGSR",
+        "commitSha": "df7ed207ed66d53dc44518ce12572cd49015c125",
+        "depth": 1,
+        "snippetPath": "spdx_snippets/Mob-FGSR_MobFGSR.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "RenderKit/ospray-studio",
+      "label": "ospray-studio",
+      "type": "consumer",
+      "data": {
+        "packageName": "ospray-studio",
+        "packageOwner": "RenderKit",
+        "originUrl": "/github.com/RenderKit/ospray-studio",
+        "commitSha": "686ceff5f1f9ee5441d5551bc22a42bcc1ef0567",
+        "depth": 1,
+        "snippetPath": "spdx_snippets/RenderKit_ospray-studio.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "LWJGL/lwjgl3",
+      "label": "lwjgl3",
+      "type": "consumer",
+      "data": {
+        "packageName": "lwjgl3",
+        "packageOwner": "LWJGL",
+        "originUrl": "/github.com/LWJGL/lwjgl3",
+        "commitSha": "8d12523d40890a78eb11673ce26732a9125971a4",
+        "depth": 1,
+        "snippetPath": "spdx_snippets/LWJGL_lwjgl3.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "syoyo/tinyexr",
+      "label": "tinyexr",
+      "type": "consumer",
+      "data": {
+        "packageName": "tinyexr",
+        "packageOwner": "syoyo",
+        "originUrl": "/github.com/syoyo/tinyexr",
+        "commitSha": "3ffe5f9d5e673e6e8c378d59b306b2824993e705",
+        "depth": 1,
+        "snippetPath": "spdx_snippets/syoyo_tinyexr.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "silx-kit/hdf5plugin",
+      "label": "hdf5plugin",
+      "type": "consumer",
+      "data": {
+        "packageName": "hdf5plugin",
+        "packageOwner": "silx-kit",
+        "originUrl": "/github.com/silx-kit/hdf5plugin",
+        "commitSha": "2bffcfeb29075dccc31cb0789fc36a9e23d783e6",
+        "depth": 1,
+        "snippetPath": "spdx_snippets/silx-kit_hdf5plugin.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "RenderKit/ospray",
+      "label": "ospray",
+      "type": "consumer",
+      "data": {
+        "packageName": "ospray",
+        "packageOwner": "RenderKit",
+        "originUrl": "/github.com/RenderKit/ospray",
+        "commitSha": "675c216b91a765bbd1cf8c7ae8e2c3c0684f21a0",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/RenderKit_ospray.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "DQLin/VolumetricReSTIRRelease",
+      "label": "VolumetricReSTIRRelease",
+      "type": "consumer",
+      "data": {
+        "packageName": "VolumetricReSTIRRelease",
+        "packageOwner": "DQLin",
+        "originUrl": "/github.com/DQLin/VolumetricReSTIRRelease",
+        "commitSha": "9c65b2f48d87b6e02b1de2e67b42ee37b8d42525",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/DQLin_VolumetricReSTIRRelease.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "awxkee/avif-coder",
+      "label": "avif-coder",
+      "type": "consumer",
+      "data": {
+        "packageName": "avif-coder",
+        "packageOwner": "awxkee",
+        "originUrl": "/github.com/awxkee/avif-coder",
+        "commitSha": "e0cabc6fe89130b539cd24a0b2db331fb2f5e087",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/awxkee_avif-coder.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "darglein/NeAT",
+      "label": "NeAT",
+      "type": "consumer",
+      "data": {
+        "packageName": "NeAT",
+        "packageOwner": "darglein",
+        "originUrl": "/github.com/darglein/NeAT",
+        "commitSha": "2fc9798963ded91e221986125f0ba300c6fb3712",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/darglein_NeAT.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "LineageOS/android_frameworks_base",
+      "label": "android_frameworks_base",
+      "type": "consumer",
+      "data": {
+        "packageName": "android_frameworks_base",
+        "packageOwner": "LineageOS",
+        "originUrl": "/github.com/LineageOS/android_frameworks_base",
+        "commitSha": "60a0325b151d70f9d909e8c7f6383b076b03bf6b",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/LineageOS_android_frameworks_base.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "crdroidandroid/android_frameworks_base",
+      "label": "android_frameworks_base",
+      "type": "consumer",
+      "data": {
+        "packageName": "android_frameworks_base",
+        "packageOwner": "crdroidandroid",
+        "originUrl": "/github.com/crdroidandroid/android_frameworks_base",
+        "commitSha": "3c1912472995ed051aef6309b0e8f30d228a372b",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/crdroidandroid_android_frameworks_base.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "zhaijialong/RealEngine",
+      "label": "RealEngine",
+      "type": "consumer",
+      "data": {
+        "packageName": "RealEngine",
+        "packageOwner": "zhaijialong",
+        "originUrl": "/github.com/zhaijialong/RealEngine",
+        "commitSha": "cc2ae0a368b1af7ce6566a31e574823b791071c4",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/zhaijialong_RealEngine.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "Stellarium/stellarium-web-engine",
+      "label": "stellarium-web-engine",
+      "type": "consumer",
+      "data": {
+        "packageName": "stellarium-web-engine",
+        "packageOwner": "Stellarium",
+        "originUrl": "/github.com/Stellarium/stellarium-web-engine",
+        "commitSha": "909c7908eaf34daf502367d1a8ba73b4347e7a3c",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/Stellarium_stellarium-web-engine.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "TU-Clausthal-Rendering/ReSTIR-FG",
+      "label": "ReSTIR-FG",
+      "type": "consumer",
+      "data": {
+        "packageName": "ReSTIR-FG",
+        "packageOwner": "TU-Clausthal-Rendering",
+        "originUrl": "/github.com/TU-Clausthal-Rendering/ReSTIR-FG",
+        "commitSha": "416e4b58e065deacb6deffb492c368c9057ab0f8",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/TU-Clausthal-Rendering_ReSTIR-FG.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "NVIDIA-RTX/RTXPT",
+      "label": "RTXPT",
+      "type": "consumer",
+      "data": {
+        "packageName": "RTXPT",
+        "packageOwner": "NVIDIA-RTX",
+        "originUrl": "/github.com/NVIDIA-RTX/RTXPT",
+        "commitSha": "2f53323ab7a8f443c477a64cd7d3e177b48998a3",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/NVIDIA-RTX_RTXPT.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "Jebbly/Reservoir-Splatting",
+      "label": "Reservoir-Splatting",
+      "type": "consumer",
+      "data": {
+        "packageName": "Reservoir-Splatting",
+        "packageOwner": "Jebbly",
+        "originUrl": "/github.com/Jebbly/Reservoir-Splatting",
+        "commitSha": "a911d9b264f0af1e93368647a47abd93aeaa2a91",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/Jebbly_Reservoir-Splatting.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "awxkee/aire",
+      "label": "aire",
+      "type": "consumer",
+      "data": {
+        "packageName": "aire",
+        "packageOwner": "awxkee",
+        "originUrl": "/github.com/awxkee/aire",
+        "commitSha": "846f7054c07aec963ab387bd168ac3e65fb16dc1",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/awxkee_aire.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "DQLin/ReSTIR_PT",
+      "label": "ReSTIR_PT",
+      "type": "consumer",
+      "data": {
+        "packageName": "ReSTIR_PT",
+        "packageOwner": "DQLin",
+        "originUrl": "/github.com/DQLin/ReSTIR_PT",
+        "commitSha": "8d12332228eb64bc234e27c6f7e0913a926285ab",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/DQLin_ReSTIR_PT.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "aosp-mirror/platform_frameworks_base",
+      "label": "platform_frameworks_base",
+      "type": "consumer",
+      "data": {
+        "packageName": "platform_frameworks_base",
+        "packageOwner": "aosp-mirror",
+        "originUrl": "/github.com/aosp-mirror/platform_frameworks_base",
+        "commitSha": "1cdfff555f4a21f71ccc978290e2e212e2f8b168",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/aosp-mirror_platform_frameworks_base.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "Trylz/Restir_CPP",
+      "label": "Restir_CPP",
+      "type": "consumer",
+      "data": {
+        "packageName": "Restir_CPP",
+        "packageOwner": "Trylz",
+        "originUrl": "/github.com/Trylz/Restir_CPP",
+        "commitSha": "c448fba9ecf8bd5f1657cca0601868a193b9a808",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/Trylz_Restir_CPP.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "NVIDIAGameWorks/Falcor",
+      "label": "Falcor",
+      "type": "consumer",
+      "data": {
+        "packageName": "Falcor",
+        "packageOwner": "NVIDIAGameWorks",
+        "originUrl": "/github.com/NVIDIAGameWorks/Falcor",
+        "commitSha": "eb540f6748774680ce0039aaf3ac9279266ec521",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/NVIDIAGameWorks_Falcor.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "guiqi134/Area-ReSTIR",
+      "label": "Area-ReSTIR",
+      "type": "consumer",
+      "data": {
+        "packageName": "Area-ReSTIR",
+        "packageOwner": "guiqi134",
+        "originUrl": "/github.com/guiqi134/Area-ReSTIR",
+        "commitSha": "c705a82bfc805d8451e0aa93999f0156d5dbd952",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/guiqi134_Area-ReSTIR.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "AOSPA/android_frameworks_base-uvite",
+      "label": "android_frameworks_base-uvite",
+      "type": "consumer",
+      "data": {
+        "packageName": "android_frameworks_base-uvite",
+        "packageOwner": "AOSPA",
+        "originUrl": "/github.com/AOSPA/android_frameworks_base-uvite",
+        "commitSha": "0362e635a608387735d5d65b11102773328c9030",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/AOSPA_android_frameworks_base-uvite.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "omnirom/android_frameworks_base_old",
+      "label": "android_frameworks_base_old",
+      "type": "consumer",
+      "data": {
+        "packageName": "android_frameworks_base_old",
+        "packageOwner": "omnirom",
+        "originUrl": "/github.com/omnirom/android_frameworks_base_old",
+        "commitSha": "5e4b775b8f5a75d9a1d2d674acf9f2fa39dae125",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/omnirom_android_frameworks_base_old.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "SirKero/RTProgressivePhotonMapper",
+      "label": "RTProgressivePhotonMapper",
+      "type": "consumer",
+      "data": {
+        "packageName": "RTProgressivePhotonMapper",
+        "packageOwner": "SirKero",
+        "originUrl": "/github.com/SirKero/RTProgressivePhotonMapper",
+        "commitSha": "3398d9659df48fe57c65ce40950599bf094bf2ba",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/SirKero_RTProgressivePhotonMapper.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "NVlabs/conditional-restir-prototype",
+      "label": "conditional-restir-prototype",
+      "type": "consumer",
+      "data": {
+        "packageName": "conditional-restir-prototype",
+        "packageOwner": "NVlabs",
+        "originUrl": "/github.com/NVlabs/conditional-restir-prototype",
+        "commitSha": "2188c2049aaa27b2576ce6486a51785d74db7bff",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/NVlabs_conditional-restir-prototype.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "ssteinberg/PLTFalcor",
+      "label": "PLTFalcor",
+      "type": "consumer",
+      "data": {
+        "packageName": "PLTFalcor",
+        "packageOwner": "ssteinberg",
+        "originUrl": "/github.com/ssteinberg/PLTFalcor",
+        "commitSha": "6c58971d1f8f031eb61ce8fd93e4ffddbe963e85",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/ssteinberg_PLTFalcor.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "swr06/Glide3D",
+      "label": "Glide3D",
+      "type": "consumer",
+      "data": {
+        "packageName": "Glide3D",
+        "packageOwner": "swr06",
+        "originUrl": "/github.com/swr06/Glide3D",
+        "commitSha": "210d696895bfa821c4e6808cc0ecf209d8985ada",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/swr06_Glide3D.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "WeakKnight/VirtualBlueNoiseLighting",
+      "label": "VirtualBlueNoiseLighting",
+      "type": "consumer",
+      "data": {
+        "packageName": "VirtualBlueNoiseLighting",
+        "packageOwner": "WeakKnight",
+        "originUrl": "/github.com/WeakKnight/VirtualBlueNoiseLighting",
+        "commitSha": "6110ae7556e8967f95fb319eda4e4900a01deb43",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/WeakKnight_VirtualBlueNoiseLighting.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "CMU-Graphics/Scotty3D",
+      "label": "Scotty3D",
+      "type": "consumer",
+      "data": {
+        "packageName": "Scotty3D",
+        "packageOwner": "CMU-Graphics",
+        "originUrl": "/github.com/CMU-Graphics/Scotty3D",
+        "commitSha": "48e8399714e1f3538996eb983116ff9199bbed90",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/CMU-Graphics_Scotty3D.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "NVIDIAGameWorks/Displacement-MicroMap-Toolkit",
+      "label": "Displacement-MicroMap-Toolkit",
+      "type": "consumer",
+      "data": {
+        "packageName": "Displacement-MicroMap-Toolkit",
+        "packageOwner": "NVIDIAGameWorks",
+        "originUrl": "/github.com/NVIDIAGameWorks/Displacement-MicroMap-Toolkit",
+        "commitSha": "01e6024ec07d0e6dd51185c16228355236d07e64",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/NVIDIAGameWorks_Displacement-MicroMap-Toolkit.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "electronicarts/fastnoise",
+      "label": "fastnoise",
+      "type": "consumer",
+      "data": {
+        "packageName": "fastnoise",
+        "packageOwner": "electronicarts",
+        "originUrl": "/github.com/electronicarts/fastnoise",
+        "commitSha": "2cf53e4bb510d07511fe63a312556d2a2e108c70",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/electronicarts_fastnoise.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "blitz-research/libsgd",
+      "label": "libsgd",
+      "type": "consumer",
+      "data": {
+        "packageName": "libsgd",
+        "packageOwner": "blitz-research",
+        "originUrl": "/github.com/blitz-research/libsgd",
+        "commitSha": "cd3c63dd87d81ee62431b8172f9efc71fe6524fe",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/blitz-research_libsgd.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "YilingQiao/DMRF",
+      "label": "DMRF",
+      "type": "consumer",
+      "data": {
+        "packageName": "DMRF",
+        "packageOwner": "YilingQiao",
+        "originUrl": "/github.com/YilingQiao/DMRF",
+        "commitSha": "711129d8cc1600eb611a24f142e3b1a4ede1d267",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/YilingQiao_DMRF.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "tataliya7/HorizonEngine",
+      "label": "HorizonEngine",
+      "type": "consumer",
+      "data": {
+        "packageName": "HorizonEngine",
+        "packageOwner": "tataliya7",
+        "originUrl": "/github.com/tataliya7/HorizonEngine",
+        "commitSha": "a54723862d04632e07666e8086386404913adfa1",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/tataliya7_HorizonEngine.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "JamesPerlman/blender-ngp",
+      "label": "blender-ngp",
+      "type": "consumer",
+      "data": {
+        "packageName": "blender-ngp",
+        "packageOwner": "JamesPerlman",
+        "originUrl": "/github.com/JamesPerlman/blender-ngp",
+        "commitSha": "e2e0000ba95aa5f4e5bdfb5ed249bebf6528f33a",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/JamesPerlman_blender-ngp.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "GPUOpen-LibrariesAndSDKs/RadeonImageFilter",
+      "label": "RadeonImageFilter",
+      "type": "consumer",
+      "data": {
+        "packageName": "RadeonImageFilter",
+        "packageOwner": "GPUOpen-LibrariesAndSDKs",
+        "originUrl": "/github.com/GPUOpen-LibrariesAndSDKs/RadeonImageFilter",
+        "commitSha": "31b926e462a097e54efd653f2ed8ba5a4fad2d8c",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/GPUOpen-LibrariesAndSDKs_RadeonImageFilter.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "ASTex-ICube/real_time_glint",
+      "label": "real_time_glint",
+      "type": "consumer",
+      "data": {
+        "packageName": "real_time_glint",
+        "packageOwner": "ASTex-ICube",
+        "originUrl": "/github.com/ASTex-ICube/real_time_glint",
+        "commitSha": "96c08fdff986e9eb83509850770b4946d829bcea",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/ASTex-ICube_real_time_glint.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "Witek902/Raytracer",
+      "label": "Raytracer",
+      "type": "consumer",
+      "data": {
+        "packageName": "Raytracer",
+        "packageOwner": "Witek902",
+        "originUrl": "/github.com/Witek902/Raytracer",
+        "commitSha": "3e38a82a5ea28e64793e98efc5b8e2643ceb8e9d",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/Witek902_Raytracer.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "cmu462/DrawSVG",
+      "label": "DrawSVG",
+      "type": "consumer",
+      "data": {
+        "packageName": "DrawSVG",
+        "packageOwner": "cmu462",
+        "originUrl": "/github.com/cmu462/DrawSVG",
+        "commitSha": "d0d8dbf3af7d7195eceea7139b817bc9e9757e29",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/cmu462_DrawSVG.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "dsforza96/tree-gen",
+      "label": "tree-gen",
+      "type": "consumer",
+      "data": {
+        "packageName": "tree-gen",
+        "packageOwner": "dsforza96",
+        "originUrl": "/github.com/dsforza96/tree-gen",
+        "commitSha": "b25a6e35e19b233a163d6ac5091201a098ae58ef",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/dsforza96_tree-gen.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "Khrylx/DSGPURayTracing",
+      "label": "DSGPURayTracing",
+      "type": "consumer",
+      "data": {
+        "packageName": "DSGPURayTracing",
+        "packageOwner": "Khrylx",
+        "originUrl": "/github.com/Khrylx/DSGPURayTracing",
+        "commitSha": "c9cb608d2592c8f20a4b12612f29dfcb56554296",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/Khrylx_DSGPURayTracing.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "shihchinw/rlShaders",
+      "label": "rlShaders",
+      "type": "consumer",
+      "data": {
+        "packageName": "rlShaders",
+        "packageOwner": "shihchinw",
+        "originUrl": "/github.com/shihchinw/rlShaders",
+        "commitSha": "13609f7f0e9b52beb8a266b18e8f7a0e8c27af40",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/shihchinw_rlShaders.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "RenderKit/embree",
+      "label": "embree",
+      "type": "consumer",
+      "data": {
+        "packageName": "embree",
+        "packageOwner": "RenderKit",
+        "originUrl": "/github.com/RenderKit/embree",
+        "commitSha": "d436cb396bd5d66aa147cf8165074f04cbd27436",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/RenderKit_embree.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "KhronosGroup/ANARI-SDK",
+      "label": "ANARI-SDK",
+      "type": "consumer",
+      "data": {
+        "packageName": "ANARI-SDK",
+        "packageOwner": "KhronosGroup",
+        "originUrl": "/github.com/KhronosGroup/ANARI-SDK",
+        "commitSha": "6bec2eb6bbe50a21e4233e30892f558dc3e3a804",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/KhronosGroup_ANARI-SDK.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "Hongtae/SwiftVVD",
+      "label": "SwiftVVD",
+      "type": "consumer",
+      "data": {
+        "packageName": "SwiftVVD",
+        "packageOwner": "Hongtae",
+        "originUrl": "/github.com/Hongtae/SwiftVVD",
+        "commitSha": "b30b0ba2e92591d760d818e4f560e81fd76a28f7",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/Hongtae_SwiftVVD.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "eqgis/Sceneform-EQR",
+      "label": "Sceneform-EQR",
+      "type": "consumer",
+      "data": {
+        "packageName": "Sceneform-EQR",
+        "packageOwner": "eqgis",
+        "originUrl": "/github.com/eqgis/Sceneform-EQR",
+        "commitSha": "c9c6606e07dbd9bd9499313e36e357a245b5edb3",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/eqgis_Sceneform-EQR.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "google/filament",
+      "label": "filament",
+      "type": "consumer",
+      "data": {
+        "packageName": "filament",
+        "packageOwner": "google",
+        "originUrl": "/github.com/google/filament",
+        "commitSha": "ad1bc6f3605cf3aee3f66dc047b660d4891058be",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/google_filament.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "baldurk/renderdoc",
+      "label": "renderdoc",
+      "type": "consumer",
+      "data": {
+        "packageName": "renderdoc",
+        "packageOwner": "baldurk",
+        "originUrl": "/github.com/baldurk/renderdoc",
+        "commitSha": "7bd3fe38f71f77af17d65022e2576c58c36e7a55",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/baldurk_renderdoc.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "Redot-Engine/redot-engine",
+      "label": "redot-engine",
+      "type": "consumer",
+      "data": {
+        "packageName": "redot-engine",
+        "packageOwner": "Redot-Engine",
+        "originUrl": "/github.com/Redot-Engine/redot-engine",
+        "commitSha": "82ff6fe523072d4fa50216a14108c0cb858f31ba",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/Redot-Engine_redot-engine.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "google/gfxstream",
+      "label": "gfxstream",
+      "type": "consumer",
+      "data": {
+        "packageName": "gfxstream",
+        "packageOwner": "google",
+        "originUrl": "/github.com/google/gfxstream",
+        "commitSha": "3b4da721654745c175b7765bac7f3df409a91a48",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/google_gfxstream.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "tylermorganwall/rayrender",
+      "label": "rayrender",
+      "type": "consumer",
+      "data": {
+        "packageName": "rayrender",
+        "packageOwner": "tylermorganwall",
+        "originUrl": "/github.com/tylermorganwall/rayrender",
+        "commitSha": "f49895996f80d46f07080cf82de4e7c3fd16ae67",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/tylermorganwall_rayrender.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "opentoonz/opentoonz",
+      "label": "opentoonz",
+      "type": "consumer",
+      "data": {
+        "packageName": "opentoonz",
+        "packageOwner": "opentoonz",
+        "originUrl": "/github.com/opentoonz/opentoonz",
+        "commitSha": "ed4aa37c8954655b3aaac04cb50b5ef4e1de9d9d",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/opentoonz_opentoonz.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "mamedev/mame",
+      "label": "mame",
+      "type": "consumer",
+      "data": {
+        "packageName": "mame",
+        "packageOwner": "mamedev",
+        "originUrl": "/github.com/mamedev/mame",
+        "commitSha": "187d832231b84646935dbeb6b7dae05f66aecc9c",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/mamedev_mame.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "cinder/Cinder",
+      "label": "Cinder",
+      "type": "consumer",
+      "data": {
+        "packageName": "Cinder",
+        "packageOwner": "cinder",
+        "originUrl": "/github.com/cinder/Cinder",
+        "commitSha": "48b16b726fb20a7389f2a56fa71db909f8856fa3",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/cinder_Cinder.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "ezEngine/ezEngine",
+      "label": "ezEngine",
+      "type": "consumer",
+      "data": {
+        "packageName": "ezEngine",
+        "packageOwner": "ezEngine",
+        "originUrl": "/github.com/ezEngine/ezEngine",
+        "commitSha": "a8d9b635239190c895d396cd8c4f64d346466fa8",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/ezEngine_ezEngine.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "adobe/lagrange",
+      "label": "lagrange",
+      "type": "consumer",
+      "data": {
+        "packageName": "lagrange",
+        "packageOwner": "adobe",
+        "originUrl": "/github.com/adobe/lagrange",
+        "commitSha": "cf7782d6391f2d3d25466b430be25b65335785fc",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/adobe_lagrange.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "NVlabs/instant-ngp",
+      "label": "instant-ngp",
+      "type": "consumer",
+      "data": {
+        "packageName": "instant-ngp",
+        "packageOwner": "NVlabs",
+        "originUrl": "/github.com/NVlabs/instant-ngp",
+        "commitSha": "abe236ee00cf90cfca6e36e65c00435d5b21f50a",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/NVlabs_instant-ngp.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "patriciogonzalezvivo/vera",
+      "label": "vera",
+      "type": "consumer",
+      "data": {
+        "packageName": "vera",
+        "packageOwner": "patriciogonzalezvivo",
+        "originUrl": "/github.com/patriciogonzalezvivo/vera",
+        "commitSha": "9df4a732d41e0ed6e87790514f1f1b9f31f6cb4f",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/patriciogonzalezvivo_vera.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "tylermorganwall/rayvertex",
+      "label": "rayvertex",
+      "type": "consumer",
+      "data": {
+        "packageName": "rayvertex",
+        "packageOwner": "tylermorganwall",
+        "originUrl": "/github.com/tylermorganwall/rayvertex",
+        "commitSha": "08d0b5c8cc8f3e8c46b607ae1fc99b011f8fff34",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/tylermorganwall_rayvertex.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "mollnn/bound-caustics",
+      "label": "bound-caustics",
+      "type": "consumer",
+      "data": {
+        "packageName": "bound-caustics",
+        "packageOwner": "mollnn",
+        "originUrl": "/github.com/mollnn/bound-caustics",
+        "commitSha": "b116d5326709cb5749a45be14c70105e224c9a9d",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/mollnn_bound-caustics.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "love2d/love",
+      "label": "love",
+      "type": "consumer",
+      "data": {
+        "packageName": "love",
+        "packageOwner": "love2d",
+        "originUrl": "/github.com/love2d/love",
+        "commitSha": "147d39251c2618852c026f8cadf95f0ffd6a746f",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/love2d_love.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "sergcpp/DummyEngine",
+      "label": "DummyEngine",
+      "type": "consumer",
+      "data": {
+        "packageName": "DummyEngine",
+        "packageOwner": "sergcpp",
+        "originUrl": "/github.com/sergcpp/DummyEngine",
+        "commitSha": "c76c3603ddfb69412cffaba59e51d558406c3f47",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/sergcpp_DummyEngine.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "cyberegoorg/zbgfx",
+      "label": "zbgfx",
+      "type": "consumer",
+      "data": {
+        "packageName": "zbgfx",
+        "packageOwner": "cyberegoorg",
+        "originUrl": "/github.com/cyberegoorg/zbgfx",
+        "commitSha": "91b0dd7159ab35ec877fa06dc22b20ad0b118ee2",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/cyberegoorg_zbgfx.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "BinomialLLC/basis_universal",
+      "label": "basis_universal",
+      "type": "consumer",
+      "data": {
+        "packageName": "basis_universal",
+        "packageOwner": "BinomialLLC",
+        "originUrl": "/github.com/BinomialLLC/basis_universal",
+        "commitSha": "41a758e7d17428f6d9d45704dcb0c3bb0547ae77",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/BinomialLLC_basis_universal.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "syoyo/tinygltf",
+      "label": "tinygltf",
+      "type": "consumer",
+      "data": {
+        "packageName": "tinygltf",
+        "packageOwner": "syoyo",
+        "originUrl": "/github.com/syoyo/tinygltf",
+        "commitSha": "bdc37385f198c787ba143e18f01b06164f8c7d15",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/syoyo_tinygltf.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "microsoft/vcpkg",
+      "label": "vcpkg",
+      "type": "consumer",
+      "data": {
+        "packageName": "vcpkg",
+        "packageOwner": "microsoft",
+        "originUrl": "/github.com/microsoft/vcpkg",
+        "commitSha": "7ab2f5d542e36af36d14decc06a59a26a939f818",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/microsoft_vcpkg.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "gboisse/gfx",
+      "label": "gfx",
+      "type": "consumer",
+      "data": {
+        "packageName": "gfx",
+        "packageOwner": "gboisse",
+        "originUrl": "/github.com/gboisse/gfx",
+        "commitSha": "08736f0104b1b7dd99cfd1c2cd2e36d9bb920eeb",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/gboisse_gfx.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "FlaxEngine/FlaxEngine",
+      "label": "FlaxEngine",
+      "type": "consumer",
+      "data": {
+        "packageName": "FlaxEngine",
+        "packageOwner": "FlaxEngine",
+        "originUrl": "/github.com/FlaxEngine/FlaxEngine",
+        "commitSha": "c51a023e6152b8f19c86edd65c07c1a497a624c8",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/FlaxEngine_FlaxEngine.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "livinamuk/Hell2025",
+      "label": "Hell2025",
+      "type": "consumer",
+      "data": {
+        "packageName": "Hell2025",
+        "packageOwner": "livinamuk",
+        "originUrl": "/github.com/livinamuk/Hell2025",
+        "commitSha": "12c90a5946f31f1f5106cb0b4a42e6526ba7c88f",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/livinamuk_Hell2025.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "LuisaGroup/LuisaCompute",
+      "label": "LuisaCompute",
+      "type": "consumer",
+      "data": {
+        "packageName": "LuisaCompute",
+        "packageOwner": "LuisaGroup",
+        "originUrl": "/github.com/LuisaGroup/LuisaCompute",
+        "commitSha": "bad1eb5b8161fffd500529ef462be4aa12d3774c",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/LuisaGroup_LuisaCompute.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "banterle/HDR_Toolbox",
+      "label": "HDR_Toolbox",
+      "type": "consumer",
+      "data": {
+        "packageName": "HDR_Toolbox",
+        "packageOwner": "banterle",
+        "originUrl": "/github.com/banterle/HDR_Toolbox",
+        "commitSha": "44b49135997da489cd639076814c578b22e87582",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/banterle_HDR_Toolbox.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "qiutang98/flower",
+      "label": "flower",
+      "type": "consumer",
+      "data": {
+        "packageName": "flower",
+        "packageOwner": "qiutang98",
+        "originUrl": "/github.com/qiutang98/flower",
+        "commitSha": "17b5ebdff6ff422fa90688762c53de8185eb7ad7",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/qiutang98_flower.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "NVIDIA-RTX/Donut",
+      "label": "Donut",
+      "type": "consumer",
+      "data": {
+        "packageName": "Donut",
+        "packageOwner": "NVIDIA-RTX",
+        "originUrl": "/github.com/NVIDIA-RTX/Donut",
+        "commitSha": "7d968902a534b6e32091a88cfb927fa40eb2c34f",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/NVIDIA-RTX_Donut.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "BachiLi/lajolla_public",
+      "label": "lajolla_public",
+      "type": "consumer",
+      "data": {
+        "packageName": "lajolla_public",
+        "packageOwner": "BachiLi",
+        "originUrl": "/github.com/BachiLi/lajolla_public",
+        "commitSha": "bed978a3ab5b80dbf52e0bae3feeecc39499c769",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/BachiLi_lajolla_public.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "justnullname/QuickView",
+      "label": "QuickView",
+      "type": "consumer",
+      "data": {
+        "packageName": "QuickView",
+        "packageOwner": "justnullname",
+        "originUrl": "/github.com/justnullname/QuickView",
+        "commitSha": "a7454d800fc840e44368b2b27d6b62c9f242ccd2",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/justnullname_QuickView.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "src.fedoraproject.org/rpms/opentoonz",
+      "label": "rpms",
+      "type": "consumer",
+      "data": {
+        "packageName": "rpms",
+        "packageOwner": "src.fedoraproject.org",
+        "originUrl": "/src.fedoraproject.org/rpms/opentoonz",
+        "commitSha": "586de0f7c89bfcf5c095c0854d071fb6b168daea",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/src.fedoraproject.org_rpms_opentoonz.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "neilmewada/CrystalEngine",
+      "label": "CrystalEngine",
+      "type": "consumer",
+      "data": {
+        "packageName": "CrystalEngine",
+        "packageOwner": "neilmewada",
+        "originUrl": "/github.com/neilmewada/CrystalEngine",
+        "commitSha": "aabab7885f5a52bc5e0f34e0302f8aebbc572872",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/neilmewada_CrystalEngine.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "eliemichel/LearnWebGPU",
+      "label": "LearnWebGPU",
+      "type": "consumer",
+      "data": {
+        "packageName": "LearnWebGPU",
+        "packageOwner": "eliemichel",
+        "originUrl": "/github.com/eliemichel/LearnWebGPU",
+        "commitSha": "56dbd6dd897daa8c9834321edec0e6e25c793212",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/eliemichel_LearnWebGPU.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "TomClabault/HIPRT-Path-Tracer",
+      "label": "HIPRT-Path-Tracer",
+      "type": "consumer",
+      "data": {
+        "packageName": "HIPRT-Path-Tracer",
+        "packageOwner": "TomClabault",
+        "originUrl": "/github.com/TomClabault/HIPRT-Path-Tracer",
+        "commitSha": "d114ed0d4c1d4ff9ea4e2511841819ed9aa59e6e",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/TomClabault_HIPRT-Path-Tracer.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "src.fedoraproject.org/rpms/tinyexr",
+      "label": "rpms",
+      "type": "consumer",
+      "data": {
+        "packageName": "rpms",
+        "packageOwner": "src.fedoraproject.org",
+        "originUrl": "/src.fedoraproject.org/rpms/tinyexr",
+        "commitSha": "8129649262c6b6289577627702483a3b96ad02ff",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/src.fedoraproject.org_rpms_tinyexr.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "beaumanvienna/vulkan",
+      "label": "vulkan",
+      "type": "consumer",
+      "data": {
+        "packageName": "vulkan",
+        "packageOwner": "beaumanvienna",
+        "originUrl": "/github.com/beaumanvienna/vulkan",
+        "commitSha": "665ce36ad3c04f3d78d888e4918190bf18d6d34a",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/beaumanvienna_vulkan.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "NVIDIA-RTX/Streamline_Sample",
+      "label": "Streamline_Sample",
+      "type": "consumer",
+      "data": {
+        "packageName": "Streamline_Sample",
+        "packageOwner": "NVIDIA-RTX",
+        "originUrl": "/github.com/NVIDIA-RTX/Streamline_Sample",
+        "commitSha": "4aa6f8f8f1e31d8f738966fba70487a7f1d14b83",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/NVIDIA-RTX_Streamline_Sample.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "papaboo/Bifrost3D",
+      "label": "Bifrost3D",
+      "type": "consumer",
+      "data": {
+        "packageName": "Bifrost3D",
+        "packageOwner": "papaboo",
+        "originUrl": "/github.com/papaboo/Bifrost3D",
+        "commitSha": "c739e1bb7154528e863f7073809e22f28435f249",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/papaboo_Bifrost3D.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "NVIDIA-RTX/RTXNTC",
+      "label": "RTXNTC",
+      "type": "consumer",
+      "data": {
+        "packageName": "RTXNTC",
+        "packageOwner": "NVIDIA-RTX",
+        "originUrl": "/github.com/NVIDIA-RTX/RTXNTC",
+        "commitSha": "1cfa9a514d1b893754df0d343e0dd9cf5a11567d",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/NVIDIA-RTX_RTXNTC.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "LuisaGroup/LuisaRender",
+      "label": "LuisaRender",
+      "type": "consumer",
+      "data": {
+        "packageName": "LuisaRender",
+        "packageOwner": "LuisaGroup",
+        "originUrl": "/github.com/LuisaGroup/LuisaRender",
+        "commitSha": "73249bfb151e9fe3f0eb55a59cfd86b6b9f77442",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/LuisaGroup_LuisaRender.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "lighttransport/tinyusdz",
+      "label": "tinyusdz",
+      "type": "consumer",
+      "data": {
+        "packageName": "tinyusdz",
+        "packageOwner": "lighttransport",
+        "originUrl": "/github.com/lighttransport/tinyusdz",
+        "commitSha": "0011b4ea8ff647d6570fa988c1865295dd5b9e1f",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/lighttransport_tinyusdz.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "WeiPhil/nbvh",
+      "label": "nbvh",
+      "type": "consumer",
+      "data": {
+        "packageName": "nbvh",
+        "packageOwner": "WeiPhil",
+        "originUrl": "/github.com/WeiPhil/nbvh",
+        "commitSha": "d3feecc53d8ad263aceb569b39db4360b0f6f2dd",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/WeiPhil_nbvh.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "nadult/lucid",
+      "label": "lucid",
+      "type": "consumer",
+      "data": {
+        "packageName": "lucid",
+        "packageOwner": "nadult",
+        "originUrl": "/github.com/nadult/lucid",
+        "commitSha": "807fc6ddaf5c3a8eb07c0e174a16344fbd04df03",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/nadult_lucid.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "NVlabs/tiny-cuda-nn",
+      "label": "tiny-cuda-nn",
+      "type": "consumer",
+      "data": {
+        "packageName": "tiny-cuda-nn",
+        "packageOwner": "NVlabs",
+        "originUrl": "/github.com/NVlabs/tiny-cuda-nn",
+        "commitSha": "2e757bbe781db59c4980d389d7dccbf5edc09669",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/NVlabs_tiny-cuda-nn.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "AdamYuan/SparseVoxelOctree",
+      "label": "SparseVoxelOctree",
+      "type": "consumer",
+      "data": {
+        "packageName": "SparseVoxelOctree",
+        "packageOwner": "AdamYuan",
+        "originUrl": "/github.com/AdamYuan/SparseVoxelOctree",
+        "commitSha": "eaa4319c166184654055fa0d9a1859549a3244eb",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/AdamYuan_SparseVoxelOctree.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "GPUOpen-LibrariesAndSDKs/Capsaicin",
+      "label": "Capsaicin",
+      "type": "consumer",
+      "data": {
+        "packageName": "Capsaicin",
+        "packageOwner": "GPUOpen-LibrariesAndSDKs",
+        "originUrl": "/github.com/GPUOpen-LibrariesAndSDKs/Capsaicin",
+        "commitSha": "914b91596cd119eda85fbc1d3c7ee6ac391b1452",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/GPUOpen-LibrariesAndSDKs_Capsaicin.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "GaijinEntertainment/DagorEngine",
+      "label": "DagorEngine",
+      "type": "consumer",
+      "data": {
+        "packageName": "DagorEngine",
+        "packageOwner": "GaijinEntertainment",
+        "originUrl": "/github.com/GaijinEntertainment/DagorEngine",
+        "commitSha": "210be6a3fccc86f467d8eb09941a54200befc562",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/GaijinEntertainment_DagorEngine.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "serhii-rieznik/etx-tracer",
+      "label": "etx-tracer",
+      "type": "consumer",
+      "data": {
+        "packageName": "etx-tracer",
+        "packageOwner": "serhii-rieznik",
+        "originUrl": "/github.com/serhii-rieznik/etx-tracer",
+        "commitSha": "464beb9be69a0528887744fbc43e1d6d5ec72978",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/serhii-rieznik_etx-tracer.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "antkeeper/antkeeper-source",
+      "label": "antkeeper-source",
+      "type": "consumer",
+      "data": {
+        "packageName": "antkeeper-source",
+        "packageOwner": "antkeeper",
+        "originUrl": "/github.com/antkeeper/antkeeper-source",
+        "commitSha": "ff20922d4d6cbaea7f4c334d4d117e951d700a13",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/antkeeper_antkeeper-source.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "Hork-Engine/Hork-Source",
+      "label": "Hork-Source",
+      "type": "consumer",
+      "data": {
+        "packageName": "Hork-Source",
+        "packageOwner": "Hork-Engine",
+        "originUrl": "/github.com/Hork-Engine/Hork-Source",
+        "commitSha": "7aafa023cb19ab63ef528c888a3e59bea6982da9",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/Hork-Engine_Hork-Source.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "NVlabs/flip",
+      "label": "flip",
+      "type": "consumer",
+      "data": {
+        "packageName": "flip",
+        "packageOwner": "NVlabs",
+        "originUrl": "/github.com/NVlabs/flip",
+        "commitSha": "b475eb4bf394ab877c42166c9eb0a84a02cc5b14",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/NVlabs_flip.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "horizon-research/rtnn",
+      "label": "rtnn",
+      "type": "consumer",
+      "data": {
+        "packageName": "rtnn",
+        "packageOwner": "horizon-research",
+        "originUrl": "/github.com/horizon-research/rtnn",
+        "commitSha": "5532e7031d0c8268ffa555972f074f8882b379b5",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/horizon-research_rtnn.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "AlchemyViewer/Alchemy",
+      "label": "Alchemy",
+      "type": "consumer",
+      "data": {
+        "packageName": "Alchemy",
+        "packageOwner": "AlchemyViewer",
+        "originUrl": "/github.com/AlchemyViewer/Alchemy",
+        "commitSha": "180fb068be6636476077cfdbc02b70a98bef0045",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/AlchemyViewer_Alchemy.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "lighttransport/pbrlab",
+      "label": "pbrlab",
+      "type": "consumer",
+      "data": {
+        "packageName": "pbrlab",
+        "packageOwner": "lighttransport",
+        "originUrl": "/github.com/lighttransport/pbrlab",
+        "commitSha": "09ac1ff927f387453328e2c37ed10b091fbddb6a",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/lighttransport_pbrlab.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "ARM-software/astc-encoder",
+      "label": "astc-encoder",
+      "type": "consumer",
+      "data": {
+        "packageName": "astc-encoder",
+        "packageOwner": "ARM-software",
+        "originUrl": "/github.com/ARM-software/astc-encoder",
+        "commitSha": "701503966b1ac2ebd2616cba94adee5ae8ba6363",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/ARM-software_astc-encoder.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "zenustech/zeno",
+      "label": "zeno",
+      "type": "consumer",
+      "data": {
+        "packageName": "zeno",
+        "packageOwner": "zenustech",
+        "originUrl": "/github.com/zenustech/zeno",
+        "commitSha": "56c74cc3ef5ca5d0cc3a9d713f6e4e7788c45979",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/zenustech_zeno.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "cnr-isti-vclab/piccante",
+      "label": "piccante",
+      "type": "consumer",
+      "data": {
+        "packageName": "piccante",
+        "packageOwner": "cnr-isti-vclab",
+        "originUrl": "/github.com/cnr-isti-vclab/piccante",
+        "commitSha": "d0bd81d5ba798ec634acb0a7fdf68dc153886844",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/cnr-isti-vclab_piccante.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "mkazhdan/TextureSignalProcessing",
+      "label": "TextureSignalProcessing",
+      "type": "consumer",
+      "data": {
+        "packageName": "TextureSignalProcessing",
+        "packageOwner": "mkazhdan",
+        "originUrl": "/github.com/mkazhdan/TextureSignalProcessing",
+        "commitSha": "dd7ab66cc0e75bec1e6eb6b704d240e8780f46e7",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/mkazhdan_TextureSignalProcessing.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "clibequilibrium/EquilibriumEngine",
+      "label": "EquilibriumEngine",
+      "type": "consumer",
+      "data": {
+        "packageName": "EquilibriumEngine",
+        "packageOwner": "clibequilibrium",
+        "originUrl": "/github.com/clibequilibrium/EquilibriumEngine",
+        "commitSha": "09c41464a67492d60f7266402bb0a569fe861f55",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/clibequilibrium_EquilibriumEngine.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "kosua20/Rendu",
+      "label": "Rendu",
+      "type": "consumer",
+      "data": {
+        "packageName": "Rendu",
+        "packageOwner": "kosua20",
+        "originUrl": "/github.com/kosua20/Rendu",
+        "commitSha": "31dfb8a1ea9ecdfa6a6945bb0371c29ed6a8a317",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/kosua20_Rendu.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "Autodesk/Aurora",
+      "label": "Aurora",
+      "type": "consumer",
+      "data": {
+        "packageName": "Aurora",
+        "packageOwner": "Autodesk",
+        "originUrl": "/github.com/Autodesk/Aurora",
+        "commitSha": "50eea04cc44c7b8c6bcfffdc68338755684bf3c8",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/Autodesk_Aurora.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "intel/RealTimePathTracingResearchFramework",
+      "label": "RealTimePathTracingResearchFramework",
+      "type": "consumer",
+      "data": {
+        "packageName": "RealTimePathTracingResearchFramework",
+        "packageOwner": "intel",
+        "originUrl": "/github.com/intel/RealTimePathTracingResearchFramework",
+        "commitSha": "fd411e4543e3d31e1cc294b0ac0f1c68a9f8f7f3",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/intel_RealTimePathTracingResearchFramework.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "Zielon/INSTA",
+      "label": "INSTA",
+      "type": "consumer",
+      "data": {
+        "packageName": "INSTA",
+        "packageOwner": "Zielon",
+        "originUrl": "/github.com/Zielon/INSTA",
+        "commitSha": "39827018dff9fef7e34bbe14e54077a5cbc01d5b",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/Zielon_INSTA.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "ziyi-zhang/INGP-RFL",
+      "label": "INGP-RFL",
+      "type": "consumer",
+      "data": {
+        "packageName": "INGP-RFL",
+        "packageOwner": "ziyi-zhang",
+        "originUrl": "/github.com/ziyi-zhang/INGP-RFL",
+        "commitSha": "d5054d5916f3fd9bb75199e5e28bff40972fc9e5",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/ziyi-zhang_INGP-RFL.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "shocker-0x15/GfxExp",
+      "label": "GfxExp",
+      "type": "consumer",
+      "data": {
+        "packageName": "GfxExp",
+        "packageOwner": "shocker-0x15",
+        "originUrl": "/github.com/shocker-0x15/GfxExp",
+        "commitSha": "b3303826086fe2ef3a606aabc5ebbec74443accd",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/shocker-0x15_GfxExp.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "qiutang98/chord",
+      "label": "chord",
+      "type": "consumer",
+      "data": {
+        "packageName": "chord",
+        "packageOwner": "qiutang98",
+        "originUrl": "/github.com/qiutang98/chord",
+        "commitSha": "408900645557b1ef3a9a9987eb24d099a47659c8",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/qiutang98_chord.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "rextimmy/the-forge-glfw",
+      "label": "the-forge-glfw",
+      "type": "consumer",
+      "data": {
+        "packageName": "the-forge-glfw",
+        "packageOwner": "rextimmy",
+        "originUrl": "/github.com/rextimmy/the-forge-glfw",
+        "commitSha": "8f8ef16c9e1a27fe9f22b4611776047240b2e994",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/rextimmy_the-forge-glfw.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "Robotics-STAR-Lab/H3-Mapping",
+      "label": "H3-Mapping",
+      "type": "consumer",
+      "data": {
+        "packageName": "H3-Mapping",
+        "packageOwner": "Robotics-STAR-Lab",
+        "originUrl": "/github.com/Robotics-STAR-Lab/H3-Mapping",
+        "commitSha": "738424c99ae22536b2c79985f8450f5575294e1c",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/Robotics-STAR-Lab_H3-Mapping.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "STORM-IRIT/Radium-Engine",
+      "label": "Radium-Engine",
+      "type": "consumer",
+      "data": {
+        "packageName": "Radium-Engine",
+        "packageOwner": "STORM-IRIT",
+        "originUrl": "/github.com/STORM-IRIT/Radium-Engine",
+        "commitSha": "90a82818d28318a900666dea5995986d1544941f",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/STORM-IRIT_Radium-Engine.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "electronicarts/cpp-ml-intro",
+      "label": "cpp-ml-intro",
+      "type": "consumer",
+      "data": {
+        "packageName": "cpp-ml-intro",
+        "packageOwner": "electronicarts",
+        "originUrl": "/github.com/electronicarts/cpp-ml-intro",
+        "commitSha": "c46a47b4fcee5ec48dbda7321210b1287b262b06",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/electronicarts_cpp-ml-intro.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "SuikaSibyl/SIByLEngine2023",
+      "label": "SIByLEngine2023",
+      "type": "consumer",
+      "data": {
+        "packageName": "SIByLEngine2023",
+        "packageOwner": "SuikaSibyl",
+        "originUrl": "/github.com/SuikaSibyl/SIByLEngine2023",
+        "commitSha": "07bf2db4d44edab74e3b9fba2c3a4c57143455da",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/SuikaSibyl_SIByLEngine2023.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "OpenPathGuidingLibrary/openpgl",
+      "label": "openpgl",
+      "type": "consumer",
+      "data": {
+        "packageName": "openpgl",
+        "packageOwner": "OpenPathGuidingLibrary",
+        "originUrl": "/github.com/OpenPathGuidingLibrary/openpgl",
+        "commitSha": "5c50cd7a331647a69e28cc8a19ff204039cbe78d",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/OpenPathGuidingLibrary_openpgl.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "syoyo/tinydng",
+      "label": "tinydng",
+      "type": "consumer",
+      "data": {
+        "packageName": "tinydng",
+        "packageOwner": "syoyo",
+        "originUrl": "/github.com/syoyo/tinydng",
+        "commitSha": "f3b42f5bb1a3151036115f84ceabe2187e023243",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/syoyo_tinydng.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "tzkt623/TezcatEngine-Tiny",
+      "label": "TezcatEngine-Tiny",
+      "type": "consumer",
+      "data": {
+        "packageName": "TezcatEngine-Tiny",
+        "packageOwner": "tzkt623",
+        "originUrl": "/github.com/tzkt623/TezcatEngine-Tiny",
+        "commitSha": "e1b63bb7662fcae65228aa55b52c89380aa8865f",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/tzkt623_TezcatEngine-Tiny.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "fzy28/BSDF_diffusion_sampling",
+      "label": "BSDF_diffusion_sampling",
+      "type": "consumer",
+      "data": {
+        "packageName": "BSDF_diffusion_sampling",
+        "packageOwner": "fzy28",
+        "originUrl": "/github.com/fzy28/BSDF_diffusion_sampling",
+        "commitSha": "f2b615cd24f7722e5a141683fd497e2dbad3ccad",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/fzy28_BSDF_diffusion_sampling.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "vga-group/tauray",
+      "label": "tauray",
+      "type": "consumer",
+      "data": {
+        "packageName": "tauray",
+        "packageOwner": "vga-group",
+        "originUrl": "/github.com/vga-group/tauray",
+        "commitSha": "0f3e095c04e083dd4c950d13f0263e7dfb139afb",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/vga-group_tauray.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "shuaizhengliu/Joint-HDRDN",
+      "label": "Joint-HDRDN",
+      "type": "consumer",
+      "data": {
+        "packageName": "Joint-HDRDN",
+        "packageOwner": "shuaizhengliu",
+        "originUrl": "/github.com/shuaizhengliu/Joint-HDRDN",
+        "commitSha": "f84424d05f70f32d53bc99661c276f9ec2929749",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/shuaizhengliu_Joint-HDRDN.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "Ershany/Arcane-Engine",
+      "label": "Arcane-Engine",
+      "type": "consumer",
+      "data": {
+        "packageName": "Arcane-Engine",
+        "packageOwner": "Ershany",
+        "originUrl": "/github.com/Ershany/Arcane-Engine",
+        "commitSha": "d79d3b2c1361e9f66dfb7b8f091c9bd6ed28145c",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/Ershany_Arcane-Engine.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "yuphin/Lumen",
+      "label": "Lumen",
+      "type": "consumer",
+      "data": {
+        "packageName": "Lumen",
+        "packageOwner": "yuphin",
+        "originUrl": "/github.com/yuphin/Lumen",
+        "commitSha": "6a0d35d8d6d48479d4030e4ba87ae06da95d91d4",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/yuphin_Lumen.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "TheRealMJP/SHforHLSL",
+      "label": "SHforHLSL",
+      "type": "consumer",
+      "data": {
+        "packageName": "SHforHLSL",
+        "packageOwner": "TheRealMJP",
+        "originUrl": "/github.com/TheRealMJP/SHforHLSL",
+        "commitSha": "e426058959123063e13d61a62df6217259b72cec",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/TheRealMJP_SHforHLSL.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "TheRealMJP/DXRPathTracer",
+      "label": "DXRPathTracer",
+      "type": "consumer",
+      "data": {
+        "packageName": "DXRPathTracer",
+        "packageOwner": "TheRealMJP",
+        "originUrl": "/github.com/TheRealMJP/DXRPathTracer",
+        "commitSha": "0af23bd4c6b6bdc6858aca30775aed88c2426af7",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/TheRealMJP_DXRPathTracer.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "Jaysmito101/TerraForge3D",
+      "label": "TerraForge3D",
+      "type": "consumer",
+      "data": {
+        "packageName": "TerraForge3D",
+        "packageOwner": "Jaysmito101",
+        "originUrl": "/github.com/Jaysmito101/TerraForge3D",
+        "commitSha": "e47fa73843246da4e63cca7be8b4ecc45fc27559",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/Jaysmito101_TerraForge3D.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "TheNumbat/Diopter",
+      "label": "Diopter",
+      "type": "consumer",
+      "data": {
+        "packageName": "Diopter",
+        "packageOwner": "TheNumbat",
+        "originUrl": "/github.com/TheNumbat/Diopter",
+        "commitSha": "9f4b08e293804d73f80a8e6a05ed9bb3cf5ef306",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/TheNumbat_Diopter.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "andyyankai/psdr-jit",
+      "label": "psdr-jit",
+      "type": "consumer",
+      "data": {
+        "packageName": "psdr-jit",
+        "packageOwner": "andyyankai",
+        "originUrl": "/github.com/andyyankai/psdr-jit",
+        "commitSha": "476ba6ef39e24474e85953ba3743bb0b967c797e",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/andyyankai_psdr-jit.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "lighttransport/nanort",
+      "label": "nanort",
+      "type": "consumer",
+      "data": {
+        "packageName": "nanort",
+        "packageOwner": "lighttransport",
+        "originUrl": "/github.com/lighttransport/nanort",
+        "commitSha": "cdf474ae9176b87a9334c858bb06c9e028ed0e0d",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/lighttransport_nanort.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "BlueBrain/Brayns",
+      "label": "Brayns",
+      "type": "consumer",
+      "data": {
+        "packageName": "Brayns",
+        "packageOwner": "BlueBrain",
+        "originUrl": "/github.com/BlueBrain/Brayns",
+        "commitSha": "747afcdfcc8c939d25e904a4092ed225e174ca67",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/BlueBrain_Brayns.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "PearCoding/Ignis",
+      "label": "Ignis",
+      "type": "consumer",
+      "data": {
+        "packageName": "Ignis",
+        "packageOwner": "PearCoding",
+        "originUrl": "/github.com/PearCoding/Ignis",
+        "commitSha": "c209e5b75a7095fd8fc27003cb066911db8159e3",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/PearCoding_Ignis.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "cuteday/KiRaRay",
+      "label": "KiRaRay",
+      "type": "consumer",
+      "data": {
+        "packageName": "KiRaRay",
+        "packageOwner": "cuteday",
+        "originUrl": "/github.com/cuteday/KiRaRay",
+        "commitSha": "6c386477eab18168976d4ba2d81113e98c9a40c8",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/cuteday_KiRaRay.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "TheRealMJP/DeferredTexturing",
+      "label": "DeferredTexturing",
+      "type": "consumer",
+      "data": {
+        "packageName": "DeferredTexturing",
+        "packageOwner": "TheRealMJP",
+        "originUrl": "/github.com/TheRealMJP/DeferredTexturing",
+        "commitSha": "20788a8f0f8a1406c01bbdb7ce18ef36bb5bf3b9",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/TheRealMJP_DeferredTexturing.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "mateeeeeee/Adria-DX11",
+      "label": "Adria-DX11",
+      "type": "consumer",
+      "data": {
+        "packageName": "Adria-DX11",
+        "packageOwner": "mateeeeeee",
+        "originUrl": "/github.com/mateeeeeee/Adria-DX11",
+        "commitSha": "dca751d82eb96d455caebccb41c474d07a78b74c",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/mateeeeeee_Adria-DX11.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "mollnn/spoly",
+      "label": "spoly",
+      "type": "consumer",
+      "data": {
+        "packageName": "spoly",
+        "packageOwner": "mollnn",
+        "originUrl": "/github.com/mollnn/spoly",
+        "commitSha": "8817b27933589e820bbec17aafd415567d6d56aa",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/mollnn_spoly.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "shocker-0x15/VLR",
+      "label": "VLR",
+      "type": "consumer",
+      "data": {
+        "packageName": "VLR",
+        "packageOwner": "shocker-0x15",
+        "originUrl": "/github.com/shocker-0x15/VLR",
+        "commitSha": "8dad615a0f82c8599c6c59998278ab90b0c56f70",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/shocker-0x15_VLR.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "NVlabs/ParallelInversion",
+      "label": "ParallelInversion",
+      "type": "consumer",
+      "data": {
+        "packageName": "ParallelInversion",
+        "packageOwner": "NVlabs",
+        "originUrl": "/github.com/NVlabs/ParallelInversion",
+        "commitSha": "5a37e4fadc3bb5982d82e7dc772786df66e0cbb0",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/NVlabs_ParallelInversion.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "deptofdefense/AndroidTacticalAssaultKit-CIV",
+      "label": "AndroidTacticalAssaultKit-CIV",
+      "type": "consumer",
+      "data": {
+        "packageName": "AndroidTacticalAssaultKit-CIV",
+        "packageOwner": "deptofdefense",
+        "originUrl": "/github.com/deptofdefense/AndroidTacticalAssaultKit-CIV",
+        "commitSha": "889eee292c43d3d2eafdd1f2fbf378ad5cd89ecc",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/deptofdefense_AndroidTacticalAssaultKit-CIV.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "owl-project/NVISII",
+      "label": "NVISII",
+      "type": "consumer",
+      "data": {
+        "packageName": "NVISII",
+        "packageOwner": "owl-project",
+        "originUrl": "/github.com/owl-project/NVISII",
+        "commitSha": "33cd7dcc899631fcebb6c6d4fe49abc2f05ee3eb",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/owl-project_NVISII.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "parallel101/opengltutor",
+      "label": "opengltutor",
+      "type": "consumer",
+      "data": {
+        "packageName": "opengltutor",
+        "packageOwner": "parallel101",
+        "originUrl": "/github.com/parallel101/opengltutor",
+        "commitSha": "a788e68ed35f3d9dcf88fb2a4c1f514721af5974",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/parallel101_opengltutor.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "thennequin/Texeled",
+      "label": "Texeled",
+      "type": "consumer",
+      "data": {
+        "packageName": "Texeled",
+        "packageOwner": "thennequin",
+        "originUrl": "/github.com/thennequin/Texeled",
+        "commitSha": "00f5b716c0afdb05b5323d799e5682a5b91ef08c",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/thennequin_Texeled.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "cmu-ci-lab/MitsubaToFRenderer",
+      "label": "MitsubaToFRenderer",
+      "type": "consumer",
+      "data": {
+        "packageName": "MitsubaToFRenderer",
+        "packageOwner": "cmu-ci-lab",
+        "originUrl": "/github.com/cmu-ci-lab/MitsubaToFRenderer",
+        "commitSha": "f4afa680c7a88a43f605606adee793325a4627d1",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/cmu-ci-lab_MitsubaToFRenderer.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "uhhhci/immersive-ngp",
+      "label": "immersive-ngp",
+      "type": "consumer",
+      "data": {
+        "packageName": "immersive-ngp",
+        "packageOwner": "uhhhci",
+        "originUrl": "/github.com/uhhhci/immersive-ngp",
+        "commitSha": "174ac5efe6e6d13fce1d0c15680053514197eab7",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/uhhhci_immersive-ngp.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "TheRealMJP/BakingLab",
+      "label": "BakingLab",
+      "type": "consumer",
+      "data": {
+        "packageName": "BakingLab",
+        "packageOwner": "TheRealMJP",
+        "originUrl": "/github.com/TheRealMJP/BakingLab",
+        "commitSha": "c3868af50d72afc13cdfe513a1e0c6a4fafdac8c",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/TheRealMJP_BakingLab.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "zhiwei-c/Monte-Carlo-Path-Tracing",
+      "label": "Monte-Carlo-Path-Tracing",
+      "type": "consumer",
+      "data": {
+        "packageName": "Monte-Carlo-Path-Tracing",
+        "packageOwner": "zhiwei-c",
+        "originUrl": "/github.com/zhiwei-c/Monte-Carlo-Path-Tracing",
+        "commitSha": "7482bda9b6be617e8bc5cef06a274ba1e1a7e914",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/zhiwei-c_Monte-Carlo-Path-Tracing.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "19reborn/NeuS2",
+      "label": "NeuS2",
+      "type": "consumer",
+      "data": {
+        "packageName": "NeuS2",
+        "packageOwner": "19reborn",
+        "originUrl": "/github.com/19reborn/NeuS2",
+        "commitSha": "081b8191d049158a8296bfcb15c7d9cf065540df",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/19reborn_NeuS2.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "scially/Cesium3DTilesConverter",
+      "label": "Cesium3DTilesConverter",
+      "type": "consumer",
+      "data": {
+        "packageName": "Cesium3DTilesConverter",
+        "packageOwner": "scially",
+        "originUrl": "/github.com/scially/Cesium3DTilesConverter",
+        "commitSha": "3e278b9d441afd7849eef0e19fb293a1fcb47b2e",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/scially_Cesium3DTilesConverter.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "HippoPlayer/HippoPlayer",
+      "label": "HippoPlayer",
+      "type": "consumer",
+      "data": {
+        "packageName": "HippoPlayer",
+        "packageOwner": "HippoPlayer",
+        "originUrl": "/github.com/HippoPlayer/HippoPlayer",
+        "commitSha": "caf376e9fbed8c41c8e9fc535fa7091ad3dc38c4",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/HippoPlayer_HippoPlayer.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "FlorisE/neural-labeling",
+      "label": "neural-labeling",
+      "type": "consumer",
+      "data": {
+        "packageName": "neural-labeling",
+        "packageOwner": "FlorisE",
+        "originUrl": "/github.com/FlorisE/neural-labeling",
+        "commitSha": "f005cb994353a702a30a44131774b3fb08d3c4a8",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/FlorisE_neural-labeling.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "MatejSakmary/atmosphere-bac",
+      "label": "atmosphere-bac",
+      "type": "consumer",
+      "data": {
+        "packageName": "atmosphere-bac",
+        "packageOwner": "MatejSakmary",
+        "originUrl": "/github.com/MatejSakmary/atmosphere-bac",
+        "commitSha": "b72b454878c186fee9c77c2012d1c9db6810da8e",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/MatejSakmary_atmosphere-bac.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "DarioSamo/sm64rt-legacy-renderer",
+      "label": "sm64rt-legacy-renderer",
+      "type": "consumer",
+      "data": {
+        "packageName": "sm64rt-legacy-renderer",
+        "packageOwner": "DarioSamo",
+        "originUrl": "/github.com/DarioSamo/sm64rt-legacy-renderer",
+        "commitSha": "47d6033ce6a89bcd45391242cee0367ce8c0bdf3",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/DarioSamo_sm64rt-legacy-renderer.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "TheRealMJP/MemPoolTest",
+      "label": "MemPoolTest",
+      "type": "consumer",
+      "data": {
+        "packageName": "MemPoolTest",
+        "packageOwner": "TheRealMJP",
+        "originUrl": "/github.com/TheRealMJP/MemPoolTest",
+        "commitSha": "8d7a5b9af5e6f1fe4ff3a35ba51aeb7924183ae2",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/TheRealMJP_MemPoolTest.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "JoshuaSenouf/tracer",
+      "label": "tracer",
+      "type": "consumer",
+      "data": {
+        "packageName": "tracer",
+        "packageOwner": "JoshuaSenouf",
+        "originUrl": "/github.com/JoshuaSenouf/tracer",
+        "commitSha": "10058876063df6484745a80e37f3c01f14b17161",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/JoshuaSenouf_tracer.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "firepond/OptixRCS",
+      "label": "OptixRCS",
+      "type": "consumer",
+      "data": {
+        "packageName": "OptixRCS",
+        "packageOwner": "firepond",
+        "originUrl": "/github.com/firepond/OptixRCS",
+        "commitSha": "8ca8677cd68569a87a213d869a328afd6f33043c",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/firepond_OptixRCS.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "facebookresearch/HairMSNN",
+      "label": "HairMSNN",
+      "type": "consumer",
+      "data": {
+        "packageName": "HairMSNN",
+        "packageOwner": "facebookresearch",
+        "originUrl": "/github.com/facebookresearch/HairMSNN",
+        "commitSha": "da10b8305b3c50a1001df01c699f9974fbcb144a",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/facebookresearch_HairMSNN.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "xelatihy/yocto-gl",
+      "label": "yocto-gl",
+      "type": "consumer",
+      "data": {
+        "packageName": "yocto-gl",
+        "packageOwner": "xelatihy",
+        "originUrl": "/github.com/xelatihy/yocto-gl",
+        "commitSha": "7e35c631b5ee29f1a7ee1010c5dcf0879aa3dcf3",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/xelatihy_yocto-gl.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "graphdeco-inria/nerfshop",
+      "label": "nerfshop",
+      "type": "consumer",
+      "data": {
+        "packageName": "nerfshop",
+        "packageOwner": "graphdeco-inria",
+        "originUrl": "/github.com/graphdeco-inria/nerfshop",
+        "commitSha": "7cf1cfc032d496d7b57d0905784fa3967bcfd485",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/graphdeco-inria_nerfshop.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "jc211/ParticleNeRF",
+      "label": "ParticleNeRF",
+      "type": "consumer",
+      "data": {
+        "packageName": "ParticleNeRF",
+        "packageOwner": "jc211",
+        "originUrl": "/github.com/jc211/ParticleNeRF",
+        "commitSha": "abae74de6dfc2af8acc2b376e08078dab0a50d58",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/jc211_ParticleNeRF.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "DrFlower/GAMES_101_202_Homework",
+      "label": "GAMES_101_202_Homework",
+      "type": "consumer",
+      "data": {
+        "packageName": "GAMES_101_202_Homework",
+        "packageOwner": "DrFlower",
+        "originUrl": "/github.com/DrFlower/GAMES_101_202_Homework",
+        "commitSha": "0b3d90b5e2b89e786bcc1e0d4c2d07b9e27dc13c",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/DrFlower_GAMES_101_202_Homework.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "JiayinCao/SORT",
+      "label": "SORT",
+      "type": "consumer",
+      "data": {
+        "packageName": "SORT",
+        "packageOwner": "JiayinCao",
+        "originUrl": "/github.com/JiayinCao/SORT",
+        "commitSha": "6769f98f7125cdc34b2a389b99f7790dfebe6b23",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/JiayinCao_SORT.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "NVIDIAGameWorks/KickstartRT_demo",
+      "label": "KickstartRT_demo",
+      "type": "consumer",
+      "data": {
+        "packageName": "KickstartRT_demo",
+        "packageOwner": "NVIDIAGameWorks",
+        "originUrl": "/github.com/NVIDIAGameWorks/KickstartRT_demo",
+        "commitSha": "95ea0142ca95df77ce7d9002788afdf1dde9ecf4",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/NVIDIAGameWorks_KickstartRT_demo.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "lzqsd/OptixRenderer",
+      "label": "OptixRenderer",
+      "type": "consumer",
+      "data": {
+        "packageName": "OptixRenderer",
+        "packageOwner": "lzqsd",
+        "originUrl": "/github.com/lzqsd/OptixRenderer",
+        "commitSha": "3eafda5b4f47c7e44be7fc58cde215a8c1c2bc1a",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/lzqsd_OptixRenderer.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "weiyu666/GAMES202homework",
+      "label": "GAMES202homework",
+      "type": "consumer",
+      "data": {
+        "packageName": "GAMES202homework",
+        "packageOwner": "weiyu666",
+        "originUrl": "/github.com/weiyu666/GAMES202homework",
+        "commitSha": "2bdb7c2fa6b8a98aeaa4154788e76543b260068a",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/weiyu666_GAMES202homework.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "sebh/UnrealEngineSkyAtmosphere",
+      "label": "UnrealEngineSkyAtmosphere",
+      "type": "consumer",
+      "data": {
+        "packageName": "UnrealEngineSkyAtmosphere",
+        "packageOwner": "sebh",
+        "originUrl": "/github.com/sebh/UnrealEngineSkyAtmosphere",
+        "commitSha": "183ead5bdacc701b3b626347a680a2f3cd3d4fbd",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/sebh_UnrealEngineSkyAtmosphere.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "Apress/Ray-Tracing-Gems-II",
+      "label": "Ray-Tracing-Gems-II",
+      "type": "consumer",
+      "data": {
+        "packageName": "Ray-Tracing-Gems-II",
+        "packageOwner": "Apress",
+        "originUrl": "/github.com/Apress/Ray-Tracing-Gems-II",
+        "commitSha": "4685b9982ed8eab08291826bd7280488e81a7ed1",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/Apress_Ray-Tracing-Gems-II.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "NVIDIAGameWorks/NVIDIAImageScaling",
+      "label": "NVIDIAImageScaling",
+      "type": "consumer",
+      "data": {
+        "packageName": "NVIDIAImageScaling",
+        "packageOwner": "NVIDIAGameWorks",
+        "originUrl": "/github.com/NVIDIAGameWorks/NVIDIAImageScaling",
+        "commitSha": "35e13ba316c98eeecf16f37eae70ce88019911f6",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/NVIDIAGameWorks_NVIDIAImageScaling.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "AirGuanZ/Btrc",
+      "label": "Btrc",
+      "type": "consumer",
+      "data": {
+        "packageName": "Btrc",
+        "packageOwner": "AirGuanZ",
+        "originUrl": "/github.com/AirGuanZ/Btrc",
+        "commitSha": "0a01737ca36595e6b7bdd2b3275da74cf504b08d",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/AirGuanZ_Btrc.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "TensorRay/TensorRay",
+      "label": "TensorRay",
+      "type": "consumer",
+      "data": {
+        "packageName": "TensorRay",
+        "packageOwner": "TensorRay",
+        "originUrl": "/github.com/TensorRay/TensorRay",
+        "commitSha": "c45c48f49157a9b7a1435f54cc95dabd71b3c2b2",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/TensorRay_TensorRay.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "xiaofeng94/renderdoc_for_game_data",
+      "label": "renderdoc_for_game_data",
+      "type": "consumer",
+      "data": {
+        "packageName": "renderdoc_for_game_data",
+        "packageOwner": "xiaofeng94",
+        "originUrl": "/github.com/xiaofeng94/renderdoc_for_game_data",
+        "commitSha": "41cf55d3491e53a775e0447ae664c22dc93baba6",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/xiaofeng94_renderdoc_for_game_data.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "EQMG/Acid",
+      "label": "Acid",
+      "type": "consumer",
+      "data": {
+        "packageName": "Acid",
+        "packageOwner": "EQMG",
+        "originUrl": "/github.com/EQMG/Acid",
+        "commitSha": "2ff8adee30cfb571d27a1d937689608ccea12734",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/EQMG_Acid.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "jan-van-bergen/GPU-Raytracer",
+      "label": "GPU-Raytracer",
+      "type": "consumer",
+      "data": {
+        "packageName": "GPU-Raytracer",
+        "packageOwner": "jan-van-bergen",
+        "originUrl": "/github.com/jan-van-bergen/GPU-Raytracer",
+        "commitSha": "6559ae2241c8fdea0ddaec959fe1a47ec9b3ab0d",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/jan-van-bergen_GPU-Raytracer.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "livinamuk/Hell2022",
+      "label": "Hell2022",
+      "type": "consumer",
+      "data": {
+        "packageName": "Hell2022",
+        "packageOwner": "livinamuk",
+        "originUrl": "/github.com/livinamuk/Hell2022",
+        "commitSha": "1a9f79710d128d3d6f7da7e3b92201ae942f7208",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/livinamuk_Hell2022.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "jeremyong/flop",
+      "label": "flop",
+      "type": "consumer",
+      "data": {
+        "packageName": "flop",
+        "packageOwner": "jeremyong",
+        "originUrl": "/github.com/jeremyong/flop",
+        "commitSha": "09199d49672fa06df5b23d1988a129da5b0a782e",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/jeremyong_flop.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "4rknova/xtracer",
+      "label": "xtracer",
+      "type": "consumer",
+      "data": {
+        "packageName": "xtracer",
+        "packageOwner": "4rknova",
+        "originUrl": "/github.com/4rknova/xtracer",
+        "commitSha": "76275126622e4af362bb8961755027348be1be0e",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/4rknova_xtracer.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "Y-ZIQI/GAMES202HW",
+      "label": "GAMES202HW",
+      "type": "consumer",
+      "data": {
+        "packageName": "GAMES202HW",
+        "packageOwner": "Y-ZIQI",
+        "originUrl": "/github.com/Y-ZIQI/GAMES202HW",
+        "commitSha": "13e7e02593c8578708d99e46d9c88c932d264540",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/Y-ZIQI_GAMES202HW.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "TheSmokeyGuys/Volume-ReSTIR-Vulkan",
+      "label": "Volume-ReSTIR-Vulkan",
+      "type": "consumer",
+      "data": {
+        "packageName": "Volume-ReSTIR-Vulkan",
+        "packageOwner": "TheSmokeyGuys",
+        "originUrl": "/github.com/TheSmokeyGuys/Volume-ReSTIR-Vulkan",
+        "commitSha": "ef866a76638af45e74cdb5522b84167754d73309",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/TheSmokeyGuys_Volume-ReSTIR-Vulkan.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "nyorain/tokonoma",
+      "label": "tokonoma",
+      "type": "consumer",
+      "data": {
+        "packageName": "tokonoma",
+        "packageOwner": "nyorain",
+        "originUrl": "/github.com/nyorain/tokonoma",
+        "commitSha": "b3a4264ef4f9f40487c2f3280812bf7513b914bb",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/nyorain_tokonoma.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "jing-interactive/melo",
+      "label": "melo",
+      "type": "consumer",
+      "data": {
+        "packageName": "melo",
+        "packageOwner": "jing-interactive",
+        "originUrl": "/github.com/jing-interactive/melo",
+        "commitSha": "67fa14d19fea157124edddead2ca3fc54d370691",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/jing-interactive_melo.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "AmesingFlank/Cavalry",
+      "label": "Cavalry",
+      "type": "consumer",
+      "data": {
+        "packageName": "Cavalry",
+        "packageOwner": "AmesingFlank",
+        "originUrl": "/github.com/AmesingFlank/Cavalry",
+        "commitSha": "9f43f475304d4ebf94e4f98fbe028956f28bf9c9",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/AmesingFlank_Cavalry.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "asiroisvigneux/Blaze",
+      "label": "Blaze",
+      "type": "consumer",
+      "data": {
+        "packageName": "Blaze",
+        "packageOwner": "asiroisvigneux",
+        "originUrl": "/github.com/asiroisvigneux/Blaze",
+        "commitSha": "acbe2572430b124b994db536781a8983104bf1ba",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/asiroisvigneux_Blaze.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "TheRealMJP/MSAAFilter",
+      "label": "MSAAFilter",
+      "type": "consumer",
+      "data": {
+        "packageName": "MSAAFilter",
+        "packageOwner": "TheRealMJP",
+        "originUrl": "/github.com/TheRealMJP/MSAAFilter",
+        "commitSha": "cfc1c19411e24dc07f74272c17f423330ac96941",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/TheRealMJP_MSAAFilter.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "Acly/hdrv",
+      "label": "hdrv",
+      "type": "consumer",
+      "data": {
+        "packageName": "hdrv",
+        "packageOwner": "Acly",
+        "originUrl": "/github.com/Acly/hdrv",
+        "commitSha": "0d68b52b8b25f8f67731f1ef41cce240c31e4031",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/Acly_hdrv.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "cmu462/Scotty3D",
+      "label": "Scotty3D",
+      "type": "consumer",
+      "data": {
+        "packageName": "Scotty3D",
+        "packageOwner": "cmu462",
+        "originUrl": "/github.com/cmu462/Scotty3D",
+        "commitSha": "c09214dd050842bc0bb9e1e0c72afdb72584f79d",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/cmu462_Scotty3D.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "chellmuth/gpu-motunui",
+      "label": "gpu-motunui",
+      "type": "consumer",
+      "data": {
+        "packageName": "gpu-motunui",
+        "packageOwner": "chellmuth",
+        "originUrl": "/github.com/chellmuth/gpu-motunui",
+        "commitSha": "1369c98408c4c59bfddff45ae00281f6463527ec",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/chellmuth_gpu-motunui.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "yumcyaWiz/LensSim",
+      "label": "LensSim",
+      "type": "consumer",
+      "data": {
+        "packageName": "LensSim",
+        "packageOwner": "yumcyaWiz",
+        "originUrl": "/github.com/yumcyaWiz/LensSim",
+        "commitSha": "4f9bd695a8a43a562e9dee62462865b9e287e01d",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/yumcyaWiz_LensSim.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "belcour/CovarianceTracing",
+      "label": "CovarianceTracing",
+      "type": "consumer",
+      "data": {
+        "packageName": "CovarianceTracing",
+        "packageOwner": "belcour",
+        "originUrl": "/github.com/belcour/CovarianceTracing",
+        "commitSha": "60b5cfd82d7b0fa9a623743551ff8cf9595adf07",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/belcour_CovarianceTracing.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "brickray/gpu-pathtracer",
+      "label": "gpu-pathtracer",
+      "type": "consumer",
+      "data": {
+        "packageName": "gpu-pathtracer",
+        "packageOwner": "brickray",
+        "originUrl": "/github.com/brickray/gpu-pathtracer",
+        "commitSha": "4a8ef9d88224deced40b9505e3bf420afd0483f9",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/brickray_gpu-pathtracer.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "SaeruHikari/SakuraRenderer",
+      "label": "SakuraRenderer",
+      "type": "consumer",
+      "data": {
+        "packageName": "SakuraRenderer",
+        "packageOwner": "SaeruHikari",
+        "originUrl": "/github.com/SaeruHikari/SakuraRenderer",
+        "commitSha": "028df4c5a2cfacba1d4521f6fe01d04dcf8a3513",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/SaeruHikari_SakuraRenderer.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "gao-duan/FaceRelighting",
+      "label": "FaceRelighting",
+      "type": "consumer",
+      "data": {
+        "packageName": "FaceRelighting",
+        "packageOwner": "gao-duan",
+        "originUrl": "/github.com/gao-duan/FaceRelighting",
+        "commitSha": "71594027af1605a643571b9628bedddf5fc3b0e9",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/gao-duan_FaceRelighting.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "glimpse-project/glimpse",
+      "label": "glimpse",
+      "type": "consumer",
+      "data": {
+        "packageName": "glimpse",
+        "packageOwner": "glimpse-project",
+        "originUrl": "/github.com/glimpse-project/glimpse",
+        "commitSha": "f7e0bee5800c72ea37928f7e0fd2e0b7b67cf904",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/glimpse-project_glimpse.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "caosdoar/Fornos",
+      "label": "Fornos",
+      "type": "consumer",
+      "data": {
+        "packageName": "Fornos",
+        "packageOwner": "caosdoar",
+        "originUrl": "/github.com/caosdoar/Fornos",
+        "commitSha": "3a74f0e0516a5656165bbc36f01c5770ef72402f",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/caosdoar_Fornos.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "r-lyeh-archived/spot",
+      "label": "spot",
+      "type": "consumer",
+      "data": {
+        "packageName": "spot",
+        "packageOwner": "r-lyeh-archived",
+        "originUrl": "/github.com/r-lyeh-archived/spot",
+        "commitSha": "171c208314d413330973cfefe5d14b7908621f42",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/r-lyeh-archived_spot.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "TheRealMJP/OverlappedExecution",
+      "label": "OverlappedExecution",
+      "type": "consumer",
+      "data": {
+        "packageName": "OverlappedExecution",
+        "packageOwner": "TheRealMJP",
+        "originUrl": "/github.com/TheRealMJP/OverlappedExecution",
+        "commitSha": "ae8c64315228e38b13b7be59e97db8996507eaee",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/TheRealMJP_OverlappedExecution.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "BentleyBlanks/Atmos",
+      "label": "Atmos",
+      "type": "consumer",
+      "data": {
+        "packageName": "Atmos",
+        "packageOwner": "BentleyBlanks",
+        "originUrl": "/github.com/BentleyBlanks/Atmos",
+        "commitSha": "8f0fc0eaeab35d4c6576a010753e1217e765544b",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/BentleyBlanks_Atmos.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "lighttransport/nanogi",
+      "label": "nanogi",
+      "type": "consumer",
+      "data": {
+        "packageName": "nanogi",
+        "packageOwner": "lighttransport",
+        "originUrl": "/github.com/lighttransport/nanogi",
+        "commitSha": "98cd6b40b8a5b0f96a62e631b51faf4b57c341b3",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/lighttransport_nanogi.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "yifenghuang/GTA_Dataminer",
+      "label": "GTA_Dataminer",
+      "type": "consumer",
+      "data": {
+        "packageName": "GTA_Dataminer",
+        "packageOwner": "yifenghuang",
+        "originUrl": "/github.com/yifenghuang/GTA_Dataminer",
+        "commitSha": "30fd6914b49652748c711e9f919578fae7cff8cc",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/yifenghuang_GTA_Dataminer.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "lighttransport/mallie",
+      "label": "mallie",
+      "type": "consumer",
+      "data": {
+        "packageName": "mallie",
+        "packageOwner": "lighttransport",
+        "originUrl": "/github.com/lighttransport/mallie",
+        "commitSha": "2ec03e06369da62eab37e2e524adeccd193911ce",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/lighttransport_mallie.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    },
+    {
+      "id": "andr3wmac/Torque6",
+      "label": "Torque6",
+      "type": "consumer",
+      "data": {
+        "packageName": "Torque6",
+        "packageOwner": "andr3wmac",
+        "originUrl": "/github.com/andr3wmac/Torque6",
+        "commitSha": "db6cd08f18f4917e0c6557b2766fb40d8e2bee39",
+        "depth": 2,
+        "snippetPath": "spdx_snippets/andr3wmac_Torque6.spdx.json",
+        "stars": 0,
+        "contributors": 0,
+        "commits": 0,
+        "lastUpdate": "",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "",
+        "paper": null
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "fountainment/cherrysoda-engine",
+      "target": "llnl/zfp"
+    },
+    {
+      "source": "godotengine/godot",
+      "target": "llnl/zfp"
+    },
+    {
+      "source": "JanThorbecke/OpenSource",
+      "target": "llnl/zfp"
+    },
+    {
+      "source": "NVIDIA/optix-toolkit",
+      "target": "llnl/zfp"
+    },
+    {
+      "source": "MaSzyna-EU07/maszyna",
+      "target": "llnl/zfp"
+    },
+    {
+      "source": "retronx-team/love-nx",
+      "target": "llnl/zfp"
+    },
+    {
+      "source": "elliahu/atmosphere",
+      "target": "llnl/zfp"
+    },
+    {
+      "source": "eu07/maszyna",
+      "target": "llnl/zfp"
+    },
+    {
+      "source": "tizian/tonemapper",
+      "target": "llnl/zfp"
+    },
+    {
+      "source": "anikau31/systemc-clang",
+      "target": "llnl/zfp"
+    },
+    {
+      "source": "intel/riggingtools",
+      "target": "llnl/zfp"
+    },
+    {
+      "source": "lvjiahui/PRT",
+      "target": "llnl/zfp"
+    },
+    {
+      "source": "uzh-rpg/vilib",
+      "target": "llnl/zfp"
+    },
+    {
+      "source": "septag/termite",
+      "target": "llnl/zfp"
+    },
+    {
+      "source": "uiuc-graphics/psdr-cuda",
+      "target": "llnl/zfp"
+    },
+    {
+      "source": "Mob-FGSR/MobFGSR",
+      "target": "llnl/zfp"
+    },
+    {
+      "source": "RenderKit/ospray-studio",
+      "target": "llnl/zfp"
+    },
+    {
+      "source": "LWJGL/lwjgl3",
+      "target": "llnl/zfp"
+    },
+    {
+      "source": "syoyo/tinyexr",
+      "target": "llnl/zfp"
+    },
+    {
+      "source": "silx-kit/hdf5plugin",
+      "target": "llnl/zfp"
+    },
+    {
+      "source": "RenderKit/ospray",
+      "target": "tizian/tonemapper"
+    },
+    {
+      "source": "DQLin/VolumetricReSTIRRelease",
+      "target": "tizian/tonemapper"
+    },
+    {
+      "source": "awxkee/avif-coder",
+      "target": "tizian/tonemapper"
+    },
+    {
+      "source": "darglein/NeAT",
+      "target": "tizian/tonemapper"
+    },
+    {
+      "source": "LineageOS/android_frameworks_base",
+      "target": "tizian/tonemapper"
+    },
+    {
+      "source": "crdroidandroid/android_frameworks_base",
+      "target": "tizian/tonemapper"
+    },
+    {
+      "source": "zhaijialong/RealEngine",
+      "target": "tizian/tonemapper"
+    },
+    {
+      "source": "Stellarium/stellarium-web-engine",
+      "target": "tizian/tonemapper"
+    },
+    {
+      "source": "TU-Clausthal-Rendering/ReSTIR-FG",
+      "target": "tizian/tonemapper"
+    },
+    {
+      "source": "NVIDIA-RTX/RTXPT",
+      "target": "tizian/tonemapper"
+    },
+    {
+      "source": "Jebbly/Reservoir-Splatting",
+      "target": "tizian/tonemapper"
+    },
+    {
+      "source": "awxkee/aire",
+      "target": "tizian/tonemapper"
+    },
+    {
+      "source": "DQLin/ReSTIR_PT",
+      "target": "tizian/tonemapper"
+    },
+    {
+      "source": "aosp-mirror/platform_frameworks_base",
+      "target": "tizian/tonemapper"
+    },
+    {
+      "source": "Trylz/Restir_CPP",
+      "target": "tizian/tonemapper"
+    },
+    {
+      "source": "NVIDIAGameWorks/Falcor",
+      "target": "tizian/tonemapper"
+    },
+    {
+      "source": "guiqi134/Area-ReSTIR",
+      "target": "tizian/tonemapper"
+    },
+    {
+      "source": "AOSPA/android_frameworks_base-uvite",
+      "target": "tizian/tonemapper"
+    },
+    {
+      "source": "omnirom/android_frameworks_base_old",
+      "target": "tizian/tonemapper"
+    },
+    {
+      "source": "SirKero/RTProgressivePhotonMapper",
+      "target": "tizian/tonemapper"
+    },
+    {
+      "source": "NVlabs/conditional-restir-prototype",
+      "target": "tizian/tonemapper"
+    },
+    {
+      "source": "ssteinberg/PLTFalcor",
+      "target": "tizian/tonemapper"
+    },
+    {
+      "source": "swr06/Glide3D",
+      "target": "tizian/tonemapper"
+    },
+    {
+      "source": "WeakKnight/VirtualBlueNoiseLighting",
+      "target": "tizian/tonemapper"
+    },
+    {
+      "source": "CMU-Graphics/Scotty3D",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "NVIDIAGameWorks/Displacement-MicroMap-Toolkit",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "electronicarts/fastnoise",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "blitz-research/libsgd",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "fountainment/cherrysoda-engine",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "YilingQiao/DMRF",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "tataliya7/HorizonEngine",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "JamesPerlman/blender-ngp",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "GPUOpen-LibrariesAndSDKs/RadeonImageFilter",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "ASTex-ICube/real_time_glint",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "Witek902/Raytracer",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "cmu462/DrawSVG",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "dsforza96/tree-gen",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "Khrylx/DSGPURayTracing",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "shihchinw/rlShaders",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "RenderKit/embree",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "KhronosGroup/ANARI-SDK",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "Hongtae/SwiftVVD",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "eqgis/Sceneform-EQR",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "google/filament",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "baldurk/renderdoc",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "godotengine/godot",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "Redot-Engine/redot-engine",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "google/gfxstream",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "tylermorganwall/rayrender",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "opentoonz/opentoonz",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "mamedev/mame",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "cinder/Cinder",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "ezEngine/ezEngine",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "adobe/lagrange",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "NVlabs/instant-ngp",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "patriciogonzalezvivo/vera",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "NVIDIA/optix-toolkit",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "tylermorganwall/rayvertex",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "mollnn/bound-caustics",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "LWJGL/lwjgl3",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "love2d/love",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "sergcpp/DummyEngine",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "cyberegoorg/zbgfx",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "BinomialLLC/basis_universal",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "syoyo/tinygltf",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "microsoft/vcpkg",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "gboisse/gfx",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "MaSzyna-EU07/maszyna",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "FlaxEngine/FlaxEngine",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "livinamuk/Hell2025",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "LuisaGroup/LuisaCompute",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "banterle/HDR_Toolbox",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "qiutang98/flower",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "NVIDIA-RTX/Donut",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "BachiLi/lajolla_public",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "justnullname/QuickView",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "src.fedoraproject.org/rpms/opentoonz",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "neilmewada/CrystalEngine",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "eliemichel/LearnWebGPU",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "TomClabault/HIPRT-Path-Tracer",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "src.fedoraproject.org/rpms/tinyexr",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "beaumanvienna/vulkan",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "NVIDIA-RTX/Streamline_Sample",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "retronx-team/love-nx",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "papaboo/Bifrost3D",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "NVIDIA-RTX/RTXNTC",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "RenderKit/ospray-studio",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "LuisaGroup/LuisaRender",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "elliahu/atmosphere",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "lighttransport/tinyusdz",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "WeiPhil/nbvh",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "nadult/lucid",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "NVlabs/tiny-cuda-nn",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "AdamYuan/SparseVoxelOctree",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "GPUOpen-LibrariesAndSDKs/Capsaicin",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "GaijinEntertainment/DagorEngine",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "serhii-rieznik/etx-tracer",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "antkeeper/antkeeper-source",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "Hork-Engine/Hork-Source",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "NVlabs/flip",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "eu07/maszyna",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "horizon-research/rtnn",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "AlchemyViewer/Alchemy",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "lighttransport/pbrlab",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "ARM-software/astc-encoder",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "zenustech/zeno",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "cnr-isti-vclab/piccante",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "mkazhdan/TextureSignalProcessing",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "clibequilibrium/EquilibriumEngine",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "kosua20/Rendu",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "Autodesk/Aurora",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "intel/RealTimePathTracingResearchFramework",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "Zielon/INSTA",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "ziyi-zhang/INGP-RFL",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "shocker-0x15/GfxExp",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "qiutang98/chord",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "rextimmy/the-forge-glfw",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "Robotics-STAR-Lab/H3-Mapping",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "STORM-IRIT/Radium-Engine",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "electronicarts/cpp-ml-intro",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "Mob-FGSR/MobFGSR",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "SuikaSibyl/SIByLEngine2023",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "OpenPathGuidingLibrary/openpgl",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "syoyo/tinydng",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "tzkt623/TezcatEngine-Tiny",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "fzy28/BSDF_diffusion_sampling",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "vga-group/tauray",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "shuaizhengliu/Joint-HDRDN",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "Ershany/Arcane-Engine",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "yuphin/Lumen",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "TheRealMJP/SHforHLSL",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "TheRealMJP/DXRPathTracer",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "tizian/tonemapper",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "Jaysmito101/TerraForge3D",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "TheNumbat/Diopter",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "andyyankai/psdr-jit",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "lighttransport/nanort",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "BlueBrain/Brayns",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "PearCoding/Ignis",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "cuteday/KiRaRay",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "TheRealMJP/DeferredTexturing",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "mateeeeeee/Adria-DX11",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "mollnn/spoly",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "shocker-0x15/VLR",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "NVlabs/ParallelInversion",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "deptofdefense/AndroidTacticalAssaultKit-CIV",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "owl-project/NVISII",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "parallel101/opengltutor",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "thennequin/Texeled",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "cmu-ci-lab/MitsubaToFRenderer",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "uhhhci/immersive-ngp",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "TheRealMJP/BakingLab",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "zhiwei-c/Monte-Carlo-Path-Tracing",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "19reborn/NeuS2",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "scially/Cesium3DTilesConverter",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "HippoPlayer/HippoPlayer",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "FlorisE/neural-labeling",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "MatejSakmary/atmosphere-bac",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "DarioSamo/sm64rt-legacy-renderer",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "TheRealMJP/MemPoolTest",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "JoshuaSenouf/tracer",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "uiuc-graphics/psdr-cuda",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "firepond/OptixRCS",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "facebookresearch/HairMSNN",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "xelatihy/yocto-gl",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "graphdeco-inria/nerfshop",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "jc211/ParticleNeRF",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "DrFlower/GAMES_101_202_Homework",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "JiayinCao/SORT",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "NVIDIAGameWorks/KickstartRT_demo",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "lzqsd/OptixRenderer",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "weiyu666/GAMES202homework",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "sebh/UnrealEngineSkyAtmosphere",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "Apress/Ray-Tracing-Gems-II",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "NVIDIAGameWorks/NVIDIAImageScaling",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "AirGuanZ/Btrc",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "TensorRay/TensorRay",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "xiaofeng94/renderdoc_for_game_data",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "EQMG/Acid",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "jan-van-bergen/GPU-Raytracer",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "livinamuk/Hell2022",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "jeremyong/flop",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "4rknova/xtracer",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "Y-ZIQI/GAMES202HW",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "TheSmokeyGuys/Volume-ReSTIR-Vulkan",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "lvjiahui/PRT",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "uzh-rpg/vilib",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "nyorain/tokonoma",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "jing-interactive/melo",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "AmesingFlank/Cavalry",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "asiroisvigneux/Blaze",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "TheRealMJP/MSAAFilter",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "Acly/hdrv",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "cmu462/Scotty3D",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "chellmuth/gpu-motunui",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "yumcyaWiz/LensSim",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "belcour/CovarianceTracing",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "brickray/gpu-pathtracer",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "SaeruHikari/SakuraRenderer",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "gao-duan/FaceRelighting",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "glimpse-project/glimpse",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "caosdoar/Fornos",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "septag/termite",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "r-lyeh-archived/spot",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "TheRealMJP/OverlappedExecution",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "BentleyBlanks/Atmos",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "lighttransport/nanogi",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "yifenghuang/GTA_Dataminer",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "lighttransport/mallie",
+      "target": "syoyo/tinyexr"
+    },
+    {
+      "source": "andr3wmac/Torque6",
+      "target": "syoyo/tinyexr"
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "spdxVersion": "SPDX-2.3",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "Restir_CPP Dependency Manifest",
+  "documentNamespace": "https://github.com/Trylz/Restir_CPP/spdx/c448fba9ecf8bd5f1657cca0601868a193b9a808",
+  "packages": [
+    {
+      "name": "Restir_CPP",
+      "SPDXID": "SPDXRef-Package-Trylz-Restir_CPP",
+      "versionInfo": "c448fba9ecf8bd5f1657cca0601868a193b9a808",
+      "downloadLocation": "git+https://github.com/Trylz/Restir_CPP.git@c448fba9ecf8bd5f1657cca0601868a193b9a808",
+      "filesAnalyzed": false
+    },
+    {
+      "name": "tonemapper",
+      "SPDXID": "SPDXRef-Package-tizian-tonemapper",
+      "versionInfo": "dd9f7c8650a5f86f6c62e9cae63b877ecf5e2e64",
+      "downloadLocation": "git+https://github.com/tizian/tonemapper.git@dd9f7c8650a5f86f6c62e9cae63b877ecf5e2e64",
+      "filesAnalyzed": false
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-Package-Trylz-Restir_CPP",
+      "relatedSpdxElement": "SPDXRef-Package-tizian-tonemapper",
+      "relationshipType": "DEPENDS_ON"
+    }
+  ]
+}

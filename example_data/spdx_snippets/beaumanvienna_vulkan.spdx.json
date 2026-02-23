@@ -1,0 +1,30 @@
+{
+  "spdxVersion": "SPDX-2.3",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "vulkan Dependency Manifest",
+  "documentNamespace": "https://github.com/beaumanvienna/vulkan/spdx/665ce36ad3c04f3d78d888e4918190bf18d6d34a",
+  "packages": [
+    {
+      "name": "vulkan",
+      "SPDXID": "SPDXRef-Package-beaumanvienna-vulkan",
+      "versionInfo": "665ce36ad3c04f3d78d888e4918190bf18d6d34a",
+      "downloadLocation": "git+https://github.com/beaumanvienna/vulkan.git@665ce36ad3c04f3d78d888e4918190bf18d6d34a",
+      "filesAnalyzed": false
+    },
+    {
+      "name": "tinyexr",
+      "SPDXID": "SPDXRef-Package-syoyo-tinyexr",
+      "versionInfo": "3ffe5f9d5e673e6e8c378d59b306b2824993e705",
+      "downloadLocation": "git+https://github.com/syoyo/tinyexr.git@3ffe5f9d5e673e6e8c378d59b306b2824993e705",
+      "filesAnalyzed": false
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-Package-beaumanvienna-vulkan",
+      "relatedSpdxElement": "SPDXRef-Package-syoyo-tinyexr",
+      "relationshipType": "DEPENDS_ON"
+    }
+  ]
+}

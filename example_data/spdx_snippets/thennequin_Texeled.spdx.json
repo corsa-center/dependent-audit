@@ -1,0 +1,30 @@
+{
+  "spdxVersion": "SPDX-2.3",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "Texeled Dependency Manifest",
+  "documentNamespace": "https://github.com/thennequin/Texeled/spdx/00f5b716c0afdb05b5323d799e5682a5b91ef08c",
+  "packages": [
+    {
+      "name": "Texeled",
+      "SPDXID": "SPDXRef-Package-thennequin-Texeled",
+      "versionInfo": "00f5b716c0afdb05b5323d799e5682a5b91ef08c",
+      "downloadLocation": "git+https://github.com/thennequin/Texeled.git@00f5b716c0afdb05b5323d799e5682a5b91ef08c",
+      "filesAnalyzed": false
+    },
+    {
+      "name": "tinyexr",
+      "SPDXID": "SPDXRef-Package-syoyo-tinyexr",
+      "versionInfo": "3ffe5f9d5e673e6e8c378d59b306b2824993e705",
+      "downloadLocation": "git+https://github.com/syoyo/tinyexr.git@3ffe5f9d5e673e6e8c378d59b306b2824993e705",
+      "filesAnalyzed": false
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-Package-thennequin-Texeled",
+      "relatedSpdxElement": "SPDXRef-Package-syoyo-tinyexr",
+      "relationshipType": "DEPENDS_ON"
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "spdxVersion": "SPDX-2.3",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "tracer Dependency Manifest",
+  "documentNamespace": "https://github.com/JoshuaSenouf/tracer/spdx/10058876063df6484745a80e37f3c01f14b17161",
+  "packages": [
+    {
+      "name": "tracer",
+      "SPDXID": "SPDXRef-Package-JoshuaSenouf-tracer",
+      "versionInfo": "10058876063df6484745a80e37f3c01f14b17161",
+      "downloadLocation": "git+https://github.com/JoshuaSenouf/tracer.git@10058876063df6484745a80e37f3c01f14b17161",
+      "filesAnalyzed": false
+    },
+    {
+      "name": "tinyexr",
+      "SPDXID": "SPDXRef-Package-syoyo-tinyexr",
+      "versionInfo": "3ffe5f9d5e673e6e8c378d59b306b2824993e705",
+      "downloadLocation": "git+https://github.com/syoyo/tinyexr.git@3ffe5f9d5e673e6e8c378d59b306b2824993e705",
+      "filesAnalyzed": false
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-Package-JoshuaSenouf-tracer",
+      "relatedSpdxElement": "SPDXRef-Package-syoyo-tinyexr",
+      "relationshipType": "DEPENDS_ON"
+    }
+  ]
+}

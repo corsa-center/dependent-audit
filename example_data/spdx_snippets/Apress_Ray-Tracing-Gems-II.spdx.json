@@ -1,0 +1,30 @@
+{
+  "spdxVersion": "SPDX-2.3",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "Ray-Tracing-Gems-II Dependency Manifest",
+  "documentNamespace": "https://github.com/Apress/Ray-Tracing-Gems-II/spdx/4685b9982ed8eab08291826bd7280488e81a7ed1",
+  "packages": [
+    {
+      "name": "Ray-Tracing-Gems-II",
+      "SPDXID": "SPDXRef-Package-Apress-Ray-Tracing-Gems-II",
+      "versionInfo": "4685b9982ed8eab08291826bd7280488e81a7ed1",
+      "downloadLocation": "git+https://github.com/Apress/Ray-Tracing-Gems-II.git@4685b9982ed8eab08291826bd7280488e81a7ed1",
+      "filesAnalyzed": false
+    },
+    {
+      "name": "tinyexr",
+      "SPDXID": "SPDXRef-Package-syoyo-tinyexr",
+      "versionInfo": "3ffe5f9d5e673e6e8c378d59b306b2824993e705",
+      "downloadLocation": "git+https://github.com/syoyo/tinyexr.git@3ffe5f9d5e673e6e8c378d59b306b2824993e705",
+      "filesAnalyzed": false
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-Package-Apress-Ray-Tracing-Gems-II",
+      "relatedSpdxElement": "SPDXRef-Package-syoyo-tinyexr",
+      "relationshipType": "DEPENDS_ON"
+    }
+  ]
+}

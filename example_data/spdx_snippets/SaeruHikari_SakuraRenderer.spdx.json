@@ -1,0 +1,30 @@
+{
+  "spdxVersion": "SPDX-2.3",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "SakuraRenderer Dependency Manifest",
+  "documentNamespace": "https://github.com/SaeruHikari/SakuraRenderer/spdx/028df4c5a2cfacba1d4521f6fe01d04dcf8a3513",
+  "packages": [
+    {
+      "name": "SakuraRenderer",
+      "SPDXID": "SPDXRef-Package-SaeruHikari-SakuraRenderer",
+      "versionInfo": "028df4c5a2cfacba1d4521f6fe01d04dcf8a3513",
+      "downloadLocation": "git+https://github.com/SaeruHikari/SakuraRenderer.git@028df4c5a2cfacba1d4521f6fe01d04dcf8a3513",
+      "filesAnalyzed": false
+    },
+    {
+      "name": "tinyexr",
+      "SPDXID": "SPDXRef-Package-syoyo-tinyexr",
+      "versionInfo": "3ffe5f9d5e673e6e8c378d59b306b2824993e705",
+      "downloadLocation": "git+https://github.com/syoyo/tinyexr.git@3ffe5f9d5e673e6e8c378d59b306b2824993e705",
+      "filesAnalyzed": false
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-Package-SaeruHikari-SakuraRenderer",
+      "relatedSpdxElement": "SPDXRef-Package-syoyo-tinyexr",
+      "relationshipType": "DEPENDS_ON"
+    }
+  ]
+}

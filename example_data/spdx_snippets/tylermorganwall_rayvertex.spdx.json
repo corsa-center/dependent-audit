@@ -1,0 +1,30 @@
+{
+  "spdxVersion": "SPDX-2.3",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "rayvertex Dependency Manifest",
+  "documentNamespace": "https://github.com/tylermorganwall/rayvertex/spdx/08d0b5c8cc8f3e8c46b607ae1fc99b011f8fff34",
+  "packages": [
+    {
+      "name": "rayvertex",
+      "SPDXID": "SPDXRef-Package-tylermorganwall-rayvertex",
+      "versionInfo": "08d0b5c8cc8f3e8c46b607ae1fc99b011f8fff34",
+      "downloadLocation": "git+https://github.com/tylermorganwall/rayvertex.git@08d0b5c8cc8f3e8c46b607ae1fc99b011f8fff34",
+      "filesAnalyzed": false
+    },
+    {
+      "name": "tinyexr",
+      "SPDXID": "SPDXRef-Package-syoyo-tinyexr",
+      "versionInfo": "3ffe5f9d5e673e6e8c378d59b306b2824993e705",
+      "downloadLocation": "git+https://github.com/syoyo/tinyexr.git@3ffe5f9d5e673e6e8c378d59b306b2824993e705",
+      "filesAnalyzed": false
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-Package-tylermorganwall-rayvertex",
+      "relatedSpdxElement": "SPDXRef-Package-syoyo-tinyexr",
+      "relationshipType": "DEPENDS_ON"
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "spdxVersion": "SPDX-2.3",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "Aurora Dependency Manifest",
+  "documentNamespace": "https://github.com/Autodesk/Aurora/spdx/50eea04cc44c7b8c6bcfffdc68338755684bf3c8",
+  "packages": [
+    {
+      "name": "Aurora",
+      "SPDXID": "SPDXRef-Package-Autodesk-Aurora",
+      "versionInfo": "50eea04cc44c7b8c6bcfffdc68338755684bf3c8",
+      "downloadLocation": "git+https://github.com/Autodesk/Aurora.git@50eea04cc44c7b8c6bcfffdc68338755684bf3c8",
+      "filesAnalyzed": false
+    },
+    {
+      "name": "tinyexr",
+      "SPDXID": "SPDXRef-Package-syoyo-tinyexr",
+      "versionInfo": "3ffe5f9d5e673e6e8c378d59b306b2824993e705",
+      "downloadLocation": "git+https://github.com/syoyo/tinyexr.git@3ffe5f9d5e673e6e8c378d59b306b2824993e705",
+      "filesAnalyzed": false
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-Package-Autodesk-Aurora",
+      "relatedSpdxElement": "SPDXRef-Package-syoyo-tinyexr",
+      "relationshipType": "DEPENDS_ON"
+    }
+  ]
+}

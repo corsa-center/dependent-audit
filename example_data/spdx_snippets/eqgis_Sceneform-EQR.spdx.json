@@ -1,0 +1,30 @@
+{
+  "spdxVersion": "SPDX-2.3",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "Sceneform-EQR Dependency Manifest",
+  "documentNamespace": "https://github.com/eqgis/Sceneform-EQR/spdx/c9c6606e07dbd9bd9499313e36e357a245b5edb3",
+  "packages": [
+    {
+      "name": "Sceneform-EQR",
+      "SPDXID": "SPDXRef-Package-eqgis-Sceneform-EQR",
+      "versionInfo": "c9c6606e07dbd9bd9499313e36e357a245b5edb3",
+      "downloadLocation": "git+https://github.com/eqgis/Sceneform-EQR.git@c9c6606e07dbd9bd9499313e36e357a245b5edb3",
+      "filesAnalyzed": false
+    },
+    {
+      "name": "tinyexr",
+      "SPDXID": "SPDXRef-Package-syoyo-tinyexr",
+      "versionInfo": "3ffe5f9d5e673e6e8c378d59b306b2824993e705",
+      "downloadLocation": "git+https://github.com/syoyo/tinyexr.git@3ffe5f9d5e673e6e8c378d59b306b2824993e705",
+      "filesAnalyzed": false
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-Package-eqgis-Sceneform-EQR",
+      "relatedSpdxElement": "SPDXRef-Package-syoyo-tinyexr",
+      "relationshipType": "DEPENDS_ON"
+    }
+  ]
+}

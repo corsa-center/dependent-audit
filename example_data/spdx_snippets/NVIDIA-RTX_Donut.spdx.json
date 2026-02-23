@@ -1,0 +1,30 @@
+{
+  "spdxVersion": "SPDX-2.3",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "Donut Dependency Manifest",
+  "documentNamespace": "https://github.com/NVIDIA-RTX/Donut/spdx/7d968902a534b6e32091a88cfb927fa40eb2c34f",
+  "packages": [
+    {
+      "name": "Donut",
+      "SPDXID": "SPDXRef-Package-NVIDIA-RTX-Donut",
+      "versionInfo": "7d968902a534b6e32091a88cfb927fa40eb2c34f",
+      "downloadLocation": "git+https://github.com/NVIDIA-RTX/Donut.git@7d968902a534b6e32091a88cfb927fa40eb2c34f",
+      "filesAnalyzed": false
+    },
+    {
+      "name": "tinyexr",
+      "SPDXID": "SPDXRef-Package-syoyo-tinyexr",
+      "versionInfo": "3ffe5f9d5e673e6e8c378d59b306b2824993e705",
+      "downloadLocation": "git+https://github.com/syoyo/tinyexr.git@3ffe5f9d5e673e6e8c378d59b306b2824993e705",
+      "filesAnalyzed": false
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-Package-NVIDIA-RTX-Donut",
+      "relatedSpdxElement": "SPDXRef-Package-syoyo-tinyexr",
+      "relationshipType": "DEPENDS_ON"
+    }
+  ]
+}

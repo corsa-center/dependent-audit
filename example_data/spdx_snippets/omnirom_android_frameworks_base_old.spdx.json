@@ -1,0 +1,30 @@
+{
+  "spdxVersion": "SPDX-2.3",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "android_frameworks_base_old Dependency Manifest",
+  "documentNamespace": "https://github.com/omnirom/android_frameworks_base_old/spdx/5e4b775b8f5a75d9a1d2d674acf9f2fa39dae125",
+  "packages": [
+    {
+      "name": "android_frameworks_base_old",
+      "SPDXID": "SPDXRef-Package-omnirom-android_frameworks_base_old",
+      "versionInfo": "5e4b775b8f5a75d9a1d2d674acf9f2fa39dae125",
+      "downloadLocation": "git+https://github.com/omnirom/android_frameworks_base_old.git@5e4b775b8f5a75d9a1d2d674acf9f2fa39dae125",
+      "filesAnalyzed": false
+    },
+    {
+      "name": "tonemapper",
+      "SPDXID": "SPDXRef-Package-tizian-tonemapper",
+      "versionInfo": "dd9f7c8650a5f86f6c62e9cae63b877ecf5e2e64",
+      "downloadLocation": "git+https://github.com/tizian/tonemapper.git@dd9f7c8650a5f86f6c62e9cae63b877ecf5e2e64",
+      "filesAnalyzed": false
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-Package-omnirom-android_frameworks_base_old",
+      "relatedSpdxElement": "SPDXRef-Package-tizian-tonemapper",
+      "relationshipType": "DEPENDS_ON"
+    }
+  ]
+}

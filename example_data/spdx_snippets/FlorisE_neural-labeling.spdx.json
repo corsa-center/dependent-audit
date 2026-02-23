@@ -1,0 +1,30 @@
+{
+  "spdxVersion": "SPDX-2.3",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "neural-labeling Dependency Manifest",
+  "documentNamespace": "https://github.com/FlorisE/neural-labeling/spdx/f005cb994353a702a30a44131774b3fb08d3c4a8",
+  "packages": [
+    {
+      "name": "neural-labeling",
+      "SPDXID": "SPDXRef-Package-FlorisE-neural-labeling",
+      "versionInfo": "f005cb994353a702a30a44131774b3fb08d3c4a8",
+      "downloadLocation": "git+https://github.com/FlorisE/neural-labeling.git@f005cb994353a702a30a44131774b3fb08d3c4a8",
+      "filesAnalyzed": false
+    },
+    {
+      "name": "tinyexr",
+      "SPDXID": "SPDXRef-Package-syoyo-tinyexr",
+      "versionInfo": "3ffe5f9d5e673e6e8c378d59b306b2824993e705",
+      "downloadLocation": "git+https://github.com/syoyo/tinyexr.git@3ffe5f9d5e673e6e8c378d59b306b2824993e705",
+      "filesAnalyzed": false
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-Package-FlorisE-neural-labeling",
+      "relatedSpdxElement": "SPDXRef-Package-syoyo-tinyexr",
+      "relationshipType": "DEPENDS_ON"
+    }
+  ]
+}

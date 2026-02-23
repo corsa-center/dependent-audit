@@ -1,0 +1,30 @@
+{
+  "spdxVersion": "SPDX-2.3",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "vera Dependency Manifest",
+  "documentNamespace": "https://github.com/patriciogonzalezvivo/vera/spdx/9df4a732d41e0ed6e87790514f1f1b9f31f6cb4f",
+  "packages": [
+    {
+      "name": "vera",
+      "SPDXID": "SPDXRef-Package-patriciogonzalezvivo-vera",
+      "versionInfo": "9df4a732d41e0ed6e87790514f1f1b9f31f6cb4f",
+      "downloadLocation": "git+https://github.com/patriciogonzalezvivo/vera.git@9df4a732d41e0ed6e87790514f1f1b9f31f6cb4f",
+      "filesAnalyzed": false
+    },
+    {
+      "name": "tinyexr",
+      "SPDXID": "SPDXRef-Package-syoyo-tinyexr",
+      "versionInfo": "3ffe5f9d5e673e6e8c378d59b306b2824993e705",
+      "downloadLocation": "git+https://github.com/syoyo/tinyexr.git@3ffe5f9d5e673e6e8c378d59b306b2824993e705",
+      "filesAnalyzed": false
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-Package-patriciogonzalezvivo-vera",
+      "relatedSpdxElement": "SPDXRef-Package-syoyo-tinyexr",
+      "relationshipType": "DEPENDS_ON"
+    }
+  ]
+}
