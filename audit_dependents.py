@@ -51,13 +51,15 @@ def resolve_doi(doi, email="audit-bot@example.com"):
         pass
     return None
 
+# FIX 1: Aggressively strip .git so the GitHub API doesn't throw a 404 Not Found
 def parse_repo_info(repo_full_name):
-    clean = repo_full_name.replace("github.com/", "").replace("gitlab.com/", "")
+    clean = repo_full_name.replace("github.com/", "").replace("gitlab.com/", "").replace(".git", "")
     parts = clean.split("/")
     return (parts[0], parts[1]) if len(parts) >= 2 else ("unknown", clean)
 
 def get_github_metadata(repo_full_name, gh_token):
     if not gh_token: 
+        print(f"Skipping GH Stats for {repo_full_name}: No GitHub Token provided.")
         return {}
         
     if "gitlab.com" in repo_full_name or "bitbucket.org" in repo_full_name:
@@ -81,11 +83,15 @@ def get_github_metadata(repo_full_name, gh_token):
       }
     }
     """
-    headers = {"Authorization": f"bearer {gh_token}"}
+    headers = {"Authorization": f"Bearer {gh_token}"}
     try:
         resp = requests.post("https://api.github.com/graphql", headers=headers, json={"query": query, "variables": {"owner": owner, "name": name}}, timeout=15)
         if resp.status_code == 200:
-            data = resp.json().get("data", {}).get("repository")
+            result = resp.json()
+            if "errors" in result:
+                print(f"GH API Warning for {repo_full_name}: {result['errors'][0].get('message')}")
+            
+            data = result.get("data", {}).get("repository")
             if data:
                 return {
                     "isFork": data.get("isFork", False),
