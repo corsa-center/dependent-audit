@@ -112,27 +112,3 @@ runs:
       with:
         name: ${{ inputs.artifact_name }}-spdx
         path: spdx_snippets/
-
-    - name: Generate Job Summary
-      shell: bash
-      run: |
-        VIZ_TOOL="https://corsa-center.github.io/dashboard/explore/dependents"
-        echo "### Dependency Audit Complete" >> $GITHUB_STEP_SUMMARY
-        echo "- **Root:** ${{ inputs.root_repo }}" >> $GITHUB_STEP_SUMMARY
-        echo "- **Depth:** ${{ inputs.max_depth }}" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        
-        if [ "${{ inputs.upload_artifact }}" == "true" ]; then
-          if [ "${{ inputs.separate_artifacts }}" == "true" ]; then
-            echo "#### Artifacts Generated (Separated)" >> $GITHUB_STEP_SUMMARY
-            echo "- **${{ inputs.artifact_name }}-json:** Contains the graph data for the visualizer." >> $GITHUB_STEP_SUMMARY
-            echo "- **${{ inputs.artifact_name }}-spdx:** Contains purely the SBOM manifests." >> $GITHUB_STEP_SUMMARY
-          else
-            echo "#### Artifact Generated (Combined)" >> $GITHUB_STEP_SUMMARY
-            echo "1. Download the **${{ inputs.artifact_name }}** artifact." >> $GITHUB_STEP_SUMMARY
-            echo "2. Go to the [**Visualizer Tool**]($VIZ_TOOL) and upload the ZIP to view the graph and SPDX data." >> $GITHUB_STEP_SUMMARY
-          fi
-        else
-          echo "#### Next Steps" >> $GITHUB_STEP_SUMMARY
-          echo "Results have been generated locally in the workspace." >> $GITHUB_STEP_SUMMARY
-        fi
