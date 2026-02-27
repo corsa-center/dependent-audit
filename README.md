@@ -51,16 +51,23 @@ Once the action generates your `spdx_snippets/` folder, you can push them to Git
 
 ### Inputs
 
-| Input | Description | Default |
-| :--- | :--- | :--- |
-| `root_repo` | The GitHub repository to audit | `${{ github.repository }}` |
-| `project_name` | Short library name | **Required** |
-| `custom_search_string` | Custom string/regex to search | `""` |
-| `custom_filename` | Limit search to file | `""` |
-| `use_defaults` | Use C++ header search logic? | `true` |
-| `include_forks` | Search forks? | `false` |
-| `upload_artifact` | Upload results as artifact? | `false` |
-| `separate_artifacts` | Upload JSON and SPDX as separate ZIPs? | `false` |
+### Action Input Configuration
+
+| Input | Requirement | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `root_repo` | Optional | `${{ github.repository }}` | The GitHub repository format (`Owner/Repo`) to audit. |
+| `project_name` | Required | N/A | The short string representation of the project to search for in dependents. |
+| `sourcegraph_token` | Required | N/A | An access token generated via Sourcegraph to execute search queries. |
+| `github_token` | Optional | `${{ github.token }}` | GitHub token used to fetch deeper repository metadata. |
+| `max_depth` | Optional | `1` | Depth of the dependency tree to crawl. |
+| `include_forks` | Optional | `false` | Set to `true` to include repository forks in the dependency output. |
+| `output_file` | Optional | `dependency_graph.json` | Desired output filename for the JSON graph structure. |
+| `upload_artifact` | Optional | `false` | Set to `true` to upload the generated output as a GitHub artifact. |
+| `artifact_name` | Optional | `dependency-graph` | Base name of the generated artifact. |
+| `separate_artifacts` | Optional | `false` | Set to `true` to upload the JSON and SPDX data in distinct ZIP files. |
+| `custom_search_string` | Optional | N/A | Provide a specific Regular Expression string to identify dependents. |
+| `custom_filename` | Optional | N/A | Restrict queries to a specific file target. |
+| `use_defaults` | Optional | `true` | Executes standard C++ header search heuristics. Set `false` when utilizing `custom_search_string`. |
 
 ## Add a Badge to Your README
 
@@ -69,6 +76,23 @@ your dependency graph json file.
 
 ```markdown
 [![Dependency Graph](https://img.shields.io/badge/dependencies-dashboard-007bff)](https://corsa-center.github.io/dashboard/explore/dependents/?url=https://raw.githubusercontent.com/YOUR_ORG/YOUR_REPO/main/dependency_graph.json)
+```
+
+### Local Execution
+
+The backend crawler can be executed locally without GitHub Actions. Ensure Python 3.10+ is installed.
+
+**Prerequisites:**
+Install required dependencies:
+
+```bash
+python audit_dependents.py \
+  --repo "LLNL/zfp" \
+  --name "zfp" \
+  --depth 1 \
+  --out "dependency_graph.json" \
+  --token "YOUR_SOURCEGRAPH_ACCESS_TOKEN" \
+  --gh-token "YOUR_GITHUB_PERSONAL_ACCESS_TOKEN"
 ```
 
 ## Known Limitations
