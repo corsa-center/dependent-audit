@@ -1,0 +1,30 @@
+{
+  "meta": {
+    "root": "corsa-center/dependent-audit"
+  },
+  "nodes": [
+    {
+      "id": "corsa-center/dependent-audit",
+      "label": "dependent-audit",
+      "type": "library",
+      "data": {
+        "packageName": "dependent-audit",
+        "packageOwner": "corsa-center",
+        "originUrl": "https://github.com/corsa-center/dependent-audit",
+        "commitSha": "fc99e1bc7cf9c218a41fd419f193f1e48bef5dee",
+        "depth": 0,
+        "snippetPath": "",
+        "stars": 0,
+        "contributors": 1,
+        "commits": 10,
+        "lastUpdate": "2026-02-27T00:37:48Z",
+        "latestRelease": "",
+        "license": "None",
+        "isFork": false,
+        "description": "Explore networks of dependent C/C++ projects",
+        "paper": null
+      }
+    }
+  ],
+  "edges": []
+}
