@@ -4,6 +4,7 @@ import json
 import argparse
 import requests
 import re
+import concurrent.futures
 from collections import deque
 
 SNIPPETS_DIR = "spdx_snippets"
@@ -13,13 +14,27 @@ CROSSREF_API_URL = "https://api.crossref.org/works/"
 
 DOI_REGEX = r'\b(10\.\d{4,9}/[-._;()/:A-Z0-9]+)\b'
 
-def load_joss_database():
+def fetch_joss_page(page):
     try:
-        resp = requests.get(JOSS_API_URL, timeout=10)
+        url = f"{JOSS_API_URL}?page={page}"
+        resp = requests.get(url, timeout=10)
         if resp.status_code == 200:
-            data = resp.json()
-            joss_map = {}
-            for paper in data:
+            return resp.json()
+    except Exception:
+        pass
+    return []
+
+def load_joss_database():
+    print("Booting concurrent JOSS scraper...")
+    joss_map = {}
+    pages_to_fetch = list(range(1, 300))
+    
+    with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
+        results = executor.map(fetch_joss_page, pages_to_fetch)
+        for page_data in results:
+            if not page_data:
+                continue
+            for paper in page_data:
                 repo_url = paper.get('repo_url', '').rstrip('/').replace('.git', '').replace('http://', 'https://')
                 if repo_url:
                     joss_map[repo_url.lower()] = {
@@ -28,10 +43,10 @@ def load_joss_database():
                         "joss_pdf": paper.get('paper_url'),
                         "journal": "JOSS"
                     }
-            return joss_map
-    except Exception as e:
-        print(f"Failed to load JOSS database: {e}")
-    return {}
+                    
+    print(f"Successfully indexed {len(joss_map)} published JOSS papers.")
+    return joss_map
+
 
 def resolve_doi(doi, email="audit-bot@example.com"):
     try:
@@ -51,11 +66,12 @@ def resolve_doi(doi, email="audit-bot@example.com"):
         pass
     return None
 
-# FIX 1: Aggressively strip .git so the GitHub API doesn't throw a 404 Not Found
+
 def parse_repo_info(repo_full_name):
     clean = repo_full_name.replace("github.com/", "").replace("gitlab.com/", "").replace(".git", "")
     parts = clean.split("/")
     return (parts[0], parts[1]) if len(parts) >= 2 else ("unknown", clean)
+
 
 def get_github_metadata(repo_full_name, gh_token):
     if not gh_token: 
@@ -109,6 +125,7 @@ def get_github_metadata(repo_full_name, gh_token):
         print(f"GH API Error for {repo_full_name}: {e}")
     return {}
 
+
 def graphql_query(query, variables, token, timeout=60):
     headers = {"Authorization": f"token {token}", "Content-Type": "application/json"}
     full_variables = {**variables, "patternType": "regexp"}
@@ -128,6 +145,7 @@ def graphql_query(query, variables, token, timeout=60):
         except Exception as e:
             time.sleep(2)
     return None
+
 
 def get_public_search_tokens(repo_name, project_short_name, token):
     query = """
@@ -155,6 +173,7 @@ def get_public_search_tokens(repo_name, project_short_name, token):
                 tokens.append((entry['name'], entry['isDirectory']))
     if not tokens: tokens = [(f"{project_short_name}.h", False), (f"{project_short_name}", True)]
     return tokens, repo.get("url", "")
+
 
 def find_consumers(search_tokens, lib_name, token, include_forks, custom_string, custom_file, use_defaults):
     regex_parts = []
@@ -256,11 +275,23 @@ def build_node_data(repo_name, label, owner, type, depth, gh_token, joss_map, fa
     meta = get_github_metadata(repo_name, gh_token)
     full_url = fallback_url.replace("http://", "https://").rstrip('/')
     
+    papers = []
+    
+    # Check JOSS mapping
     paper_info = joss_map.get(full_url.lower())
-    if not paper_info and meta.get("readme"):
+    if paper_info:
+        papers.append(paper_info)
+        
+    # Check README DOIs
+    if meta.get("readme"):
         found_dois = list(set(re.findall(DOI_REGEX, meta["readme"], re.IGNORECASE)))
-        if found_dois:
-            paper_info = resolve_doi(found_dois[0])
+        for doi in found_dois:
+            # Prevent adding the same DOI twice if it was already caught by JOSS
+            if paper_info and paper_info.get("doi") == doi:
+                continue
+            resolved_paper = resolve_doi(doi)
+            if resolved_paper:
+                papers.append(resolved_paper)
 
     return {
         "id": repo_name,
@@ -281,7 +312,7 @@ def build_node_data(repo_name, label, owner, type, depth, gh_token, joss_map, fa
             "license": meta.get("license", "None"),
             "isFork": meta.get("isFork", False),
             "description": meta.get("description", ""),
-            "paper": paper_info
+            "papers": papers
         }
     }
 
