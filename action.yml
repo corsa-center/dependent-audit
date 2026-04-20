@@ -16,6 +16,10 @@ inputs:
     description: 'GitHub token to pull deep repository metrics'
     required: true
     default: ${{ github.token }}
+  email:
+    description: 'Email for OpenAlex and CrossRef API polite pools'
+    required: false
+    default: 'audit-bot@example.com'
   max_depth:
     description: 'How deep to crawl the dependency tree'
     required: false
@@ -71,8 +75,9 @@ runs:
           --name '${{ inputs.project_name }}' \
           --depth ${{ inputs.max_depth }} \
           --out '${{ inputs.output_file }}' \
-          --token '${{ inputs.sourcegraph_token }}' \
-          --gh-token '${{ inputs.github_token }}'"
+          --sg-token '${{ inputs.sourcegraph_token }}' \
+          --gh-token '${{ inputs.github_token }}' \
+          --email '${{ inputs.email }}'"
         
         if [ "${{ inputs.include_forks }}" == "true" ]; then
           CMD="$CMD --forks"

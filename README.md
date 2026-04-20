@@ -44,12 +44,13 @@ Once the action generates your `spdx_snippets/` folder, you can push them to Git
     project_name: 'zfp'
     sourcegraph_token: ${{ secrets.TOKEN }}
     github_token: ${{ secrets.GITHUB_TOKEN }}
+    email: 'ci-bot@yourdomain.com'
     custom_search_string: 'find_package(zfp)'
     custom_filename: 'CMakeLists.txt'
     use_defaults: false
 ```
 
-### Inputs
+..Note: Tokens can also be specified as environment variables using SG_TOKEN and GH_TOKEN for Sourcegraph and Github respectively
 
 ### Action Input Configuration
 
@@ -59,6 +60,7 @@ Once the action generates your `spdx_snippets/` folder, you can push them to Git
 | `project_name` | Required | N/A | The short string representation of the project to search for in dependents. |
 | `sourcegraph_token` | Required | N/A | An access token generated via Sourcegraph to execute search queries. |
 | `github_token` | Optional | `${{ github.token }}` | GitHub token used to fetch deeper repository metadata. |
+| `email` | Optional | `audit-bot@example.com` | Email address used for OpenAlex and CrossRef API polite pools. |
 | `max_depth` | Optional | `1` | Depth of the dependency tree to crawl. |
 | `include_forks` | Optional | `false` | Set to `true` to include repository forks in the dependency output. |
 | `output_file` | Optional | `dependency_graph.json` | Desired output filename for the JSON graph structure. |
@@ -91,9 +93,11 @@ python audit_dependents.py \
   --name "zfp" \
   --depth 1 \
   --out "dependency_graph.json" \
-  --token "YOUR_SOURCEGRAPH_ACCESS_TOKEN" \
+  --sg-token "YOUR_SOURCEGRAPH_ACCESS_TOKEN" \
   --gh-token "YOUR_GITHUB_PERSONAL_ACCESS_TOKEN"
 ```
+
+.. Note: Tokens can be specified as env variables using SG_TOKEN and GH_TOKEN for sourcegraph and github respectively
 
 ## Known Limitations
 
