@@ -10,8 +10,8 @@ inputs:
     description: 'The short name of the project'
     required: true
   sourcegraph_token:
-    description: 'Your Sourcegraph Access Token'
-    required: true
+    description: 'Your Sourcegraph Access Token (optional if depth=0)'
+    required: false
   github_token:
     description: 'GitHub token to pull deep repository metrics'
     required: true
@@ -21,7 +21,7 @@ inputs:
     required: false
     default: 'audit-bot@example.com'
   max_depth:
-    description: 'How deep to crawl the dependency tree'
+    description: 'How deep to crawl the dependency tree (0 evaluates root node only)'
     required: false
     default: '1'
   include_forks:
@@ -50,10 +50,17 @@ inputs:
   custom_filename:
     description: 'Limit search to this filename'
     required: false
+  academic_keywords:
+    description: 'Comma separated list of unique keywords to search in full-text publications (e.g. "dyninst")'
+    required: false
   use_defaults:
     description: 'If false, disables standard C++ header/pragma searching'
     required: false
     default: 'true'
+  verbose:
+    description: 'Enable verbose JSON logging'
+    required: false
+    default: 'false'
 
 runs:
   using: "composite"
@@ -75,22 +82,29 @@ runs:
           --name '${{ inputs.project_name }}' \
           --depth ${{ inputs.max_depth }} \
           --out '${{ inputs.output_file }}' \
-          --sg-token '${{ inputs.sourcegraph_token }}' \
           --gh-token '${{ inputs.github_token }}' \
           --email '${{ inputs.email }}'"
         
+        if [ -n "${{ inputs.sourcegraph_token }}" ]; then
+          CMD="$CMD --sg-token '${{ inputs.sourcegraph_token }}'"
+        fi
         if [ "${{ inputs.include_forks }}" == "true" ]; then
           CMD="$CMD --forks"
         fi
-        
         if [ -n "${{ inputs.custom_search_string }}" ]; then
            CMD="$CMD --custom-string '${{ inputs.custom_search_string }}'"
         fi
         if [ -n "${{ inputs.custom_filename }}" ]; then
            CMD="$CMD --custom-file '${{ inputs.custom_filename }}'"
         fi
+        if [ -n "${{ inputs.academic_keywords }}" ]; then
+           CMD="$CMD --academic-keyword '${{ inputs.academic_keywords }}'"
+        fi
         if [ "${{ inputs.use_defaults }}" == "false" ]; then
            CMD="$CMD --no-defaults"
+        fi
+        if [ "${{ inputs.verbose }}" == "true" ]; then
+           CMD="$CMD --verbose"
         fi
         
         eval $CMD
