@@ -4,9 +4,21 @@
   "type": "object",
   "required": ["meta", "nodes", "edges"],
   "properties": {
+    "meta": {
+      "type": "object",
+      "properties": {
+        "root": {"type": "string"},
+        "ecosystem": {"type": "string"},
+        "schemaVersion": {"type": "string"}
+      }
+    },
     "nodes": {
+      "type": "array",
       "items": {
         "properties": {
+          "id": {"type": "string"},
+          "label": {"type": "string"},
+          "type": {"type": "string"},
           "data": {
             "properties": {
               "stars": {"type": "integer"},
@@ -16,17 +28,77 @@
               "latestRelease": {"type": "string"},
               "license": {"type": "string"},
               "isFork": {"type": "boolean"},
-              "paper": {
-                "type": ["object", "null"],
-                "properties": {
-                  "title": {"type": "string"},
-                  "doi": {"type": "string"},
-                  "journal": {"type": "string"},
-                  "url": {"type": "string"}
+              "confidence": {
+                "type": ["string", "null"],
+                "description": "Discovery confidence tier: high | medium | low | unknown",
+                "enum": ["high", "medium", "low", "unknown", null]
+              },
+              "confidenceScore": {"type": "integer"},
+              "evidence": {
+                "type": "object",
+                "description": "Map of evidence type (vcs_ref, cmake_target, find_package, bazel, pkg_config, pragma_lib, include, custom) to number of matching lines observed.",
+                "additionalProperties": {"type": "integer"}
+              },
+              "identifiers": {
+                "type": "array",
+                "description": "Provider identifier values (header names, package names, ...) this consumer was observed referencing.",
+                "items": {"type": "string"}
+              },
+              "provenance": {
+                "type": "array",
+                "description": "How the matched identifiers were learned (include_tree, cmake_config, cmake_project, pc_file, bazel_module, vcs, convention, ...).",
+                "items": {"type": "string"}
+              },
+              "relationship": {
+                "type": ["string", "null"],
+                "description": "Edge relationship: DEPENDS_ON | VENDORED (reproduces most of the provider's headers) | MIRROR (GitHub fork).",
+                "enum": ["DEPENDS_ON", "VENDORED", "MIRROR", null]
+              },
+              "matchCount": {"type": "integer"},
+              "papers": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "title": {"type": "string"},
+                    "doi": {"type": "string"},
+                    "journal": {"type": "string"},
+                    "url": {"type": "string"}
+                  }
                 }
               }
             }
           }
+        }
+      }
+    },
+    "edges": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["source", "target"],
+        "properties": {
+          "source": {"type": "string"},
+          "target": {"type": "string"},
+          "confidence": {"type": ["string", "null"]},
+          "confidenceScore": {"type": "integer"},
+          "evidence": {
+            "type": "object",
+            "additionalProperties": {"type": "integer"}
+          },
+          "identifiers": {
+            "type": "array",
+            "items": {"type": "string"}
+          },
+          "provenance": {
+            "type": "array",
+            "items": {"type": "string"}
+          },
+          "relationship": {
+            "type": "string",
+            "enum": ["DEPENDS_ON", "VENDORED", "MIRROR"]
+          },
+          "matchCount": {"type": "integer"}
         }
       }
     }

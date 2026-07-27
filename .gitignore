@@ -7,3 +7,4 @@ sg_*
 gh_*
 
 example_data/**
+.idf_cache.json
