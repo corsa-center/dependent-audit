@@ -494,6 +494,22 @@ def test_end_to_end_emits_identifiers():
     print("PASS test_end_to_end_emits_identifiers")
 
 
+def test_regexp_literal_slash_delimits_and_escapes():
+    # Regression: a combined alternation dropped into the query bare makes
+    # Sourcegraph reject it ("unclear parentheses") and return 0 consumers.
+    # Wrapping in a slash-delimited regexp literal disambiguates it; only
+    # unescaped '/' is escaped, and existing escape pairs are preserved.
+    f = A.CppSourcegraphPlugin._regexp_literal
+    assert f("a|b") == "/a|b/"
+    assert f(r"find_package\s*\(\s*Foo[\s)]") == r"/find_package\s*\(\s*Foo[\s)]/"
+    assert f(r"github\.com[:/]LLNL/zfp") == r"/github\.com[:\/]LLNL\/zfp/"
+    assert f(r"x\/y") == r"/x\/y/"  # already-escaped slash passed through
+    # The literal is a valid regex whose body round-trips once slashes unescape.
+    body = f(r"a(b|c)/d")[1:-1]
+    assert re.compile(body.replace(r"\/", "/"))
+    print("PASS test_regexp_literal_slash_delimits_and_escapes")
+
+
 if __name__ == "__main__":
     for name, fn in sorted(globals().items()):
         if name.startswith("test_") and callable(fn):

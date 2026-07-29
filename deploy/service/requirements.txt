@@ -1,0 +1,5 @@
+# Runtime deps for the audit service harness.
+# The crawler itself only needs `requests`; flask/gunicorn front it as a service.
+requests>=2.28
+flask>=3.0
+gunicorn>=21.2

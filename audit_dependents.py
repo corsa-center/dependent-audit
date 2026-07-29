@@ -842,8 +842,8 @@ class CppSourcegraphPlugin(EcosystemPlugin):
         """Bounded global match count for a pattern, used as an IDF proxy."""
         cap = self.specificity.probe_cap
         query = (
-            f"context:global patternType:regexp {regex} fork:no "
-            f"count:{cap} timeout:1m"
+            f"context:global patternType:regexp {self._regexp_literal(regex)} "
+            f"fork:no count:{cap} timeout:1m"
         )
         seen = 0
         for match in self._stream_search(query, log):
@@ -1138,7 +1138,8 @@ class CppSourcegraphPlugin(EcosystemPlugin):
     def _registry_manifest_paths(self, cfg, content_re, log, cap):
         """Paths of registry manifests whose content matches a regex."""
         query = (
-            f"repo:^{re.escape(cfg['repo'])}$ patternType:regexp {content_re} "
+            f"repo:^{re.escape(cfg['repo'])}$ patternType:regexp "
+            f"{self._regexp_literal(content_re)} "
             f"file:{cfg['manifest']} count:{cap} timeout:1m"
         )
         paths = set()
@@ -1465,6 +1466,31 @@ class CppSourcegraphPlugin(EcosystemPlugin):
         return "DEPENDS_ON"
 
     @staticmethod
+    def _regexp_literal(regex):
+        """Wrap a regex as a Sourcegraph slash-delimited pattern literal.
+
+        A bare regex placed in a query lets Sourcegraph's parser interpret the
+        pattern's parentheses/pipes as query operators; a large alternation like
+        `(a|b|c)` then fails with "Unable To Process Query ... unclear
+        parentheses". Delimiting with slashes marks the whole thing as a single
+        regexp token, so its parens are unambiguous. Only unescaped `/` needs
+        escaping to `\\/` (an already-escaped `\\/` is passed through)."""
+        out, i = [], 0
+        while i < len(regex):
+            c = regex[i]
+            if c == "\\" and i + 1 < len(regex):
+                out.append(regex[i : i + 2])  # keep escape pairs intact
+                i += 2
+                continue
+            if c == "/":
+                out.append("\\/")
+                i += 1
+                continue
+            out.append(c)
+            i += 1
+        return f"/{''.join(out)}/"
+
+    @staticmethod
     def _match_lines(match):
         """Extract the matched source lines from a streaming content match,
         supporting both the chunkMatches (current) and lineMatches (legacy)
@@ -1654,7 +1680,7 @@ class CppSourcegraphPlugin(EcosystemPlugin):
         )
 
         full_query = (
-            f"context:global patternType:regexp {full_regex} "
+            f"context:global patternType:regexp {self._regexp_literal(full_regex)} "
             f"{fork_filter} {file_filter} {archived_filter} {vendor_filter} "
             f"count:{self.args.sg_count} timeout:2m"
         )

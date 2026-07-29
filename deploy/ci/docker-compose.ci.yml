@@ -1,0 +1,21 @@
+# CI overlay for docker-compose.yml. Swaps the real crawler for the fake one so
+# the endpoint can be smoke-tested with no tokens and no external network.
+#
+#   docker compose -f docker-compose.yml -f deploy/ci/docker-compose.ci.yml up -d --build
+#
+# The fake script is mounted in and selected via AUDIT_SCRIPT; everything else
+# (nginx, gunicorn, the worker, the shared volume) runs exactly as in prod.
+
+services:
+  audit:
+    environment:
+      AUDIT_SCRIPT: /app/fake_audit.py
+    volumes:
+      - ./deploy/ci/fake_audit.py:/app/fake_audit.py:ro
+
+  worker:
+    environment:
+      AUDIT_SCRIPT: /app/fake_audit.py
+      POLL_INTERVAL: "0.5"
+    volumes:
+      - ./deploy/ci/fake_audit.py:/app/fake_audit.py:ro

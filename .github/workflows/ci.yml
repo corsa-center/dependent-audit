@@ -1,0 +1,56 @@
+name: CI
+
+# Runs on every PR targeting main, plus pushes to main.
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  tests:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install runtime dep
+        # audit_dependents.py (imported by the identifier-set suite) needs requests.
+        run: pip install requests
+
+      - name: Identifier-set / discovery tests
+        run: python tests/test_identifier_set.py
+
+      - name: Service harness tests (mapping + job store)
+        run: python deploy/service/tests/test_auditlib.py
+
+  docker-endpoint:
+    name: Docker endpoint (compose + nginx)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build and start the stack (CI overlay = fake crawler, no tokens)
+        run: |
+          docker compose \
+            -f docker-compose.yml \
+            -f deploy/ci/docker-compose.ci.yml \
+            up -d --build
+
+      - name: Smoke-test the endpoint through nginx
+        run: bash deploy/ci/smoke_test.sh
+
+      - name: Dump logs on failure
+        if: failure()
+        run: |
+          docker compose -f docker-compose.yml -f deploy/ci/docker-compose.ci.yml ps
+          docker compose -f docker-compose.yml -f deploy/ci/docker-compose.ci.yml logs --no-color
+
+      - name: Tear down
+        if: always()
+        run: |
+          docker compose -f docker-compose.yml -f deploy/ci/docker-compose.ci.yml down -v

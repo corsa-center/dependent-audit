@@ -12,6 +12,8 @@ The toolchain consists of two discrete components:
 
 The crawler searches global open-source indices to find projects utilizing a target repository. It outputs a Universal Dependency Graph (`.json`) and a set of SPDX 2.3 manifests.
 
+For each project it compiles an **identifier set** (header, CMake/Bazel/pkg-config, and repository-URL identifiers) from the project's own files and searches for the ways consumers reference them. Every dependency edge in the graph carries a **confidence** tier and score, the **evidence** and **identifiers** behind it, its **provenance**, and a **relationship** label (`DEPENDS_ON`, or `VENDORED`/`MIRROR` for bundled copies and forks) — so the dashboard can sort and filter dependents by how strongly the evidence supports them. See `OVERVIEW.md` for the methodology.
+
 ### Data Generation
 The crawler is deployed primarily as a GitHub Action. Upon execution, the action outputs an archive containing all graph data and SPDX manifests. This archive is required to initialize the dashboard.
 
