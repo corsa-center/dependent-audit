@@ -1,0 +1,80 @@
+# Dependent-audit tool as an async HTTP API behind nginx.
+#
+#   client ──▶ nginx (:8080) ──▶ gunicorn/flask web API ──┐
+#                                                          ├── shared jobs volume
+#                                    worker (crawler) ─────┘
+#
+#   POST /audit returns a job id immediately; the worker runs the crawl and the
+#   client polls GET /jobs/<id> for the result. Deep searches never hold a
+#   connection open. See deploy/README.md for the payload schema.
+#
+# Bring it up with:  docker compose up --build
+
+services:
+  audit:
+    build:
+      context: .
+      dockerfile: deploy/service/Dockerfile
+    image: dependent-audit-service
+    expose:
+      - "8000"
+    environment:
+      JOBS_DIR: /data/jobs
+      WEB_CONCURRENCY: "${WEB_CONCURRENCY:-2}"
+      WEB_THREADS: "${WEB_THREADS:-4}"
+      GUNICORN_TIMEOUT: "${GUNICORN_TIMEOUT:-120}"
+      LOG_LEVEL: "${LOG_LEVEL:-info}"
+    volumes:
+      - jobs:/data/jobs
+    healthcheck:
+      test: ["CMD", "python", "-c",
+             "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health').status==200 else 1)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+
+  worker:
+    # Reuses the image built by the `audit` service above (same Dockerfile).
+    # Only one service declares `build:` so `up --build` can't race two builds
+    # of the same tag.
+    image: dependent-audit-service
+    depends_on:
+      - audit
+    command: ["python", "worker.py"]
+    environment:
+      JOBS_DIR: /data/jobs
+      # Tokens default from the shell / .env; requests may override per-call.
+      SG_TOKEN: "${SG_TOKEN:-}"
+      GH_TOKEN: "${GH_TOKEN:-}"
+      AUDIT_EMAIL: "${AUDIT_EMAIL:-audit-bot@example.com}"
+      WORKER_CONCURRENCY: "${WORKER_CONCURRENCY:-2}"
+      AUDIT_TIMEOUT: "${AUDIT_TIMEOUT:-3600}"
+      POLL_INTERVAL: "${POLL_INTERVAL:-2.0}"
+      JOB_TTL: "${JOB_TTL:-0}"
+      LOG_LEVEL: "${LOG_LEVEL:-info}"
+    volumes:
+      - jobs:/data/jobs
+    healthcheck:
+      # Worker has no HTTP; check the heartbeat file it touches each loop.
+      test: ["CMD", "python", "-c",
+             "import os,time,sys; p='/tmp/worker.alive'; sys.exit(0 if os.path.isfile(p) and time.time()-os.path.getmtime(p) < 60 else 1)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:1.27-alpine
+    depends_on:
+      - audit
+    ports:
+      - "${HTTP_PORT:-8080}:80"
+    volumes:
+      - ./deploy/nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    restart: unless-stopped
+
+volumes:
+  jobs:

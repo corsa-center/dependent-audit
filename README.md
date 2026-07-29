@@ -9,9 +9,11 @@ This tool discovers public repositories that depend on your project. It automati
 
 ## How It Works
 
-Rather than relying strictly on standard package manager registries (like npm or PyPI), this tool utilizes Sourcegraph's GraphQL API to execute massive-scale source code searches (e.g., C/C++ `#include` statements and linker pragmas).
+C and C++ have no central registry of who depends on what, so rather than relying on opt-in package managers, this tool searches globally-indexed source code. For each project it compiles an **identifier set** from the project's own files — header paths, CMake package/target names, pkg-config and Bazel module names, the repository URL, and optional registry aliases — and searches Sourcegraph's **streaming search API** for the ways a consumer would reference each one (`#include`, `find_package`, `Foo::Bar`, `#pragma comment(lib)`, `pkg_check_modules`, `bazel_dep`, git submodules, …).
 
-Once a dependent repository is identified, it leverages GitHub's GraphQL API to extract rich repository metrics (Stars, Commit History, Contributors, Latest Releases, and exact Commit SHAs).
+Because a wide net is deliberately noisy, precision comes from scoring rather than from discarding matches. An inverse-frequency guard drops non-discriminating tokens (a generic `config.h`), every edge gets a **confidence** tier driven by how many independent kinds of evidence corroborate it, and copies/forks are labeled (`VENDORED` / `MIRROR`) instead of counted as dependents. Optionally, package registries (e.g. Spack) corroborate and extend the findings, reconciled on repository URL.
+
+Once a dependent is identified, the tool uses GitHub's GraphQL API to extract rich repository metrics (Stars, Commit History, Contributors, Latest Releases, and exact Commit SHAs). See `OVERVIEW.md` for the full methodology.
 
 ## What is SPDX & Why Generate It?
 
@@ -58,18 +60,27 @@ Once the action generates your `spdx_snippets/` folder, you can push them to Git
 | :--- | :--- | :--- | :--- |
 | `root_repo` | Optional | `${{ github.repository }}` | The GitHub repository format (`Owner/Repo`) to audit. |
 | `project_name` | Required | N/A | The short string representation of the project to search for in dependents. |
-| `sourcegraph_token` | Required | N/A | An access token generated via Sourcegraph to execute search queries. |
+| `sourcegraph_token` | Optional | N/A | Sourcegraph access token for search queries. Required unless `max_depth: 0` (root-only metadata/citations). |
 | `github_token` | Optional | `${{ github.token }}` | GitHub token used to fetch deeper repository metadata. |
 | `email` | Optional | `audit-bot@example.com` | Email address used for OpenAlex and CrossRef API polite pools. |
-| `max_depth` | Optional | `1` | Depth of the dependency tree to crawl. |
-| `include_forks` | Optional | `false` | Set to `true` to include repository forks in the dependency output. |
+| `max_depth` | Optional | `1` | Depth of the dependency tree to crawl. `0` audits only the root node's metadata/citations. |
+| `include_forks` | Optional | `false` | Set to `true` to include repository forks in the search. |
+| `include_archived` | Optional | `false` | Set to `true` to include archived repositories as dependents. |
+| `include_vendored` | Optional | `false` | Set to `true` to count vendored/third-party copies as dependents. |
 | `output_file` | Optional | `dependency_graph.json` | Desired output filename for the JSON graph structure. |
 | `upload_artifact` | Optional | `false` | Set to `true` to upload the generated output as a GitHub artifact. |
 | `artifact_name` | Optional | `dependency-graph` | Base name of the generated artifact. |
 | `separate_artifacts` | Optional | `false` | Set to `true` to upload the JSON and SPDX data in distinct ZIP files. |
 | `custom_search_string` | Optional | N/A | Provide a specific Regular Expression string to identify dependents. |
 | `custom_filename` | Optional | N/A | Restrict queries to a specific file target. |
-| `use_defaults` | Optional | `true` | Executes standard C++ header search heuristics. Set `false` when utilizing `custom_search_string`. |
+| `use_defaults` | Optional | `true` | Executes the default identifier-set discovery. Set `false` to rely solely on `custom_search_string`. |
+| `academic_keywords` | Optional | N/A | Comma-separated keywords for full-text academic search (root node only). |
+| `disable_idf` | Optional | `false` | Set to `true` to disable inverse-frequency gating of generic tokens. |
+| `idf_cap` | Optional | `300` | Frequency-probe cap; tokens at or above this are treated as generic. |
+| `declared_sources` | Optional | N/A | Comma-separated package registries to corroborate against (e.g. `spack`); opt-in. |
+| `search_delay` | Optional | `0` | Seconds to wait before each Sourcegraph streaming search (rate-limit throttle). |
+| `search_count` | Optional | `5000` | Max matches Sourcegraph collects per node (integer or `all`). |
+| `verbose` | Optional | `false` | Set to `true` for structured JSON logging. |
 
 ## Add a Badge to Your README
 
@@ -101,6 +112,7 @@ python audit_dependents.py \
 
 ## Known Limitations
 
-* **Heuristics:** This tool relies on source code scraping. It may return false positives if the project name is commonly used elsewhere.
-* **API Limits:** Large crawls might occasionally hit API rate limits. The tool implements automatic backoff, but massive graphs may take longer to generate.
-* **Tools:** This tool searches sourcegraph for `#include` and `#pragma comment` stanzas referencing the project name to indicate usage. This breaks down for tool usage where the tool isn't typically used as a library, i.e. CMake, Godot, clang-tidy. For tools like these, this tool will not report sufficient usage information. This is an area of current development.
+* **Best-effort, not ground truth:** This tool scrapes source code, so its findings are evidence, not proof. Every edge carries a `confidence` tier and the `evidence`/`identifiers`/`provenance` behind it; treat low-confidence edges as leads to review, not assertions. The inverse-frequency guard and corroboration scoring keep generic-name false positives out of the high-confidence band, but they cannot eliminate them entirely. Use `--no-idf` / `disable_idf` to inspect the raw (ungated) matches.
+* **API Limits:** Large crawls may hit search rate limits or the index's internal result limits. The tool backs off automatically and reports truncation rather than failing silently, but very large graphs take longer to generate. `search_delay` throttles further; `search_count` bounds matches per node.
+* **Library-style usage:** Discovery keys off the ways a *library* is consumed (includes, `find_package`, targets, submodules, …). Tools that are not used as libraries (CMake, Godot, clang-tidy) leave few such traces; use `custom_search_string` to target their specific usage patterns. This remains an area of development.
+* **Indexing and layout:** The identifier set is compiled from the provider's own files as indexed by Sourcegraph; an unindexed provider, or one with an unconventional/macro-generated layout, yields a thinner identifier set and lower recall.

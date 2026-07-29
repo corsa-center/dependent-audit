@@ -28,6 +28,34 @@ inputs:
     description: 'Set to true to search forks'
     required: false
     default: 'false'
+  include_archived:
+    description: 'Set to true to include archived repositories as dependents'
+    required: false
+    default: 'false'
+  include_vendored:
+    description: 'Set to true to count vendored/third-party copies as dependents'
+    required: false
+    default: 'false'
+  search_delay:
+    description: 'Seconds to wait before each Sourcegraph streaming search (throttle)'
+    required: false
+    default: '0'
+  search_count:
+    description: "Max matches Sourcegraph collects per node (integer or 'all')"
+    required: false
+    default: '5000'
+  disable_idf:
+    description: 'Set to true to disable IDF specificity gating of generic tokens'
+    required: false
+    default: 'false'
+  idf_cap:
+    description: 'Frequency-probe cap; tokens at/above this are treated as generic'
+    required: false
+    default: '300'
+  declared_sources:
+    description: "Comma-separated registries to corroborate against (e.g. 'spack'); opt-in"
+    required: false
+    default: ''
   output_file:
     description: 'The name of the generated JSON file'
     required: false
@@ -90,6 +118,27 @@ runs:
         fi
         if [ "${{ inputs.include_forks }}" == "true" ]; then
           CMD="$CMD --forks"
+        fi
+        if [ "${{ inputs.include_archived }}" == "true" ]; then
+          CMD="$CMD --include-archived"
+        fi
+        if [ "${{ inputs.include_vendored }}" == "true" ]; then
+          CMD="$CMD --include-vendored"
+        fi
+        if [ -n "${{ inputs.search_delay }}" ]; then
+          CMD="$CMD --sg-delay '${{ inputs.search_delay }}'"
+        fi
+        if [ -n "${{ inputs.search_count }}" ]; then
+          CMD="$CMD --sg-count '${{ inputs.search_count }}'"
+        fi
+        if [ "${{ inputs.disable_idf }}" == "true" ]; then
+          CMD="$CMD --no-idf"
+        fi
+        if [ -n "${{ inputs.idf_cap }}" ]; then
+          CMD="$CMD --idf-cap '${{ inputs.idf_cap }}'"
+        fi
+        if [ -n "${{ inputs.declared_sources }}" ]; then
+          CMD="$CMD --declared-sources '${{ inputs.declared_sources }}'"
         fi
         if [ -n "${{ inputs.custom_search_string }}" ]; then
            CMD="$CMD --custom-string '${{ inputs.custom_search_string }}'"
