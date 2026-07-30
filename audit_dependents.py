@@ -19,6 +19,13 @@ CROSSREF_API_URL = "https://api.crossref.org/works/"
 OPENCITATIONS_API_URL = "https://opencitations.net/index/api/v1/citations/"
 DOI_REGEX = r"\b(10\.\d{4,9}/[-._;()/:A-Z0-9]+)\b"
 
+# Reverse-citation crawl bounds. Depth 1 == "direct citers of the seminal
+# paper" (the historical behavior); higher depths crawl citers-of-citers.
+# The per-level / total caps are load-bearing: citation fan-out is explosive.
+CITATION_DEFAULT_DEPTH = 1
+CITATION_MAX_PER_LEVEL = 500
+CITATION_MAX_TOTAL = 2000
+
 
 class JSONFormatter(logging.Formatter):
     def format(self, record):
@@ -186,9 +193,36 @@ class WebScrapePublicationPlugin(PublicationPlugin):
 
 
 class OpenAlexPublicationPlugin(PublicationPlugin):
-    def discover_citing(self, target_urls, seminal_dois, keywords, log):
-        found_dois = set()
+    def _paginate_dois(self, params, on_error, log):
+        """Cursor-paginate an OpenAlex /works query, collecting normalized DOIs."""
+        found = set()
+        cursor = "*"
+        while cursor:
+            try:
+                resp = requests.get(
+                    "https://api.openalex.org/works",
+                    params={**params, "mailto": self.email, "per-page": 50,
+                            "cursor": cursor},
+                    timeout=10,
+                )
+                if resp.status_code != 200:
+                    break
+                data = resp.json()
+                works = data.get("results", [])
+                if not works:
+                    break
+                for work in works:
+                    if work.get("doi"):
+                        found.add(work["doi"].replace("https://doi.org/", ""))
+                cursor = data.get("meta", {}).get("next_cursor")
+            except Exception as e:
+                on_error(e)
+                break
+        return found
 
+    def seed_search(self, target_urls, keywords, log):
+        """One-shot full-text seed: works mentioning the target URLs / keywords."""
+        found_dois = set()
         search_terms = {
             f'"{u.replace("https://", "").replace("http://", "").rstrip("/")}"'
             for u in target_urls
@@ -202,76 +236,38 @@ class OpenAlexPublicationPlugin(PublicationPlugin):
             )
 
         for term in search_terms:
-            cursor = "*"
-            while cursor:
-                try:
-                    resp = requests.get(
-                        "https://api.openalex.org/works",
-                        params={
-                            "search": term,
-                            "mailto": self.email,
-                            "per-page": 50,
-                            "cursor": cursor,
-                        },
-                        timeout=10,
-                    )
-                    if resp.status_code != 200:
-                        break
-                    data = resp.json()
-                    works = data.get("results", [])
-                    if not works:
-                        break
-                    for work in works:
-                        if work.get("doi"):
-                            found_dois.add(work["doi"].replace("https://doi.org/", ""))
-                    cursor = data.get("meta", {}).get("next_cursor")
-                except Exception as e:
-                    log.debug(
-                        f"OpenAlex full-text query failed for {term}",
-                        extra={"error": str(e)},
-                    )
-                    break
-
-        for doi in seminal_dois:
-            cursor = "*"
-            log.debug(
-                "OpenAlex reverse-citation lookup for Seminal DOI", extra={"doi": doi}
+            found_dois |= self._paginate_dois(
+                {"search": term},
+                lambda e, term=term: log.debug(
+                    f"OpenAlex full-text query failed for {term}",
+                    extra={"error": str(e)},
+                ),
+                log,
             )
-            while cursor:
-                try:
-                    resp = requests.get(
-                        "https://api.openalex.org/works",
-                        params={
-                            "filter": f"cites:doi:{doi}",
-                            "mailto": self.email,
-                            "per-page": 50,
-                            "cursor": cursor,
-                        },
-                        timeout=10,
-                    )
-                    if resp.status_code != 200:
-                        break
-                    data = resp.json()
-                    works = data.get("results", [])
-                    if not works:
-                        break
-                    for work in works:
-                        if work.get("doi"):
-                            found_dois.add(work["doi"].replace("https://doi.org/", ""))
-                    cursor = data.get("meta", {}).get("next_cursor")
-                except Exception as e:
-                    log.debug(
-                        f"OpenAlex citation query failed for {doi}",
-                        extra={"error": str(e)},
-                    )
-                    break
+        return found_dois
+
+    def citing_dois(self, dois, log):
+        """Reverse-citation lookup: works that cite any DOI in `dois`."""
+        found_dois = set()
+        for doi in dois:
+            log.debug(
+                "OpenAlex reverse-citation lookup", extra={"doi": doi}
+            )
+            found_dois |= self._paginate_dois(
+                {"filter": f"cites:doi:{doi}"},
+                lambda e, doi=doi: log.debug(
+                    f"OpenAlex citation query failed for {doi}",
+                    extra={"error": str(e)},
+                ),
+                log,
+            )
         return found_dois
 
 
 class OpenCitationsPlugin(PublicationPlugin):
-    def discover_citing(self, seminal_dois, log):
+    def citing_dois(self, dois, log):
         found_dois = set()
-        for doi in seminal_dois:
+        for doi in dois:
             log.debug("OpenCitations reverse-citation lookup", extra={"doi": doi})
             try:
                 resp = requests.get(f"{OPENCITATIONS_API_URL}{doi}", timeout=10)
@@ -319,12 +315,49 @@ class CitationEngine:
 
         self.joss_plugin.initialize()
 
+    def _expand_citations(self, seminal_dois, max_depth, log):
+        """Breadth-first crawl of the reverse-citation graph seeded by the
+        seminal DOIs. Returns {doi: depth}, where depth 0 == seminal, 1 ==
+        direct citer, 2 == citer-of-citer, etc. Bounded by CITATION_MAX_*."""
+        depth_of = {d: 0 for d in seminal_dois}
+        frontier = set(seminal_dois)
+        depth = 0
+
+        while frontier and depth < max_depth:
+            depth += 1
+
+            # Bound the fan-out. The slice is arbitrary prioritization; a
+            # smarter policy would rank the frontier by citation count first.
+            batch = set(list(frontier)[:CITATION_MAX_PER_LEVEL])
+
+            citing = self.openalex_plugin.citing_dois(batch, log)
+            citing |= self.opencitations_plugin.citing_dois(batch, log)
+
+            # Only DOIs we have never expanded before: this is the cycle guard.
+            new = citing - depth_of.keys()
+            for d in new:
+                depth_of[d] = depth
+
+            log.info(
+                f"Citation hop {depth}: +{len(new)} DOIs ({len(depth_of)} total)"
+            )
+
+            if len(depth_of) >= CITATION_MAX_TOTAL:
+                log.warning(
+                    "Citation crawl hit total cap; halting expansion",
+                    extra={"cap": CITATION_MAX_TOTAL},
+                )
+                break
+
+            frontier = new
+
+        return depth_of
+
     def get_publications(
-        self, repo_url, repo_meta, target_urls, all_text, keywords, log
+        self, repo_url, repo_meta, target_urls, all_text, keywords, log,
+        citation_depth=CITATION_DEFAULT_DEPTH,
     ):
         seminal_dois = set()
-        general_dois = set()
-
         seminal_dois.update(self.joss_plugin.discover_seminal(repo_url, repo_meta, log))
         seminal_dois.update(self.cff_plugin.discover_seminal(repo_url, repo_meta, log))
         seminal_dois.update(
@@ -334,28 +367,28 @@ class CitationEngine:
         if seminal_dois:
             log.info(f"Identified {len(seminal_dois)} Seminal DOIs for reverse-lookup.")
 
-        general_dois.update(self.text_plugin.discover_dois(all_text, log))
-        general_dois.update(self.scrape_plugin.discover_dois(target_urls, log))
+        # Reverse-citation crawl, seeded only by seminal DOIs.
+        depth_of = self._expand_citations(seminal_dois, citation_depth, log)
 
-        general_dois.update(
-            self.openalex_plugin.discover_citing(
-                target_urls, seminal_dois, keywords, log
-            )
-        )
+        # One-shot seed signals (text mining + full-text search) never recurse;
+        # they are treated as direct evidence, folded in at depth 0.
+        seed_dois = set()
+        seed_dois.update(self.text_plugin.discover_dois(all_text, log))
+        seed_dois.update(self.scrape_plugin.discover_dois(target_urls, log))
+        seed_dois.update(self.openalex_plugin.seed_search(target_urls, keywords, log))
+        for d in seed_dois:
+            depth_of.setdefault(d, 0)
 
-        general_dois.update(
-            self.opencitations_plugin.discover_citing(seminal_dois, log)
-        )
-
-        all_dois = seminal_dois.union(general_dois)
         papers = []
-
-        log.debug(f"Resolving {len(all_dois)} unique DOIs via Crossref")
-        for doi in all_dois:
+        log.debug(f"Resolving {len(depth_of)} unique DOIs via Crossref")
+        for doi, doi_depth in depth_of.items():
             res = self.joss_plugin.joss_map.get(doi)
             if not res:
                 res = self.crossref_plugin.resolve_doi(doi, log)
             if res:
+                res = dict(res)  # copy: joss_map entries are shared across nodes
+                res["citationDepth"] = doi_depth
+                res["relation"] = "seminal" if doi_depth == 0 else "citing"
                 papers.append(res)
 
         return papers
@@ -1840,8 +1873,15 @@ class AuditOrchestrator:
         if depth == 0 and self.args.academic_keyword:
             keywords = [kw.strip() for kw in self.args.academic_keyword.split(",")]
 
+        # The deeper (multi-hop) citation crawl is expensive and noisy, so run
+        # it only at the root node; every other node gets the direct-citer pass.
+        citation_depth = CITATION_DEFAULT_DEPTH
+        if depth == 0:
+            citation_depth = self.args.citation_depth
+
         papers = self.citations.get_publications(
-            full_url, meta, target_urls, all_text, keywords, log
+            full_url, meta, target_urls, all_text, keywords, log,
+            citation_depth=citation_depth,
         )
 
         return {
@@ -2067,6 +2107,14 @@ if __name__ == "__main__":
     parser.add_argument(
         "--academic-keyword",
         help="Comma-separated keywords for full-text academic searching (e.g. 'dyninst')",
+    )
+    parser.add_argument(
+        "--citation-depth",
+        type=int,
+        default=CITATION_DEFAULT_DEPTH,
+        help="Hops to crawl the reverse-citation graph from seminal DOIs at the "
+        "root node (1 = direct citers only; higher = citers-of-citers). "
+        "Non-root nodes always use depth 1.",
     )
     parser.add_argument("--verbose", action="store_true")
     parser.add_argument("--forks", action="store_true")
