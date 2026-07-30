@@ -63,7 +63,10 @@
                     "title": {"type": "string"},
                     "doi": {"type": "string"},
                     "journal": {"type": "string"},
-                    "url": {"type": "string"}
+                    "url": {"type": "string"},
+                    "citations": {"type": "integer", "description": "Crossref is-referenced-by count."},
+                    "citationDepth": {"type": "integer", "description": "Hops from a seminal DOI in the reverse-citation crawl: 0 = seminal (the repo's own paper) or a direct text/full-text seed hit, 1 = direct citer, 2+ = citer-of-citer."},
+                    "relation": {"type": "string", "enum": ["seminal", "citing"], "description": "seminal when citationDepth == 0, else citing."}
                   }
                 }
               }
