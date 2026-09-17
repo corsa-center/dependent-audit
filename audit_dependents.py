@@ -2037,10 +2037,12 @@ class CppSourcegraphPlugin(EcosystemPlugin):
         """C++20 named-module interfaces the provider declares (`export module
         X;`), searched in consumers as `import X;`. Named-module consumption
         emits no #include, so it is invisible to header-based discovery."""
+        # NB: keep the raw regex out of the f-string expression — a backslash in
+        # an f-string replacement field is a syntax error before Python 3.12.
+        decl_literal = self._regexp_literal(r"^\s*export\s+module\s+[A-Za-z_]")
         query = (
             f"repo:^{re.escape(search_id)}$ patternType:regexp "
-            f"{self._regexp_literal(r'^\s*export\s+module\s+[A-Za-z_]')} "
-            f"count:200 timeout:1m"
+            f"{decl_literal} count:200 timeout:1m"
         )
         ids, seen = [], set()
         for match in self._stream_search(query, log):
