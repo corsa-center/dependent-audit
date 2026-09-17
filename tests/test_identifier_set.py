@@ -1112,6 +1112,44 @@ def test_module_kind_weight_layer_and_ungated():
     print("PASS test_module_kind_weight_layer_and_ungated")
 
 
+def _has_nested_repeat(regex):
+    # RE2 rejects a repetition modified by `+`/`*` (possessive/nested: `c++`,
+    # `a*+`); non-greedy `*?`/`+?` are fine. Python 3.11+ silently accepts the
+    # possessive forms, so re.compile won't catch them. Detect an unescaped
+    # quantifier immediately followed by `+` or `*`.
+    return bool(re.search(r"(?<!\\)[+*?][+*]", regex))
+
+
+def test_identifier_values_are_regex_escaped():
+    p = _plugin()
+
+    # HDF5 ships its C++ bindings under `c++/`; that header path carries a `+`.
+    # Unescaped it becomes `c++` — a valid possessive quantifier in Python 3.11+
+    # but an "invalid nested repetition operator" to Sourcegraph's RE2, which
+    # fails the ENTIRE combined query (this is the HDF5 "returns nothing" bug).
+    hp = A.Identifier("c++/src", K.HEADER_PATH, "t", 3)
+    (regex, _), = p._patterns_for_identifier(hp)
+    assert "c\\+\\+" in regex, regex
+    assert not _has_nested_repeat(regex), regex
+
+    # Normal identifiers still produce patterns that match real includes.
+    hb = A.Identifier("H5Cpp.h", K.HEADER_BASENAME, "t", 2)
+    (regex_b, _), = p._patterns_for_identifier(hb)
+    assert re.search(regex_b, "#include <H5Cpp.h>")
+    assert re.search(regex_b, '#include "subdir/H5Cpp.h"')
+    assert not _has_nested_repeat(regex_b), regex_b
+
+    # pkg-config / CMake names with `++` are real (libsigc++, libxml++).
+    ci = p._ci_regex("libsigc++")
+    assert "\\+\\+" in ci, ci
+    fp = f"find_package\\s*\\(\\s*{ci}[\\s)]"
+    assert not _has_nested_repeat(fp), fp
+    # still case-insensitive on the letters
+    assert re.search(f"find_package\\s*\\(\\s*{p._ci_regex('hdf5')}[\\s)]", "find_package(HDF5)")
+
+    print("PASS test_identifier_values_are_regex_escaped")
+
+
 if __name__ == "__main__":
     for name, fn in sorted(globals().items()):
         if name.startswith("test_") and callable(fn):
