@@ -1568,10 +1568,14 @@ class CppSourcegraphPlugin(EcosystemPlugin):
                     )
             return False
         if event == "alert":
+            # An alert means the query was constrained or rejected outright — a
+            # bad regex, for instance, yields zero matches. That must not be
+            # INFO: it is the difference between "no dependents" and "the search
+            # never ran" (see the HDF5 `c++/` regex-escape bug).
             try:
                 alert = json.loads(payload)
-                log.info(
-                    "Sourcegraph search alert (results constrained)",
+                log.warning(
+                    "Sourcegraph search alert (results constrained or query rejected)",
                     extra={
                         "title": alert.get("title"),
                         "description": alert.get("description"),
@@ -1583,9 +1587,12 @@ class CppSourcegraphPlugin(EcosystemPlugin):
         if event == "error":
             try:
                 err = json.loads(payload)
-                log.info(
+                # NB: "message" is a reserved LogRecord field — putting it in
+                # `extra` raises KeyError, so the original error logging crashed
+                # rather than logged. Use a non-reserved key.
+                log.warning(
                     "Sourcegraph stream error event",
-                    extra={"message": err.get("message")},
+                    extra={"sg_error": err.get("message")},
                 )
             except ValueError:
                 pass
@@ -1639,8 +1646,20 @@ class CppSourcegraphPlugin(EcosystemPlugin):
                 backoff = min(backoff * 2, 120)
                 continue
 
+            if resp.status_code in (401, 403):
+                # Auth failures never recover by retrying: surface loudly and
+                # stop. A missing/expired SG token otherwise masquerades as "no
+                # dependents found" after minutes of pointless backoff.
+                log.error(
+                    f"Sourcegraph auth failed (HTTP {resp.status_code}); check "
+                    "SG_TOKEN. No dependents can be discovered without a valid token.",
+                    extra={"status": resp.status_code, "body": resp.text[:300]},
+                )
+                resp.close()
+                return
+
             if resp.status_code != 200:
-                log.debug(
+                log.warning(
                     "Sourcegraph stream unexpected status",
                     extra={"status": resp.status_code, "body": resp.text[:300]},
                 )
@@ -1650,7 +1669,7 @@ class CppSourcegraphPlugin(EcosystemPlugin):
                 continue
             break
         else:
-            log.info(
+            log.warning(
                 "Sourcegraph stream abandoned after retries; results for this "
                 "node may be incomplete."
             )
