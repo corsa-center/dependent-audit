@@ -510,6 +510,77 @@ def test_regexp_literal_slash_delimits_and_escapes():
     print("PASS test_regexp_literal_slash_delimits_and_escapes")
 
 
+class _CaptureHandler(logging.Handler):
+    def __init__(self):
+        super().__init__()
+        self.records = []
+
+    def emit(self, record):
+        self.records.append(record)
+
+
+def _capturing_logger(name):
+    log = logging.getLogger(name)
+    log.setLevel(logging.DEBUG)
+    cap = _CaptureHandler()
+    log.addHandler(cap)
+    return log, cap
+
+
+def test_search_alert_and_error_are_warnings():
+    p = _plugin()
+    log, cap = _capturing_logger("test_loud_events")
+    try:
+        # A query-rejected alert (e.g. the HDF5 bad-regex case) must be WARNING,
+        # not INFO — it is the difference between "no dependents" and "the search
+        # never ran".
+        assert (
+            list(p._emit_sse("alert", json.dumps({"title": "x", "description": "bad"}), log))
+            == []
+        )
+        assert any(r.levelno == logging.WARNING for r in cap.records), [
+            r.levelno for r in cap.records
+        ]
+        cap.records.clear()
+        list(p._emit_sse("error", json.dumps({"message": "boom"}), log))
+        assert any(r.levelno == logging.WARNING for r in cap.records)
+    finally:
+        log.removeHandler(cap)
+    print("PASS test_search_alert_and_error_are_warnings")
+
+
+def test_stream_search_auth_fast_fail():
+    p = _plugin()
+    calls = {"n": 0}
+
+    class Resp:
+        status_code = 401
+        headers = {}
+        text = "unauthorized"
+
+        def close(self):
+            pass
+
+    def fake_get(*a, **k):
+        calls["n"] += 1
+        return Resp()
+
+    log, cap = _capturing_logger("test_authfail")
+    orig = A.requests.get
+    A.requests.get = fake_get
+    try:
+        # 401 must fail fast (one request, no 6x backoff storm) and loudly.
+        assert list(p._stream_search("q", log)) == []
+        assert calls["n"] == 1, calls
+        assert any(r.levelno == logging.ERROR for r in cap.records), [
+            r.levelno for r in cap.records
+        ]
+    finally:
+        A.requests.get = orig
+        log.removeHandler(cap)
+    print("PASS test_stream_search_auth_fast_fail")
+
+
 if __name__ == "__main__":
     for name, fn in sorted(globals().items()):
         if name.startswith("test_") and callable(fn):
