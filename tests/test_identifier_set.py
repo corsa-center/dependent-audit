@@ -19,6 +19,7 @@ import logging
 import os
 import re
 import sys
+import time
 import types
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -1148,6 +1149,47 @@ def test_identifier_values_are_regex_escaped():
     assert re.search(f"find_package\\s*\\(\\s*{p._ci_regex('hdf5')}[\\s)]", "find_package(HDF5)")
 
     print("PASS test_identifier_values_are_regex_escaped")
+def test_rate_limit_wait_capped():
+    E = A.GitHubEnricher("tok")
+
+    class R:
+        def __init__(self, headers):
+            self.headers = headers
+
+    assert E._rate_limit_wait(R({"Retry-After": "5"})) == 5
+    assert E._rate_limit_wait(R({"Retry-After": "99999"}), cap=60) == 60
+    # X-RateLimit-Reset -> seconds until reset, capped and floored at 1
+    assert E._rate_limit_wait(R({"X-RateLimit-Reset": str(int(time.time()) + 10)})) == 10
+    assert E._rate_limit_wait(R({"X-RateLimit-Reset": "1"})) == 1  # past -> floor 1
+    assert E._rate_limit_wait(R({})) == 60  # nothing advertised -> cap
+    print("PASS test_rate_limit_wait_capped")
+
+
+def test_get_metadata_guards_and_null_repo():
+    # Guards short-circuit to empty with no request at all.
+    assert A.GitHubEnricher("").get_metadata("github.com/a/b", LOG) == {}
+    assert A.GitHubEnricher("tok").get_metadata("gitlab.com/a/b", LOG) == {}
+    assert A.GitHubEnricher("tok").get_metadata("justname", LOG) == {}
+
+    # A 200 carrying GraphQL errors + null repository is a definitive answer:
+    # return empty without retrying or raising (the dyninst-style empty node).
+    class Resp:
+        status_code = 200
+        headers = {}
+
+        def json(self):
+            return {"data": {"repository": None}, "errors": [{"message": "NOT_FOUND"}]}
+
+    orig = A.requests.post
+    A.requests.post = lambda *a, **k: Resp()
+    try:
+        assert (
+            A.GitHubEnricher("tok").get_metadata("github.com/dyninst/dyninst", LOG)
+            == {}
+        )
+    finally:
+        A.requests.post = orig
+    print("PASS test_get_metadata_guards_and_null_repo")
 
 
 if __name__ == "__main__":

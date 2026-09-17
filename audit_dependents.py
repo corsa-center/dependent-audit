@@ -1238,72 +1238,169 @@ class GitHubEnricher:
         }
         """
         log.debug("Fetching GitHub Metadata", extra={"repo": repo_full_name})
-        try:
-            resp = requests.post(
-                "https://api.github.com/graphql",
-                headers={"Authorization": f"Bearer {self.gh_token}"},
-                json={"query": query, "variables": {"owner": owner, "name": name}},
-                timeout=15,
+        # A single bare POST here is how a transient 403/secondary-rate-limit or
+        # 5xx silently degraded a node to empty metadata (no stars/contributors/
+        # license) with no retry and no log line. Retry transient failures with
+        # backoff, honour rate-limit windows (capped so one throttled repo cannot
+        # stall the crawl), and treat a null `repository` / GraphQL `errors` as a
+        # definitive answer rather than retrying it.
+        data = None
+        backoff = 5
+        for attempt in range(1, 5):
+            try:
+                resp = requests.post(
+                    "https://api.github.com/graphql",
+                    headers={"Authorization": f"Bearer {self.gh_token}"},
+                    json={
+                        "query": query,
+                        "variables": {"owner": owner, "name": name},
+                    },
+                    timeout=15,
+                )
+            except requests.exceptions.RequestException as e:
+                log.debug(
+                    "GH API request failed",
+                    extra={"repo": repo_full_name, "attempt": attempt, "error": str(e)},
+                )
+                time.sleep(backoff)
+                backoff = min(backoff * 2, 60)
+                continue
+
+            # Rate limited: primary limit is 403 with X-RateLimit-Remaining: 0,
+            # secondary is 429; both may carry Retry-After. Wait the advertised
+            # window (capped), then retry.
+            if resp.status_code in (403, 429) and (
+                resp.headers.get("Retry-After")
+                or resp.headers.get("X-RateLimit-Remaining") == "0"
+            ):
+                wait = self._rate_limit_wait(resp)
+                log.warning(
+                    "GitHub rate limited; backing off",
+                    extra={"repo": repo_full_name, "attempt": attempt, "wait": wait},
+                )
+                time.sleep(wait)
+                continue
+
+            if resp.status_code >= 500:
+                log.debug(
+                    "GH API server error",
+                    extra={
+                        "repo": repo_full_name,
+                        "attempt": attempt,
+                        "status": resp.status_code,
+                    },
+                )
+                time.sleep(backoff)
+                backoff = min(backoff * 2, 60)
+                continue
+
+            if resp.status_code != 200:
+                log.warning(
+                    "GitHub metadata request returned non-200",
+                    extra={"repo": repo_full_name, "status": resp.status_code},
+                )
+                break
+
+            try:
+                body = resp.json()
+            except ValueError as e:
+                log.debug(
+                    "GH API bad JSON",
+                    extra={"repo": repo_full_name, "error": str(e)},
+                )
+                break
+            # A 200 can still carry GraphQL errors with a null repository (a
+            # renamed/redirected repo, or insufficient permissions). That is a
+            # complete answer, so surface it and stop rather than retrying.
+            if body.get("errors"):
+                log.warning(
+                    "GitHub metadata GraphQL errors",
+                    extra={"repo": repo_full_name, "errors": body["errors"]},
+                )
+            data = (body.get("data") or {}).get("repository")
+            break
+
+        if not data:
+            # Make the empty result visible instead of letting it masquerade as a
+            # genuinely star-less / contributor-less / unlicensed project.
+            log.warning(
+                "GitHub metadata unavailable; stars/contributors/license "
+                "will be empty for this node",
+                extra={"repo": repo_full_name},
             )
-            if resp.status_code == 200:
-                data = resp.json().get("data", {}).get("repository")
-                if data:
-                    return {
-                        "isFork": data.get("isFork", False),
-                        "stars": data.get("stargazerCount", 0),
-                        "description": data.get("description", ""),
-                        "homepageUrl": data.get("homepageUrl", ""),
-                        "license": data.get("licenseInfo", {}).get("name", "None")
-                        if data.get("licenseInfo")
-                        else "None",
-                        "lastUpdate": data.get("updatedAt", ""),
-                        "commitSha": data.get("defaultBranchRef", {})
-                        .get("target", {})
-                        .get("oid", "HEAD")
-                        if data.get("defaultBranchRef")
-                        else "HEAD",
-                        "commits": data.get("defaultBranchRef", {})
-                        .get("target", {})
-                        .get("history", {})
-                        .get("totalCount", 0)
-                        if data.get("defaultBranchRef")
-                        else 0,
-                        "latestRelease": data.get("releases", {})
-                        .get("nodes", [{"publishedAt": ""}])[0]
-                        .get("publishedAt", "")
-                        if data.get("releases", {}).get("nodes")
-                        else "",
-                        "contributors": data.get("mentionableUsers", {}).get(
-                            "totalCount", 0
-                        )
-                        if data.get("mentionableUsers")
-                        else 0,
-                        "readme": data.get("readme", {}).get("text", "")
-                        if data.get("readme")
-                        else "",
-                        "cff": data.get("cff", {}).get("text", "")
-                        if data.get("cff")
-                        else "",
-                        "codemeta": data.get("codemeta", {}).get("text", "")
-                        if data.get("codemeta")
-                        else "",
-                        "zenodo": data.get("zenodo", {}).get("text", "")
-                        if data.get("zenodo")
-                        else "",
-                        "zenodo_alt": data.get("zenodo_alt", {}).get("text", "")
-                        if data.get("zenodo_alt")
-                        else "",
-                        "topics": [
-                            n["topic"]["name"]
-                            for n in (
-                                data.get("repositoryTopics", {}) or {}
-                            ).get("nodes", [])
-                            if n.get("topic", {}).get("name")
-                        ],
-                    }
-        except Exception as e:
-            log.debug("GH API Error", extra={"error": str(e)})
-        return {}
+            return {}
+
+        return {
+                "isFork": data.get("isFork", False),
+                "stars": data.get("stargazerCount", 0),
+                "description": data.get("description", ""),
+                "homepageUrl": data.get("homepageUrl", ""),
+                "license": data.get("licenseInfo", {}).get("name", "None")
+                if data.get("licenseInfo")
+                else "None",
+                "lastUpdate": data.get("updatedAt", ""),
+                "commitSha": data.get("defaultBranchRef", {})
+                .get("target", {})
+                .get("oid", "HEAD")
+                if data.get("defaultBranchRef")
+                else "HEAD",
+                "commits": data.get("defaultBranchRef", {})
+                .get("target", {})
+                .get("history", {})
+                .get("totalCount", 0)
+                if data.get("defaultBranchRef")
+                else 0,
+                "latestRelease": data.get("releases", {})
+                .get("nodes", [{"publishedAt": ""}])[0]
+                .get("publishedAt", "")
+                if data.get("releases", {}).get("nodes")
+                else "",
+                "contributors": data.get("mentionableUsers", {}).get(
+                    "totalCount", 0
+                )
+                if data.get("mentionableUsers")
+                else 0,
+                "readme": data.get("readme", {}).get("text", "")
+                if data.get("readme")
+                else "",
+                "cff": data.get("cff", {}).get("text", "")
+                if data.get("cff")
+                else "",
+                "codemeta": data.get("codemeta", {}).get("text", "")
+                if data.get("codemeta")
+                else "",
+                "zenodo": data.get("zenodo", {}).get("text", "")
+                if data.get("zenodo")
+                else "",
+                "zenodo_alt": data.get("zenodo_alt", {}).get("text", "")
+                if data.get("zenodo_alt")
+                else "",
+                "topics": [
+                    n["topic"]["name"]
+                    for n in (
+                        data.get("repositoryTopics", {}) or {}
+                    ).get("nodes", [])
+                    if n.get("topic", {}).get("name")
+                ],
+            }
+
+    @staticmethod
+    def _rate_limit_wait(resp, cap=60):
+        """Seconds to wait on a GitHub rate-limit response, capped so one
+        throttled repo cannot stall the crawl for the full reset window."""
+        retry_after = resp.headers.get("Retry-After")
+        if retry_after:
+            try:
+                return min(int(retry_after), cap)
+            except ValueError:
+                return cap
+        reset = resp.headers.get("X-RateLimit-Reset")
+        if reset:
+            try:
+                return max(1, min(int(reset) - int(time.time()), cap))
+            except ValueError:
+                return cap
+        return cap
 
 
 class SPDXManager:
