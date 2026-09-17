@@ -2074,10 +2074,14 @@ class CppSourcegraphPlugin(EcosystemPlugin):
     def _ci_regex(name):
         """Case-insensitive character-class form of a token. Sourcegraph's RE2 is
         case-sensitive by default, and CMake/pkg-config names are matched
-        case-insensitively (e.g. find_package(ZFP) vs find_package(zfp))."""
-        safe = name.replace(".", "\\.")
+        case-insensitively (e.g. find_package(ZFP) vs find_package(zfp)).
+
+        Every non-letter is regex-escaped, not just `.`: package/pkg-config names
+        legitimately contain regex metacharacters (e.g. `libsigc++`, `libxml++`),
+        and an unescaped `+`/`*` would corrupt the combined search regex."""
         return "".join(
-            f"[{c.lower()}{c.upper()}]" if c.isalpha() else c for c in safe
+            f"[{c.lower()}{c.upper()}]" if c.isalpha() else re.escape(c)
+            for c in name
         )
 
     # --- declared-dependent registries (opt-in via --declared-sources) ------
@@ -2266,13 +2270,15 @@ class CppSourcegraphPlugin(EcosystemPlugin):
         Phase 0 mirrors the original patterns and evidence labels verbatim."""
         k = idf.kind
         if k == IdentifierKind.HEADER_PATH:
+            # Full regex-escape, not just dots: a header path can contain any
+            # regex metacharacter (e.g. HDF5's `c++/` C++ bindings dir). An
+            # unescaped `+`/`*` yields `c++` etc., which Python 3.11+ silently
+            # accepts as a possessive quantifier but Sourcegraph's RE2 rejects
+            # ("invalid nested repetition operator"), failing the whole query.
             safe = re.escape(idf.value)
-            bracket = f"[<\\x22]{safe}/.*[>\\x22]"
-            # Also match a C++20 header-unit import of the same header
-            # (`import <foo/bar.h>;`), which #include-only search misses.
             return [
-                (f"include\\s*{bracket}", "include"),
-                (f"import\\s+{bracket}\\s*;", "header_unit"),
+                (f"include\\s*[<\\x22]{safe}/.*[>\\x22]", "include"),
+                (f"import\\s+[<\\x22]{safe}/.*[>\\x22]\\s*;", "header_unit"),
             ]
         if k == IdentifierKind.HEADER_BASENAME:
             safe = re.escape(idf.value)
@@ -2293,7 +2299,7 @@ class CppSourcegraphPlugin(EcosystemPlugin):
         if k == IdentifierKind.LIB_ARTIFACT:
             return [
                 (
-                    f"pragma\\s+comment\\s*\\(\\s*lib\\s*,\\s*\\x22.*{idf.value}.*\\x22\\s*\\)",
+                    f"pragma\\s+comment\\s*\\(\\s*lib\\s*,\\s*\\x22.*{re.escape(idf.value)}.*\\x22\\s*\\)",
                     "pragma_lib",
                 )
             ]
