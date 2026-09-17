@@ -1128,17 +1128,23 @@ def test_identifier_values_are_regex_escaped():
     # Unescaped it becomes `c++` — a valid possessive quantifier in Python 3.11+
     # but an "invalid nested repetition operator" to Sourcegraph's RE2, which
     # fails the ENTIRE combined query (this is the HDF5 "returns nothing" bug).
+    # Header kinds now yield several patterns (an #include and a header-unit
+    # import); the escape must hold for all of them, so check each.
     hp = A.Identifier("c++/src", K.HEADER_PATH, "t", 3)
-    (regex, _), = p._patterns_for_identifier(hp)
+    hp_pats = p._patterns_for_identifier(hp)
+    regex = next(r for r, ev in hp_pats if ev == "include")
     assert "c\\+\\+" in regex, regex
-    assert not _has_nested_repeat(regex), regex
+    for r, _ in hp_pats:
+        assert not _has_nested_repeat(r), r
 
     # Normal identifiers still produce patterns that match real includes.
     hb = A.Identifier("H5Cpp.h", K.HEADER_BASENAME, "t", 2)
-    (regex_b, _), = p._patterns_for_identifier(hb)
+    hb_pats = p._patterns_for_identifier(hb)
+    regex_b = next(r for r, ev in hb_pats if ev == "include")
     assert re.search(regex_b, "#include <H5Cpp.h>")
     assert re.search(regex_b, '#include "subdir/H5Cpp.h"')
-    assert not _has_nested_repeat(regex_b), regex_b
+    for r, _ in hb_pats:
+        assert not _has_nested_repeat(r), r
 
     # pkg-config / CMake names with `++` are real (libsigc++, libxml++).
     ci = p._ci_regex("libsigc++")
