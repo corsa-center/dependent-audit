@@ -8,7 +8,7 @@ import concurrent.futures
 import math
 import uuid
 import logging
-from collections import deque
+from collections import deque, defaultdict
 from dataclasses import dataclass
 
 SNIPPETS_DIR = "spdx_snippets"
@@ -25,6 +25,65 @@ DOI_REGEX = r"\b(10\.\d{4,9}/[-._;()/:A-Z0-9]+)\b"
 CITATION_DEFAULT_DEPTH = 1
 CITATION_MAX_PER_LEVEL = 500
 CITATION_MAX_TOTAL = 2000
+
+OPENALEX_API_URL = "https://api.openalex.org/works"
+
+# Longest Retry-After (seconds) an optional publication call will honor before
+# giving up. A quota-limited service can send a multi-hour Retry-After; honoring
+# it literally would stall the whole crawl for a *best-effort* enrichment call,
+# so beyond this cap we abandon that one call and degrade to empty metadata.
+HTTP_RETRY_AFTER_CAP = 60
+
+# Paper-relevance scoring. Mirrors the consumer corroboration scorer
+# (_score_consumer): each independent signal is a "kind", the strongest one
+# drives the score, and additional kinds corroborate. Discovery *provenance* is
+# the dominant signal — how a DOI was found says the most about whether it truly
+# references this project. Vocabulary, strongest -> weakest:
+#   seminal            the repo's own paper (always kept)
+#   reverse_citation   OpenAlex `cites:doi:` reverse lookup off a seminal DOI
+#   reverse_citation_oc OpenCitations reverse lookup (same signal, other source)
+#   text_scrape        a raw DOI mined from the repo's own text
+#   web_scrape         a DOI scraped from a linked homepage
+#   keyword_search     bare OpenAlex full-text `search=<term>` hit (weakest;
+#                      needs corroboration to clear `low` — the "zfp" fix)
+PROVENANCE_WEIGHT = {
+    "seminal": 6,
+    "reverse_citation": 5,
+    "reverse_citation_oc": 5,
+    "text_scrape": 4,
+    "web_scrape": 3,
+    "keyword_search": 1,
+}
+
+# Common English + academic-boilerplate tokens excluded from the repo "profile"
+# term set, so term-overlap measures topical similarity, not shared filler.
+PROFILE_STOPWORDS = frozenset(
+    """
+    the a an and or of to in for on with without by from as is are was were be been
+    being at this that these those it its into over under out up down off then than
+    but not no nor so such can may might will would should could must have has had do
+    does did done using use used via not we our you your they their he she his her
+    library software package tool toolkit framework project code source data file
+    files based provide provides provided support supports supported implementation
+    implements interface api version release build make cmake python cpp header
+    include https http github com www org io new open free general purpose simple fast
+    high performance easy also more most other some any all one two three
+    """.split()
+)
+
+# Paper-relevance scorer weights / tiers (parallel to KIND_WEIGHTS + TIER_*).
+PAPER_AUTHOR_OVERLAP_WEIGHT = 4.0
+PAPER_TERM_OVERLAP_WEIGHT = 3.0  # scaled by matched-fraction
+PAPER_CONCEPT_OVERLAP_WEIGHT = 3.0
+PAPER_VENUE_MATCH_WEIGHT = 2.0
+PAPER_CORROBORATION_BONUS = 1.5
+PAPER_VOLUME_CAP = 2.0
+PAPER_TIER_HIGH = 5.5
+PAPER_TIER_MEDIUM = 3.0
+# A paper whose heuristic score lands within this margin *below* a tier cutoff
+# is "borderline" and eligible for the optional LLM tie-breaker.
+PAPER_LLM_BORDERLINE_MARGIN = 1.0
+PAPER_TIER_ORDER = {"low": 0, "medium": 1, "high": 2}
 
 
 class JSONFormatter(logging.Formatter):
@@ -68,12 +127,197 @@ def setup_logger(verbose):
     return logger
 
 
+class CitationDiagnostics:
+    """Per-node record of everything that made a citation search *partial*, so
+    an incomplete result is reported rather than silently smaller.
+
+    Determinism depends on this. Two runs over the same live data should agree;
+    the things that break that promise are transient failures (rate limits,
+    timeouts) and bounded caps that truncate the crawl. When one of those does
+    cause divergence, it must be surfaced — a swallowed 429 is exactly how two
+    users get different graphs with no way to tell which is complete."""
+
+    RATE_LIMITED = "rate_limited"
+    SERVER_ERROR = "server_error"
+    REQUEST_ERROR = "request_error"
+    BAD_RESPONSE = "bad_response"
+
+    def __init__(self):
+        self.http_failures = {}  # channel -> {kind: count}
+        self.caps_hit = set()  # e.g. {"citation_per_level", "citation_total"}
+        self.dois_seen = 0
+        self.dois_unresolved = 0  # DOI produced no usable metadata record
+        self.seminal_found = 0
+
+    def record_http(self, channel, kind):
+        channel = channel or "unknown"
+        kinds = self.http_failures.setdefault(channel, {})
+        kinds[kind] = kinds.get(kind, 0) + 1
+
+    def record_cap(self, name):
+        self.caps_hit.add(name)
+
+    @property
+    def complete(self):
+        return not self.http_failures and not self.caps_hit
+
+    def warnings(self):
+        """Deterministic, human-readable account of what made this partial."""
+        out = []
+        for channel in sorted(self.http_failures):
+            kinds = self.http_failures[channel]
+            detail = ", ".join(f"{k}×{kinds[k]}" for k in sorted(kinds))
+            out.append(
+                f"{channel}: {sum(kinds.values())} dropped request(s) ({detail})"
+            )
+        for cap in sorted(self.caps_hit):
+            out.append(f"cap '{cap}' reached; crawl truncated (results may vary)")
+        if self.dois_unresolved:
+            out.append(
+                f"{self.dois_unresolved} DOI(s) could not be resolved to metadata"
+            )
+        return out
+
+    def summary(self):
+        return {
+            "complete": self.complete,
+            "warnings": self.warnings(),
+            "httpFailures": {
+                c: dict(sorted(self.http_failures[c].items()))
+                for c in sorted(self.http_failures)
+            },
+            "capsHit": sorted(self.caps_hit),
+            "doisSeen": self.dois_seen,
+            "doisUnresolved": self.dois_unresolved,
+            "seminalFound": self.seminal_found,
+        }
+
+
+def _tokenize(text):
+    """Lowercase, split on non-alphanumerics, drop stopwords and short tokens."""
+    if not text:
+        return []
+    return [
+        t
+        for t in re.split(r"[^a-z0-9]+", text.lower())
+        if len(t) >= 3 and t not in PROFILE_STOPWORDS
+    ]
+
+
+def _significant_terms(text, exclude=frozenset(), top_n=40):
+    """Top-N most frequent significant tokens in `text`, minus `exclude`.
+
+    `exclude` carries the bare project-name token(s): a colliding name like
+    `zfp` must never enter the profile term set, or a keyword-search hit on an
+    unrelated `zfp` paper would corroborate itself into a higher tier."""
+    freq = defaultdict(int)
+    for tok in _tokenize(text):
+        if tok in exclude:
+            continue
+        freq[tok] += 1
+    ranked = sorted(freq.items(), key=lambda kv: (-kv[1], kv[0]))
+    return {tok for tok, _ in ranked[:top_n]}
+
+
 class PublicationPlugin:
     def __init__(self, email):
         self.email = email
+        # Set per-node by CitationEngine so failures on shared plugins are
+        # attributed to the node being processed. None outside a scored run.
+        self.diag = None
 
     def initialize(self):
         pass
+
+    def _note_failure(self, channel, kind, log, url, attempt):
+        if self.diag is not None:
+            self.diag.record_http(channel, kind)
+        if log:
+            log.debug(
+                f"{channel or 'http'} call dropped ({kind})",
+                extra={"url": url, "attempt": attempt},
+            )
+
+    def _http_get_json(
+        self, url, params=None, headers=None, timeout=10, max_attempts=4,
+        log=None, channel=None,
+    ):
+        """GET returning parsed JSON with exponential backoff on 429/5xx and
+        transient request errors. Modeled on `_graphql_query`. Returns the
+        decoded body on success, or None once attempts are exhausted / on a
+        non-retryable non-200. Never raises — publication lookups degrade to
+        empty rather than aborting the crawl.
+
+        A definitive negative (a non-retryable non-200 such as 404 "not found")
+        is NOT recorded as a failure: it is a complete answer. Only exhausted
+        retries, an over-cap Retry-After, and an unparseable 200 count against
+        completeness (via `channel`), because those *drop* data that another run
+        might have gotten."""
+        backoff = 2
+        for attempt in range(1, max_attempts + 1):
+            try:
+                resp = requests.get(
+                    url, params=params, headers=headers, timeout=timeout
+                )
+            except requests.exceptions.RequestException as e:
+                if log:
+                    log.debug(
+                        "HTTP request failed",
+                        extra={"url": url, "attempt": attempt, "error": str(e)},
+                    )
+                if attempt == max_attempts:
+                    self._note_failure(
+                        channel, CitationDiagnostics.REQUEST_ERROR, log, url, attempt
+                    )
+                    return None
+                time.sleep(backoff)
+                backoff = min(backoff * 2, 30)
+                continue
+
+            if resp.status_code == 429 or resp.status_code >= 500:
+                kind = (
+                    CitationDiagnostics.RATE_LIMITED
+                    if resp.status_code == 429
+                    else CitationDiagnostics.SERVER_ERROR
+                )
+                if attempt == max_attempts:
+                    self._note_failure(channel, kind, log, url, attempt)
+                    return None
+                wait = backoff
+                retry_after = resp.headers.get("Retry-After")
+                if retry_after and retry_after.strip().isdigit():
+                    ra = int(retry_after.strip())
+                    # A quota cool-off longer than the cap won't clear within a
+                    # sensible run; abandon this optional call rather than stall.
+                    if ra > HTTP_RETRY_AFTER_CAP:
+                        self._note_failure(channel, kind, log, url, attempt)
+                        if log:
+                            log.debug(
+                                f"HTTP {resp.status_code}; Retry-After {ra}s "
+                                "exceeds cap, skipping call",
+                                extra={"url": url, "attempt": attempt},
+                            )
+                        return None
+                    wait = max(wait, ra)
+                if log:
+                    log.debug(
+                        f"HTTP {resp.status_code}; backing off {wait}s",
+                        extra={"url": url, "attempt": attempt},
+                    )
+                time.sleep(wait)
+                backoff = min(backoff * 2, 30)
+                continue
+
+            if resp.status_code != 200:
+                return None  # definitive negative (e.g. 404) — a complete answer
+            try:
+                return resp.json()
+            except ValueError:
+                self._note_failure(
+                    channel, CitationDiagnostics.BAD_RESPONSE, log, url, attempt
+                )
+                return None
+        return None
 
 
 class SeminalDiscoveryPlugin(PublicationPlugin):
@@ -84,9 +328,16 @@ class SeminalDiscoveryPlugin(PublicationPlugin):
 class JOSSPublicationPlugin(SeminalDiscoveryPlugin):
     def initialize(self):
         self.joss_map = {}
+        # Run-level completeness: a dropped JOSS page can hide a seminal DOI for
+        # *any* node, so two users with different page failures could diverge.
+        self.pages_total = 299
+        self.pages_failed = 0
         with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
             for page_data in executor.map(self._fetch_joss_page, list(range(1, 300))):
-                if not page_data:
+                if page_data is None:  # request failed (distinct from empty page)
+                    self.pages_failed += 1
+                    continue
+                if not page_data:  # legitimately empty page (past the last)
                     continue
                 for paper in page_data:
                     repo_url = (
@@ -104,13 +355,15 @@ class JOSSPublicationPlugin(SeminalDiscoveryPlugin):
                         }
 
     def _fetch_joss_page(self, page):
+        """Return the page's JSON list on success, [] for an empty page, or
+        None when the request itself failed (so init can count it)."""
         try:
             resp = requests.get(f"{JOSS_API_URL}?page={page}", timeout=10)
             if resp.status_code == 200:
                 return resp.json()
+            return None
         except Exception:
-            pass
-        return []
+            return None
 
     def discover_seminal(self, repo_url, repo_meta, log):
         paper = self.joss_map.get(repo_url.lower())
@@ -193,36 +446,99 @@ class WebScrapePublicationPlugin(PublicationPlugin):
 
 
 class OpenAlexPublicationPlugin(PublicationPlugin):
-    def _paginate_dois(self, params, on_error, log):
-        """Cursor-paginate an OpenAlex /works query, collecting normalized DOIs."""
-        found = set()
+    @staticmethod
+    def _deinvert_abstract(inv_index):
+        """Reconstruct plain abstract text from OpenAlex's inverted index
+        (`{token: [positions...]}`). Returns "" when absent/malformed."""
+        if not isinstance(inv_index, dict) or not inv_index:
+            return ""
+        positioned = []
+        for token, positions in inv_index.items():
+            if not isinstance(positions, list):
+                continue
+            for pos in positions:
+                if isinstance(pos, int):
+                    positioned.append((pos, token))
+        if not positioned:
+            return ""
+        positioned.sort()
+        return " ".join(token for _, token in positioned)
+
+    @classmethod
+    def _parse_work(cls, work, provenance):
+        """Extract the scoring-relevant surface of an OpenAlex work.
+
+        `provenance` tags which channel surfaced the work; it is stamped onto
+        the returned meta so callers can merge channels for one DOI."""
+        doi = (work.get("doi") or "").replace("https://doi.org/", "")
+        authors = []
+        for a in work.get("authorships", []) or []:
+            name = (a.get("author") or {}).get("display_name")
+            if name:
+                authors.append(name)
+        concepts = [
+            c.get("display_name")
+            for c in (work.get("concepts") or [])
+            if c.get("display_name")
+        ]
+        for t in work.get("topics") or []:
+            if t.get("display_name"):
+                concepts.append(t.get("display_name"))
+        venue = ""
+        primary = work.get("primary_location") or {}
+        source = primary.get("source") or {}
+        venue = source.get("display_name") or (
+            (work.get("host_venue") or {}).get("display_name") or ""
+        )
+        return {
+            "doi": doi,
+            "title": work.get("title") or "",
+            "abstract": cls._deinvert_abstract(
+                work.get("abstract_inverted_index")
+            ),
+            "authors": authors,
+            "concepts": concepts,
+            "year": work.get("publication_year"),
+            "venue": venue,
+            "openalex_citations": work.get("cited_by_count", 0),
+            "openalex_id": work.get("id"),
+            "provenance": {provenance},
+        }
+
+    def _paginate_works(self, params, provenance, log):
+        """Cursor-paginate an OpenAlex /works query, yielding parsed work meta
+        keyed by normalized DOI."""
+        out = {}
         cursor = "*"
         while cursor:
-            try:
-                resp = requests.get(
-                    "https://api.openalex.org/works",
-                    params={**params, "mailto": self.email, "per-page": 50,
-                            "cursor": cursor},
-                    timeout=10,
-                )
-                if resp.status_code != 200:
-                    break
-                data = resp.json()
-                works = data.get("results", [])
-                if not works:
-                    break
-                for work in works:
-                    if work.get("doi"):
-                        found.add(work["doi"].replace("https://doi.org/", ""))
-                cursor = data.get("meta", {}).get("next_cursor")
-            except Exception as e:
-                on_error(e)
+            data = self._http_get_json(
+                OPENALEX_API_URL,
+                params={
+                    **params,
+                    "mailto": self.email,
+                    "per-page": 50,
+                    "cursor": cursor,
+                },
+                timeout=10,
+                log=log,
+                channel="openalex",
+            )
+            if not data:
                 break
-        return found
+            works = data.get("results", [])
+            if not works:
+                break
+            for work in works:
+                meta = self._parse_work(work, provenance)
+                if meta["doi"]:
+                    out[meta["doi"]] = meta
+            cursor = data.get("meta", {}).get("next_cursor")
+        return out
 
     def seed_search(self, target_urls, keywords, log):
-        """One-shot full-text seed: works mentioning the target URLs / keywords."""
-        found_dois = set()
+        """One-shot full-text seed: works mentioning the target URLs / keywords.
+        Returns {doi: meta} tagged `keyword_search`."""
+        found = {}
         search_terms = {
             f'"{u.replace("https://", "").replace("http://", "").rstrip("/")}"'
             for u in target_urls
@@ -235,33 +551,41 @@ class OpenAlexPublicationPlugin(PublicationPlugin):
                 f"Injecting explicit academic keywords into OpenAlex search: {keywords}"
             )
 
-        for term in search_terms:
-            found_dois |= self._paginate_dois(
-                {"search": term},
-                lambda e, term=term: log.debug(
-                    f"OpenAlex full-text query failed for {term}",
-                    extra={"error": str(e)},
-                ),
-                log,
-            )
-        return found_dois
+        # Sorted so the DOI whose meta "wins" a setdefault collision is stable
+        # across runs (determinism), not dependent on set-iteration order.
+        for term in sorted(search_terms):
+            for doi, meta in self._paginate_works(
+                {"search": term}, "keyword_search", log
+            ).items():
+                found.setdefault(doi, meta)
+        return found
 
-    def citing_dois(self, dois, log):
-        """Reverse-citation lookup: works that cite any DOI in `dois`."""
-        found_dois = set()
+    def discover_citing(self, dois, log):
+        """Reverse-citation lookup: works that cite any DOI in `dois`.
+        Returns {doi: meta} tagged `reverse_citation`."""
+        found = {}
         for doi in dois:
-            log.debug(
-                "OpenAlex reverse-citation lookup", extra={"doi": doi}
-            )
-            found_dois |= self._paginate_dois(
-                {"filter": f"cites:doi:{doi}"},
-                lambda e, doi=doi: log.debug(
-                    f"OpenAlex citation query failed for {doi}",
-                    extra={"error": str(e)},
-                ),
-                log,
-            )
-        return found_dois
+            log.debug("OpenAlex reverse-citation lookup", extra={"doi": doi})
+            for cdoi, meta in self._paginate_works(
+                {"filter": f"cites:doi:{doi}"}, "reverse_citation", log
+            ).items():
+                found.setdefault(cdoi, meta)
+        return found
+
+    def fetch_by_doi(self, doi, log):
+        """Backfill a single work's meta by DOI. Used when a DOI arrived via a
+        non-OpenAlex channel (text/web scrape, OpenCitations) but we still want
+        its authors/concepts/abstract for relevance scoring."""
+        data = self._http_get_json(
+            f"{OPENALEX_API_URL}/https://doi.org/{doi}",
+            params={"mailto": self.email},
+            timeout=10,
+            log=log,
+            channel="openalex",
+        )
+        if not data or not isinstance(data, dict) or data.get("error"):
+            return None
+        return self._parse_work(data, "backfill")
 
 
 class OpenCitationsPlugin(PublicationPlugin):
@@ -269,41 +593,224 @@ class OpenCitationsPlugin(PublicationPlugin):
         found_dois = set()
         for doi in dois:
             log.debug("OpenCitations reverse-citation lookup", extra={"doi": doi})
-            try:
-                resp = requests.get(f"{OPENCITATIONS_API_URL}{doi}", timeout=10)
-                if resp.status_code == 200:
-                    for item in resp.json():
-                        if item.get("citing"):
-                            found_dois.add(item["citing"])
-            except Exception as e:
-                log.debug(
-                    f"OpenCitations query failed for {doi}", extra={"error": str(e)}
-                )
+            data = self._http_get_json(
+                f"{OPENCITATIONS_API_URL}{doi}", timeout=10, log=log,
+                channel="opencitations",
+            )
+            if isinstance(data, list):
+                for item in data:
+                    if item.get("citing"):
+                        found_dois.add(item["citing"])
         return found_dois
 
 
 class CrossrefPublicationPlugin(PublicationPlugin):
+    @staticmethod
+    def _strip_jats(abstract):
+        """Crossref abstracts arrive wrapped in JATS XML; strip the tags."""
+        if not abstract:
+            return ""
+        text = re.sub(r"<[^>]+>", " ", abstract)
+        return re.sub(r"\s+", " ", text).strip()
+
     def resolve_doi(self, doi, log):
+        data = self._http_get_json(
+            f"{CROSSREF_API_URL}{doi}",
+            headers={"User-Agent": f"DependencyAuditBot/1.0 (mailto:{self.email})"},
+            timeout=5,
+            log=log,
+            channel="crossref",
+        )
+        if not data:
+            return None
+        item = data.get("message", {})
+        titles = item.get("title") or [""]
+        containers = item.get("container-title") or ["Unknown"]
+        authors = []
+        for a in item.get("author", []) or []:
+            name = " ".join(
+                filter(None, [a.get("given"), a.get("family")])
+            ).strip()
+            if name:
+                authors.append(name)
+        year = None
+        parts = (item.get("published") or item.get("issued") or {}).get(
+            "date-parts"
+        )
+        if isinstance(parts, list) and parts and isinstance(parts[0], list) and parts[0]:
+            year = parts[0][0]
+        return {
+            "title": titles[0] if titles else "",
+            "doi": doi,
+            "journal": containers[0] if containers else "Unknown",
+            "citations": item.get("is-referenced-by-count", 0),
+            "url": item.get("URL"),
+            "authors": authors,
+            "subjects": item.get("subject", []) or [],
+            "year": year,
+            "abstract": self._strip_jats(item.get("abstract", "")),
+        }
+
+
+class PaperRelevanceScorer:
+    """Scores how likely a discovered paper truly references *this* project.
+
+    Deliberately mirrors the consumer corroboration scorer (`_score_consumer`):
+    each independent evidence source is a "kind", the strongest kind drives the
+    score, additional kinds corroborate, and a bounded log-volume term rewards a
+    DOI surfaced through multiple channels. The dominant kind is discovery
+    *provenance* — how the DOI was found — augmented by lexical overlap of the
+    paper's content against the repo profile (authors / terms / concepts / venue).
+
+    A bare `keyword_search`-only hit scores at most the keyword_search
+    provenance weight (1) and lands in `low`; it needs real corroboration (a
+    shared author, overlapping terms/concepts, or a matching venue) to clear the
+    `medium` cutoff. That is the colliding-name ("zfp") false-positive guard."""
+
+    def score(self, meta, provenance, profile):
+        """Return (score, tier, evidence). `meta` carries title/abstract/authors/
+        concepts/venue; `provenance` is the set of channels for this DOI;
+        `profile` is the repo profile (see CitationEngine._score_paper)."""
+        signals = {}
+        evidence = {}
+
+        prov_weight = max(
+            (PROVENANCE_WEIGHT.get(p, 0) for p in provenance), default=0
+        )
+        if prov_weight:
+            signals["provenance"] = float(prov_weight)
+        evidence["provenance"] = sorted(provenance)
+
+        paper_authors = {a.lower().strip() for a in meta.get("authors", []) if a}
+        shared_authors = sorted(
+            paper_authors & {a.lower() for a in profile.get("seminal_authors", set())}
+        )
+        if shared_authors:
+            signals["author_overlap"] = PAPER_AUTHOR_OVERLAP_WEIGHT
+            evidence["sharedAuthors"] = shared_authors
+
+        profile_terms = profile.get("terms", set())
+        if profile_terms:
+            paper_tokens = set(
+                _tokenize(f"{meta.get('title', '')} {meta.get('abstract', '')}")
+            )
+            matched_terms = sorted(paper_tokens & profile_terms)
+            if matched_terms:
+                fraction = len(matched_terms) / len(profile_terms)
+                signals["term_overlap"] = PAPER_TERM_OVERLAP_WEIGHT * min(
+                    1.0, fraction
+                )
+                evidence["matchedTerms"] = matched_terms
+
+        profile_topics = {t.lower() for t in profile.get("topics", set())}
+        if profile_topics:
+            paper_concepts = {c.lower().strip() for c in meta.get("concepts", []) if c}
+            matched_concepts = sorted(paper_concepts & profile_topics)
+            if matched_concepts:
+                signals["concept_overlap"] = PAPER_CONCEPT_OVERLAP_WEIGHT
+                evidence["matchedConcepts"] = matched_concepts
+
+        venue = (meta.get("venue") or meta.get("journal") or "").lower().strip()
+        seminal_venues = {v.lower() for v in profile.get("seminal_venues", set())}
+        if venue and venue in seminal_venues:
+            signals["venue_match"] = PAPER_VENUE_MATCH_WEIGHT
+            evidence["venue"] = meta.get("venue") or meta.get("journal")
+
+        channels = len(provenance)
+        evidence["channels"] = channels
+
+        if not signals:
+            return 0.0, "low", evidence
+
+        strongest = max(signals.values())
+        corroboration = (len(signals) - 1) * PAPER_CORROBORATION_BONUS
+        volume = min(math.log10(channels + 1), PAPER_VOLUME_CAP)
+        score = strongest + corroboration + volume
+        tier = (
+            "high"
+            if score >= PAPER_TIER_HIGH
+            else "medium"
+            if score >= PAPER_TIER_MEDIUM
+            else "low"
+        )
+        return round(score, 2), tier, evidence
+
+
+class LLMRelevanceJudge:
+    """Optional tie-breaker for *borderline* papers, pointed at any OpenAI-
+    compatible chat endpoint (llama.cpp / LMStudio / vLLM / Ollama shim) via a
+    configurable base URL + model. Off unless a URL is provided. Uses only
+    `requests`; any failure degrades silently to the heuristic tier."""
+
+    def __init__(self, base_url, model, token=None, email=None):
+        self.base_url = (base_url or "").rstrip("/")
+        self.model = model or "local-model"
+        self.token = token
+        self.email = email
+
+    @property
+    def enabled(self):
+        return bool(self.base_url)
+
+    def judge(self, profile, meta, log):
+        """Return a small verdict dict {relevant, confidence, reason} or None."""
+        if not self.enabled:
+            return None
+        prompt = (
+            "You judge whether an academic paper references or uses a specific "
+            "software project. Answer ONLY with compact JSON: "
+            '{"relevant": true|false, "confidence": 0.0-1.0, "reason": "..."}.\n\n'
+            f"PROJECT: {profile.get('name')} (owner: {profile.get('owner')})\n"
+            f"PROJECT TOPICS: {', '.join(sorted(profile.get('topics', set())))}\n"
+            f"PROJECT TERMS: {', '.join(sorted(list(profile.get('terms', set()))[:30]))}\n\n"
+            f"PAPER TITLE: {meta.get('title', '')}\n"
+            f"PAPER VENUE: {meta.get('venue') or meta.get('journal') or ''}\n"
+            f"PAPER ABSTRACT: {(meta.get('abstract') or '')[:1500]}\n"
+        )
+        headers = {"Content-Type": "application/json"}
+        if self.token:
+            headers["Authorization"] = f"Bearer {self.token}"
+        payload = {
+            "model": self.model,
+            "messages": [{"role": "user", "content": prompt}],
+            "temperature": 0.0,
+            "max_tokens": 200,
+        }
         try:
-            headers = {"User-Agent": f"DependencyAuditBot/1.0 (mailto:{self.email})"}
-            resp = requests.get(f"{CROSSREF_API_URL}{doi}", headers=headers, timeout=5)
-            if resp.status_code == 200:
-                item = resp.json().get("message", {})
-                res = {
-                    "title": item.get("title", [""])[0],
-                    "doi": doi,
-                    "journal": item.get("container-title", ["Unknown"])[0],
-                    "citations": item.get("is-referenced-by-count", 0),
-                    "url": item.get("URL"),
-                }
-                return res
-        except:
-            pass
-        return None
+            resp = requests.post(
+                f"{self.base_url}/v1/chat/completions",
+                headers=headers,
+                json=payload,
+                timeout=30,
+            )
+            if resp.status_code != 200:
+                if log:
+                    log.debug(
+                        "LLM judge non-200", extra={"status": resp.status_code}
+                    )
+                return None
+            content = (
+                resp.json()["choices"][0]["message"]["content"]
+            )
+            match = re.search(r"\{.*\}", content, re.DOTALL)
+            if not match:
+                return None
+            verdict = json.loads(match.group(0))
+            if "relevant" not in verdict:
+                return None
+            return {
+                "relevant": bool(verdict.get("relevant")),
+                "confidence": float(verdict.get("confidence", 0.0) or 0.0),
+                "reason": str(verdict.get("reason", ""))[:300],
+            }
+        except Exception as e:
+            if log:
+                log.debug("LLM judge failed", extra={"error": str(e)})
+            return None
 
 
 class CitationEngine:
-    def __init__(self, email):
+    def __init__(self, email, args=None):
         self.joss_plugin = JOSSPublicationPlugin(email)
         self.cff_plugin = CFFPublicationPlugin(email)
         self.zenodo_plugin = ZenodoPublicationPlugin(email)
@@ -315,10 +822,67 @@ class CitationEngine:
 
         self.joss_plugin.initialize()
 
-    def _expand_citations(self, seminal_dois, max_depth, log):
+        # Plugins that make network calls we track for completeness; their
+        # `.diag` is swapped per node in get_publications.
+        self._net_plugins = [
+            self.openalex_plugin,
+            self.opencitations_plugin,
+            self.crossref_plugin,
+        ]
+
+        self.args = args
+        self.scorer = PaperRelevanceScorer()
+        self.relevance_enabled = not getattr(args, "no_paper_relevance", False)
+        self.filter_papers = not getattr(args, "no_paper_filter", False)
+        floor = getattr(args, "paper_relevance_floor", "medium") or "medium"
+        self.relevance_floor = PAPER_TIER_ORDER.get(floor, 1)
+
+        self.judge = LLMRelevanceJudge(
+            getattr(args, "relevance_llm_url", None),
+            getattr(args, "relevance_llm_model", None),
+            token=os.environ.get("RELEVANCE_LLM_TOKEN"),
+            email=email,
+        )
+
+        # DOI -> backfilled OpenAlex meta cache (persisted like the IDF cache).
+        self.cache_path = getattr(args, "paper_cache", None) or None
+        self.paper_cache = {}
+        self._load_cache()
+
+    def _load_cache(self):
+        if self.cache_path and os.path.exists(self.cache_path):
+            try:
+                with open(self.cache_path) as f:
+                    self.paper_cache = json.load(f)
+            except Exception:
+                self.paper_cache = {}
+
+    def save(self):
+        if not self.cache_path:
+            return
+        try:
+            with open(self.cache_path, "w") as f:
+                json.dump(self.paper_cache, f)
+        except Exception:
+            pass
+
+    @staticmethod
+    def _frontier_rank(doi_meta, doi):
+        """Deterministic priority for capping the frontier: most-cited first
+        (when OpenAlex citation counts are known), DOI as the stable tiebreak.
+        Makes the truncated set reproducible instead of set-iteration-random,
+        and — per the original TODO — also keeps the *most influential* citers
+        when the cap bites."""
+        cites = (doi_meta.get(doi) or {}).get("openalex_citations") or 0
+        return (-cites, doi)
+
+    def _expand_citations(
+        self, seminal_dois, max_depth, doi_meta, doi_provenance, log, diag=None
+    ):
         """Breadth-first crawl of the reverse-citation graph seeded by the
-        seminal DOIs. Returns {doi: depth}, where depth 0 == seminal, 1 ==
-        direct citer, 2 == citer-of-citer, etc. Bounded by CITATION_MAX_*."""
+        seminal DOIs. Returns {doi: depth} (0 == seminal, 1 == direct citer,
+        ...), and folds discovered work metadata/provenance into the passed
+        `doi_meta` / `doi_provenance` accumulators. Bounded by CITATION_MAX_*."""
         depth_of = {d: 0 for d in seminal_dois}
         frontier = set(seminal_dois)
         depth = 0
@@ -326,12 +890,31 @@ class CitationEngine:
         while frontier and depth < max_depth:
             depth += 1
 
-            # Bound the fan-out. The slice is arbitrary prioritization; a
-            # smarter policy would rank the frontier by citation count first.
-            batch = set(list(frontier)[:CITATION_MAX_PER_LEVEL])
+            # Bound the fan-out deterministically: rank the frontier (most-cited
+            # first, DOI tiebreak) BEFORE slicing, so which DOIs get expanded
+            # when the cap bites does not depend on set-iteration order.
+            ranked = sorted(
+                frontier, key=lambda d: self._frontier_rank(doi_meta, d)
+            )
+            batch = ranked[:CITATION_MAX_PER_LEVEL]
+            if len(frontier) > CITATION_MAX_PER_LEVEL:
+                log.warning(
+                    "Citation frontier exceeds per-level cap; truncating",
+                    extra={"frontier": len(frontier), "cap": CITATION_MAX_PER_LEVEL},
+                )
+                if diag is not None:
+                    diag.record_cap("citation_per_level")
 
-            citing = self.openalex_plugin.citing_dois(batch, log)
-            citing |= self.opencitations_plugin.citing_dois(batch, log)
+            citing_meta = self.openalex_plugin.discover_citing(batch, log)
+            for cdoi, meta in citing_meta.items():
+                self._merge_meta(doi_meta, cdoi, meta)
+                doi_provenance[cdoi].add("reverse_citation")
+
+            oc_dois = self.opencitations_plugin.citing_dois(batch, log)
+            for cdoi in oc_dois:
+                doi_provenance[cdoi].add("reverse_citation_oc")
+
+            citing = set(citing_meta) | oc_dois
 
             # Only DOIs we have never expanded before: this is the cycle guard.
             new = citing - depth_of.keys()
@@ -347,15 +930,79 @@ class CitationEngine:
                     "Citation crawl hit total cap; halting expansion",
                     extra={"cap": CITATION_MAX_TOTAL},
                 )
+                if diag is not None:
+                    diag.record_cap("citation_total")
                 break
 
             frontier = new
 
         return depth_of
 
+    @staticmethod
+    def _merge_meta(doi_meta, doi, meta):
+        """Union a work's parsed meta into the accumulator, preferring existing
+        non-empty content but always merging provenance and concepts."""
+        if not doi:
+            return
+        existing = doi_meta.get(doi)
+        if existing is None:
+            doi_meta[doi] = dict(meta)
+            doi_meta[doi]["provenance"] = set(meta.get("provenance", set()))
+            return
+        existing["provenance"] = set(existing.get("provenance", set())) | set(
+            meta.get("provenance", set())
+        )
+        for key in ("title", "abstract", "venue", "year", "openalex_id"):
+            if not existing.get(key) and meta.get(key):
+                existing[key] = meta[key]
+        for key in ("authors", "concepts"):
+            merged = list(
+                dict.fromkeys((existing.get(key) or []) + (meta.get(key) or []))
+            )
+            if merged:
+                existing[key] = merged
+        if meta.get("openalex_citations") and not existing.get("openalex_citations"):
+            existing["openalex_citations"] = meta["openalex_citations"]
+
+    def _apply_diag(self, diag):
+        for p in self._net_plugins:
+            p.diag = diag
+
+    @staticmethod
+    def _paper_sort_key(p):
+        """Stable, meaningful output order: most-relevant first, then by
+        citation depth, then DOI. Independent of set-iteration order so two
+        runs over the same data emit byte-identical paper lists."""
+        return (
+            -PAPER_TIER_ORDER.get(p.get("relevanceTier"), -1),
+            -(p.get("relevanceScore") or 0),
+            p.get("citationDepth", 0),
+            p.get("doi") or "",
+        )
+
     def get_publications(
         self, repo_url, repo_meta, target_urls, all_text, keywords, log,
-        citation_depth=CITATION_DEFAULT_DEPTH,
+        citation_depth=CITATION_DEFAULT_DEPTH, profile=None,
+    ):
+        diag = CitationDiagnostics()
+        self._apply_diag(diag)
+        try:
+            papers = self._get_publications(
+                repo_url, repo_meta, target_urls, all_text, keywords, log,
+                citation_depth, profile, diag,
+            )
+        finally:
+            self._apply_diag(None)  # don't leak this node's collector to the next
+        if not diag.complete:
+            log.warning(
+                "Citation search for this node is INCOMPLETE",
+                extra={"warnings": diag.warnings()},
+            )
+        return papers, diag.summary()
+
+    def _get_publications(
+        self, repo_url, repo_meta, target_urls, all_text, keywords, log,
+        citation_depth, profile, diag,
     ):
         seminal_dois = set()
         seminal_dois.update(self.joss_plugin.discover_seminal(repo_url, repo_meta, log))
@@ -367,31 +1014,187 @@ class CitationEngine:
         if seminal_dois:
             log.info(f"Identified {len(seminal_dois)} Seminal DOIs for reverse-lookup.")
 
+        profile = dict(profile or {})
+        profile.setdefault("terms", set())
+        profile.setdefault("topics", set())
+        profile.setdefault("seminal_authors", set())
+        profile.setdefault("seminal_venues", set())
+
+        # doi -> merged work meta (scoring content); doi -> set of provenances.
+        doi_meta = {}
+        doi_provenance = defaultdict(set)
+        for d in seminal_dois:
+            doi_provenance[d].add("seminal")
+
+        # Resolve seminal DOIs FIRST so their authors/venue seed the profile
+        # before any citing paper is scored (they are the strongest overlap
+        # signal a citing paper can corroborate against).
+        seminal_records = {}
+        for doi in seminal_dois:
+            rec = self.joss_plugin.joss_map.get(doi)
+            if not rec:
+                rec = self.crossref_plugin.resolve_doi(doi, log)
+            if rec:
+                seminal_records[doi] = rec
+                for a in rec.get("authors", []) or []:
+                    profile["seminal_authors"].add(a)
+                venue = rec.get("journal") or rec.get("venue")
+                if venue and venue != "Unknown":
+                    profile["seminal_venues"].add(venue)
+        diag.seminal_found = len(seminal_records)
+
         # Reverse-citation crawl, seeded only by seminal DOIs.
-        depth_of = self._expand_citations(seminal_dois, citation_depth, log)
+        depth_of = self._expand_citations(
+            seminal_dois, citation_depth, doi_meta, doi_provenance, log, diag
+        )
 
         # One-shot seed signals (text mining + full-text search) never recurse;
         # they are treated as direct evidence, folded in at depth 0.
-        seed_dois = set()
-        seed_dois.update(self.text_plugin.discover_dois(all_text, log))
-        seed_dois.update(self.scrape_plugin.discover_dois(target_urls, log))
-        seed_dois.update(self.openalex_plugin.seed_search(target_urls, keywords, log))
-        for d in seed_dois:
+        for d in self.text_plugin.discover_dois(all_text, log):
+            doi_provenance[d].add("text_scrape")
+            depth_of.setdefault(d, 0)
+        for d in self.scrape_plugin.discover_dois(target_urls, log):
+            doi_provenance[d].add("web_scrape")
+            depth_of.setdefault(d, 0)
+        for d, meta in self.openalex_plugin.seed_search(
+            target_urls, keywords, log
+        ).items():
+            self._merge_meta(doi_meta, d, meta)
+            doi_provenance[d].add("keyword_search")
             depth_of.setdefault(d, 0)
 
+        diag.dois_seen = len(depth_of)
         papers = []
-        log.debug(f"Resolving {len(depth_of)} unique DOIs via Crossref")
+        log.debug(f"Resolving/scoring {len(depth_of)} unique DOIs")
         for doi, doi_depth in depth_of.items():
-            res = self.joss_plugin.joss_map.get(doi)
-            if not res:
-                res = self.crossref_plugin.resolve_doi(doi, log)
-            if res:
-                res = dict(res)  # copy: joss_map entries are shared across nodes
-                res["citationDepth"] = doi_depth
-                res["relation"] = "seminal" if doi_depth == 0 else "citing"
-                papers.append(res)
+            paper = self._resolve_and_score(
+                doi, doi_depth, doi_meta.get(doi), doi_provenance.get(doi, set()),
+                seminal_records.get(doi), profile, log,
+            )
+            if paper is None:
+                # No metadata at all resolved for this DOI — a gap, not a low
+                # score. Recorded so the count of dropped-for-lack-of-data is
+                # visible rather than silently shrinking the graph.
+                diag.dois_unresolved += 1
+                continue
+            # Default filter: drop noise below the floor, but never a truly
+            # seminal paper (the repo's own work is always retained). The
+            # exemption keys on *provenance*, not the depth-0 `relation` field:
+            # a bare keyword-search seed hit is also depth 0 but must remain
+            # filterable — that is the colliding-name ("zfp") case.
+            if (
+                self.relevance_enabled
+                and self.filter_papers
+                and "seminal" not in doi_provenance.get(doi, set())
+                and PAPER_TIER_ORDER.get(paper.get("relevanceTier"), 0)
+                < self.relevance_floor
+            ):
+                continue
+            papers.append(paper)
 
+        papers.sort(key=self._paper_sort_key)
         return papers
+
+    def _resolve_and_score(
+        self, doi, doi_depth, meta, provenance, seminal_rec, profile, log
+    ):
+        """Merge OpenAlex + Crossref metadata for one DOI, score its relevance,
+        and return the emitted paper dict (raw abstract dropped) or None."""
+        # OpenAlex backfill when no OpenAlex channel surfaced this DOI (e.g. it
+        # arrived via text/web scrape or OpenCitations) but we want its content
+        # for scoring. Cached on disk across runs.
+        if meta is None and self.relevance_enabled:
+            if doi in self.paper_cache:
+                meta = self.paper_cache[doi]
+            else:
+                fetched = self.openalex_plugin.fetch_by_doi(doi, log)
+                if fetched is not None:
+                    fetched = dict(fetched)
+                    fetched["provenance"] = sorted(fetched.get("provenance", set()))
+                    self.paper_cache[doi] = fetched
+                meta = fetched
+        meta = dict(meta) if meta else {}
+
+        # Crossref (or JOSS map) for the emitted title/journal/citations/url.
+        res = seminal_rec or self.joss_plugin.joss_map.get(doi)
+        if not res:
+            res = self.crossref_plugin.resolve_doi(doi, log)
+        if not res and not meta:
+            return None
+        res = dict(res) if res else {}
+
+        # Unify the two sources into one scoring/content view.
+        content = {
+            "title": res.get("title") or meta.get("title") or "",
+            "abstract": meta.get("abstract") or res.get("abstract") or "",
+            "authors": meta.get("authors") or res.get("authors") or [],
+            "concepts": meta.get("concepts") or [],
+            "venue": meta.get("venue") or res.get("journal") or "",
+            "journal": res.get("journal") or meta.get("venue") or "Unknown",
+            "year": res.get("year") or meta.get("year"),
+        }
+        if res.get("subjects"):
+            content["concepts"] = list(
+                dict.fromkeys(content["concepts"] + res["subjects"])
+            )
+
+        paper = {
+            "title": content["title"],
+            "doi": doi,
+            "journal": content["journal"],
+            "url": res.get("url"),
+            "citations": res.get("citations", meta.get("openalex_citations", 0)),
+            "citationDepth": doi_depth,
+            # Historical semantics: depth 0 == seminal or a one-shot seed hit.
+            "relation": "seminal" if doi_depth == 0 else "citing",
+            "authors": content["authors"],
+            "year": content["year"],
+            "concepts": content["concepts"],
+            "provenance": sorted(provenance),
+        }
+
+        if self.relevance_enabled:
+            score, tier, evidence = self.scorer.score(content, provenance, profile)
+            # Borderline papers (just under a tier cutoff) get the optional LLM
+            # tie-breaker, if configured.
+            if self.judge.enabled and self._is_borderline(score):
+                verdict = self.judge.judge(profile, content, log)
+                if verdict is not None:
+                    evidence["llm"] = verdict
+                    score, tier = self._apply_llm(score, tier, verdict)
+            paper["relevanceScore"] = score
+            paper["relevanceTier"] = tier
+            paper["relevanceEvidence"] = evidence
+
+        return paper
+
+    @staticmethod
+    def _is_borderline(score):
+        for cutoff in (PAPER_TIER_MEDIUM, PAPER_TIER_HIGH):
+            if cutoff - PAPER_LLM_BORDERLINE_MARGIN <= score < cutoff:
+                return True
+        return False
+
+    @staticmethod
+    def _apply_llm(score, tier, verdict):
+        """Nudge score/tier by a borderline LLM verdict. A confident 'relevant'
+        promotes across the nearest cutoff; a confident 'not relevant' demotes."""
+        confidence = verdict.get("confidence", 0.0)
+        if verdict.get("relevant") and confidence >= 0.5:
+            for cutoff in (PAPER_TIER_MEDIUM, PAPER_TIER_HIGH):
+                if cutoff - PAPER_LLM_BORDERLINE_MARGIN <= score < cutoff:
+                    score = round(cutoff, 2)
+                    break
+        elif not verdict.get("relevant") and confidence >= 0.5:
+            score = round(max(0.0, score - PAPER_LLM_BORDERLINE_MARGIN), 2)
+        tier = (
+            "high"
+            if score >= PAPER_TIER_HIGH
+            else "medium"
+            if score >= PAPER_TIER_MEDIUM
+            else "low"
+        )
+        return score, tier
 
 
 class GitHubEnricher:
@@ -422,6 +1225,7 @@ class GitHubEnricher:
         query($owner: String!, $name: String!) {
           repository(owner: $owner, name: $name) {
             isFork stargazerCount description homepageUrl licenseInfo { name } updatedAt
+            repositoryTopics(first: 20) { nodes { topic { name } } }
             releases(last: 1) { nodes { publishedAt } }
             defaultBranchRef { target { ... on Commit { oid history { totalCount } } } }
             mentionableUsers(first: 1) { totalCount }
@@ -489,6 +1293,13 @@ class GitHubEnricher:
                         "zenodo_alt": data.get("zenodo_alt", {}).get("text", "")
                         if data.get("zenodo_alt")
                         else "",
+                        "topics": [
+                            n["topic"]["name"]
+                            for n in (
+                                data.get("repositoryTopics", {}) or {}
+                            ).get("nodes", [])
+                            if n.get("topic", {}).get("name")
+                        ],
                     }
         except Exception as e:
             log.debug("GH API Error", extra={"error": str(e)})
@@ -565,6 +1376,7 @@ class IdentifierKind:
 
     HEADER_PATH = "header_path"
     HEADER_BASENAME = "header_basename"
+    MODULE_NAME = "module_name"
     CMAKE_PACKAGE = "cmake_package"
     CMAKE_TARGET = "cmake_target"
     PKGCONFIG = "pkgconfig"
@@ -584,6 +1396,7 @@ KIND_WEIGHTS = {
     IdentifierKind.REPO_SLUG: 6,
     IdentifierKind.CMAKE_TARGET: 5,
     IdentifierKind.CMAKE_PACKAGE: 5,
+    IdentifierKind.MODULE_NAME: 4,
     IdentifierKind.BAZEL_MODULE: 4,
     IdentifierKind.PKGCONFIG: 4,
     IdentifierKind.LIB_ARTIFACT: 3,
@@ -591,6 +1404,59 @@ KIND_WEIGHTS = {
     IdentifierKind.HEADER_BASENAME: 2,
     IdentifierKind.PROJECT_NAME: 1,
     IdentifierKind.ALIAS: 1,
+}
+
+
+# Axis-A evidence layers (see DISCOVERY_EXPANSION_NOTES.md Part 6). A dependency
+# fact can be observed at increasing levels of authority: prose that mentions the
+# project (narrative), source code that references it (source-consumption), a
+# build manifest that declares it, a third-party package registry, a compiled
+# artifact that actually links it (binary/link), or a signed bill of materials.
+# The layer is orthogonal to the per-kind KIND_WEIGHTS: weights rank identifiers
+# within a layer, the layer ranks *kinds of evidence* against each other.
+LAYER_NARRATIVE = 1
+LAYER_SOURCE = 2
+LAYER_BUILD = 3
+LAYER_REGISTRY = 4
+LAYER_BINARY = 5
+LAYER_SBOM = 6
+LAYER_BIBLIOMETRIC = 7
+
+# Which evidence layer each identifier kind is observed at. Unknown kinds default
+# to LAYER_SOURCE (the historical assumption). New kinds from later phases add
+# their entry here; the special "declared" kind is a package-registry assertion.
+EVIDENCE_LAYER = {
+    IdentifierKind.HEADER_PATH: LAYER_SOURCE,
+    IdentifierKind.HEADER_BASENAME: LAYER_SOURCE,
+    IdentifierKind.MODULE_NAME: LAYER_SOURCE,
+    IdentifierKind.PROJECT_NAME: LAYER_SOURCE,
+    IdentifierKind.ALIAS: LAYER_SOURCE,
+    # A repo-URL/slug reference lives in build/VCS config (.gitmodules,
+    # FetchContent, CPM), so it is a build-manifest declaration, not source.
+    IdentifierKind.REPO_URL: LAYER_BUILD,
+    IdentifierKind.REPO_SLUG: LAYER_BUILD,
+    IdentifierKind.CMAKE_PACKAGE: LAYER_BUILD,
+    IdentifierKind.CMAKE_TARGET: LAYER_BUILD,
+    IdentifierKind.PKGCONFIG: LAYER_BUILD,
+    IdentifierKind.BAZEL_MODULE: LAYER_BUILD,
+    IdentifierKind.LIB_ARTIFACT: LAYER_BUILD,
+    "declared": LAYER_REGISTRY,
+}
+
+# Additive confidence nudge applied to an edge by its strongest evidence layer,
+# on top of the KIND_WEIGHTS sum. Source/build/registry stay at 0 so existing
+# calibration is unchanged (KIND_WEIGHTS already orders them); narrative-only is
+# penalised (and hard-capped at low, below), while a binary-link or SBOM edge —
+# a real link / declared bill of materials, not an inferred reference — is lifted
+# toward the high tier even when seen alone.
+LAYER_WEIGHT = {
+    LAYER_NARRATIVE: -2.0,
+    LAYER_SOURCE: 0.0,
+    LAYER_BUILD: 0.0,
+    LAYER_REGISTRY: 0.0,
+    LAYER_BINARY: 1.5,
+    LAYER_SBOM: 1.5,
+    LAYER_BIBLIOMETRIC: 0.0,
 }
 
 
@@ -870,6 +1736,17 @@ class CppSourcegraphPlugin(EcosystemPlugin):
             probe_cap=getattr(args, "idf_cap", 300),
             cache_path=getattr(args, "idf_cache", None),
         )
+        # Run-level discovery completeness: set when Sourcegraph truncates,
+        # errors, or a stream is abandoned/interrupted. Accumulates across the
+        # whole crawl; the orchestrator folds it into meta.completeness so a
+        # partial dependent search is visible, not silently smaller.
+        self.search_incomplete = False
+        self.search_warnings = []
+
+    def _note_search_incomplete(self, reason, log):
+        self.search_incomplete = True
+        if reason not in self.search_warnings:
+            self.search_warnings.append(reason)
 
     def _probe_frequency(self, regex, log):
         """Bounded global match count for a pattern, used as an IDF proxy."""
@@ -914,6 +1791,12 @@ class CppSourcegraphPlugin(EcosystemPlugin):
     SRC_MARKERS = ("src", "source")
     NAMESPACE_CAP = 60
     BASENAME_CAP = 25
+    # C++20 module interface unit extensions, and module names never worth
+    # searching (the standard library). A partition (`X:part`) is reduced to its
+    # primary module `X`, the only thing external consumers `import`.
+    MODULE_EXT_RE = r"\.(ixx|cppm|mpp|ccm|cxx)$"
+    MODULE_STOPLIST = frozenset({"std", "std.compat"})
+    MODULE_CAP = 40
     BUILD_ID_CAP = 40
 
     def _search_paths(self, search_id, file_filter, log, cap=1000):
@@ -1148,6 +2031,43 @@ class CppSourcegraphPlugin(EcosystemPlugin):
         ids += self._parse_bazel(blobs.get("bazel") or "")
         return ids[: self.BUILD_ID_CAP]
 
+    _MODULE_DECL_RE = re.compile(r"export\s+module\s+([A-Za-z_]\w*(?:\.\w+)*)")
+
+    def _extract_module_identifiers(self, search_id, log):
+        """C++20 named-module interfaces the provider declares (`export module
+        X;`), searched in consumers as `import X;`. Named-module consumption
+        emits no #include, so it is invisible to header-based discovery."""
+        query = (
+            f"repo:^{re.escape(search_id)}$ patternType:regexp "
+            f"{self._regexp_literal(r'^\s*export\s+module\s+[A-Za-z_]')} "
+            f"count:200 timeout:1m"
+        )
+        ids, seen = [], set()
+        for match in self._stream_search(query, log):
+            if match.get("type") != "content":
+                continue
+            for line in self._match_lines(match):
+                m = self._MODULE_DECL_RE.search(line)
+                if not m:
+                    continue
+                # A partition (`X:part`) reduces to its primary module `X`; the
+                # capture already stops at `:`, so this is the whole name.
+                name = m.group(1)
+                if name in self.MODULE_STOPLIST or name in seen:
+                    continue
+                seen.add(name)
+                ids.append(
+                    Identifier(
+                        name,
+                        IdentifierKind.MODULE_NAME,
+                        "module_unit",
+                        KIND_WEIGHTS[IdentifierKind.MODULE_NAME],
+                    )
+                )
+                if len(ids) >= self.MODULE_CAP:
+                    return ids
+        return ids
+
     @staticmethod
     def _ci_regex(name):
         """Case-insensitive character-class form of a token. Sourcegraph's RE2 is
@@ -1307,6 +2227,9 @@ class CppSourcegraphPlugin(EcosystemPlugin):
             for idf in self._extract_build_identifiers(search_id, log):
                 idset.add(idf)
 
+            for idf in self._extract_module_identifiers(search_id, log):
+                idset.add(idf)
+
             for idf in self._extract_vcs_identifiers(curr_id):
                 idset.add(idf)
 
@@ -1341,15 +2264,30 @@ class CppSourcegraphPlugin(EcosystemPlugin):
         Phase 0 mirrors the original patterns and evidence labels verbatim."""
         k = idf.kind
         if k == IdentifierKind.HEADER_PATH:
-            safe = idf.value.replace(".", "\\.")
-            return [(f"include\\s*[<\\x22]{safe}/.*[>\\x22]", "include")]
+            safe = re.escape(idf.value)
+            bracket = f"[<\\x22]{safe}/.*[>\\x22]"
+            # Also match a C++20 header-unit import of the same header
+            # (`import <foo/bar.h>;`), which #include-only search misses.
+            return [
+                (f"include\\s*{bracket}", "include"),
+                (f"import\\s+{bracket}\\s*;", "header_unit"),
+            ]
         if k == IdentifierKind.HEADER_BASENAME:
-            safe = idf.value.replace(".", "\\.")
+            safe = re.escape(idf.value)
             # Namespace-invariant: the basename is stable across consumers even
             # when the include-path prefix varies with their -I flags. The
             # optional prefix must end at a path boundary so `zfp.h` does not
             # match `libzfp.h`.
-            return [(f"include\\s*[<\\x22](?:[^<>\\x22]*/)?{safe}[>\\x22]", "include")]
+            bracket = f"[<\\x22](?:[^<>\\x22]*/)?{safe}[>\\x22]"
+            return [
+                (f"include\\s*{bracket}", "include"),
+                (f"import\\s+{bracket}\\s*;", "header_unit"),
+            ]
+        if k == IdentifierKind.MODULE_NAME:
+            # `import fmt;` / `export import boost.json;` — a named-module import,
+            # distinct from a header-unit import (which carries <>/"").
+            n = re.escape(idf.value)
+            return [(f"^\\s*(?:export\\s+)?import\\s+{n}\\s*;", "import")]
         if k == IdentifierKind.LIB_ARTIFACT:
             return [
                 (
@@ -1465,26 +2403,47 @@ class CppSourcegraphPlugin(EcosystemPlugin):
         CMakeLists.txt is intentionally not matched (it is real build config)."""
         return bool(self.DOC_PATH_RE.search(path or ""))
 
+    @staticmethod
+    def _evidence_layers(kind_weights):
+        """The distinct Axis-A evidence layers present in a match set, sorted.
+        Unknown kinds default to LAYER_SOURCE (the historical assumption)."""
+        return sorted(
+            {EVIDENCE_LAYER.get(kind, LAYER_SOURCE) for kind in kind_weights}
+        )
+
     def _score_consumer(self, kind_weights, match_count):
         """Corroboration score + tier from the per-kind best pattern weights.
 
-        Driven by the strongest single signal, plus independent-kind
-        corroboration, plus a bounded volume term. Weights already reflect IDF
-        specificity, so a lone generic-basename match scores low while an
-        exact-identity vcs_ref or a corroborated find_package scores high."""
+        Driven by the strongest single signal, plus cross-layer corroboration,
+        plus a bounded volume term, plus an evidence-layer nudge. Weights already
+        reflect IDF specificity, so a lone generic-basename match scores low while
+        an exact-identity vcs_ref or a corroborated find_package scores high.
+
+        Corroboration accrues per distinct *evidence layer*, not per kind: two
+        header signals (both source-consumption) are one corroboration unit,
+        while a header plus a find_package (source + build-manifest) are two.
+        Cross-reach agreement on the same fact therefore does not inflate
+        confidence; independent cross-layer evidence does."""
         if not kind_weights:
             return 0.0, "unknown"
+        layers = self._evidence_layers(kind_weights)
+        top_layer = layers[-1]
         strongest = max(kind_weights.values())
-        corroboration = (len(kind_weights) - 1) * self.CORROBORATION_BONUS
+        corroboration = (len(layers) - 1) * self.CORROBORATION_BONUS
         volume = min(math.log10(match_count + 1), self.VOLUME_CAP)
-        score = strongest + corroboration + volume
-        tier = (
-            "high"
-            if score >= self.TIER_HIGH
-            else "medium"
-            if score >= self.TIER_MEDIUM
-            else "low"
-        )
+        score = strongest + corroboration + volume + LAYER_WEIGHT.get(top_layer, 0.0)
+        # Narrative-only evidence (docs/prose) never clears low on its own; a
+        # higher layer must corroborate it. This is the colliding-name guard.
+        if top_layer <= LAYER_NARRATIVE:
+            tier = "low"
+        else:
+            tier = (
+                "high"
+                if score >= self.TIER_HIGH
+                else "medium"
+                if score >= self.TIER_MEDIUM
+                else "low"
+            )
         return round(score, 2), tier
 
     def _classify_relationship(self, matched_headers, provider_headers):
@@ -1566,6 +2525,9 @@ class CppSourcegraphPlugin(EcosystemPlugin):
                             "message": skip.get("message"),
                         },
                     )
+                    self._note_search_incomplete(
+                        f"sourcegraph: {skip.get('title') or reason}", log
+                    )
             return False
         if event == "alert":
             # An alert means the query was constrained or rejected outright — a
@@ -1593,6 +2555,9 @@ class CppSourcegraphPlugin(EcosystemPlugin):
                 log.warning(
                     "Sourcegraph stream error event",
                     extra={"sg_error": err.get("message")},
+                )
+                self._note_search_incomplete(
+                    f"sourcegraph error: {err.get('message', 'unknown')}", log
                 )
             except ValueError:
                 pass
@@ -1673,6 +2638,9 @@ class CppSourcegraphPlugin(EcosystemPlugin):
                 "Sourcegraph stream abandoned after retries; results for this "
                 "node may be incomplete."
             )
+            self._note_search_incomplete(
+                "sourcegraph: stream abandoned after retries", log
+            )
             return
 
         event, data_lines = None, []
@@ -1695,9 +2663,12 @@ class CppSourcegraphPlugin(EcosystemPlugin):
                 elif raw.startswith("data:"):
                     data_lines.append(raw[len("data:") :].lstrip())
         except requests.exceptions.RequestException as e:
-            log.info(
+            log.warning(
                 "Sourcegraph stream interrupted; keeping partial results.",
                 extra={"error": str(e)},
+            )
+            self._note_search_incomplete(
+                "sourcegraph: stream interrupted mid-response", log
             )
         finally:
             resp.close()
@@ -1787,8 +2758,11 @@ class CppSourcegraphPlugin(EcosystemPlugin):
             score, tier = self._score_consumer(
                 entry["kindWeights"], entry["matchCount"]
             )
+            layers = self._evidence_layers(entry["kindWeights"])
             entry["confidenceScore"] = score
             entry["confidence"] = tier
+            entry["layers"] = layers
+            entry["evidenceLayer"] = layers[-1] if layers else None
             entry["relationship"] = self._classify_relationship(
                 len(entry["matchedHeaders"]), provider_headers
             )
@@ -1807,7 +2781,7 @@ class AuditOrchestrator:
     def __init__(self, args, plugin: EcosystemPlugin, base_logger):
         self.args = args
         self.plugin = plugin
-        self.citations = CitationEngine(args.email)
+        self.citations = CitationEngine(args.email, args)
         self.github = GitHubEnricher(args.gh_token)
         self.spdx = SPDXManager()
         self.base_logger = base_logger
@@ -1816,6 +2790,7 @@ class AuditOrchestrator:
         self.visited = set()
         self.nodes_map = {}
         self.edges_list = []
+        self.incomplete_nodes = []  # repos whose citation search was partial
 
     def _build_node_data(
         self,
@@ -1885,7 +2860,7 @@ class AuditOrchestrator:
                 except:
                     pass
 
-        target_urls = list(set(target_urls))
+        target_urls = sorted(set(target_urls))  # sorted: deterministic ordering
 
         # Only inject the academic keywords if we are scanning the root
         keywords = []
@@ -1898,10 +2873,28 @@ class AuditOrchestrator:
         if depth == 0:
             citation_depth = self.args.citation_depth
 
-        papers = self.citations.get_publications(
+        # Repo "profile" used by the paper-relevance scorer. Topics come from
+        # GitHub repo topics plus any injected academic keywords; terms are the
+        # most frequent significant tokens in the repo's own text. The bare
+        # project-name token is EXCLUDED from terms (the "zfp" fix): a colliding
+        # name must not corroborate an unrelated keyword-search paper.
+        name_tokens = set(_tokenize(label)) | {label.lower()}
+        profile = {
+            "name": label,
+            "owner": owner,
+            "topics": {t.lower() for t in meta.get("topics", [])}
+            | {k.lower() for k in keywords},
+            "terms": _significant_terms(all_text, exclude=name_tokens),
+            "seminal_authors": set(),
+            "seminal_venues": set(),
+        }
+
+        papers, paper_diag = self.citations.get_publications(
             full_url, meta, target_urls, all_text, keywords, log,
-            citation_depth=citation_depth,
+            citation_depth=citation_depth, profile=profile,
         )
+        if not paper_diag.get("complete"):
+            self.incomplete_nodes.append(repo_name)
 
         return {
             "id": repo_name,
@@ -1923,6 +2916,7 @@ class AuditOrchestrator:
                 "isFork": meta.get("isFork", False),
                 "description": meta.get("description", ""),
                 "papers": papers,
+                "paperDiagnostics": paper_diag,
                 "confidence": discovery.get("confidence") if discovery else None,
                 "confidenceScore": discovery.get("confidenceScore", 0)
                 if discovery
@@ -1930,6 +2924,8 @@ class AuditOrchestrator:
                 "evidence": discovery.get("evidence", {}) if discovery else {},
                 "identifiers": discovery.get("identifiers", []) if discovery else [],
                 "provenance": discovery.get("provenance", []) if discovery else [],
+                "evidenceLayer": discovery.get("evidenceLayer") if discovery else None,
+                "layers": discovery.get("layers", []) if discovery else [],
                 "relationship": discovery.get("relationship", "DEPENDS_ON")
                 if discovery
                 else None,
@@ -2071,6 +3067,8 @@ class AuditOrchestrator:
                         "evidence": child.get("evidence", {}),
                         "identifiers": child.get("identifiers", []),
                         "provenance": child.get("provenance", []),
+                        "evidenceLayer": child.get("evidenceLayer"),
+                        "layers": child.get("layers", []),
                         "relationship": relationship,
                         "confidence": child.get("confidence"),
                         "confidenceScore": child.get("confidenceScore", 0),
@@ -2083,13 +3081,15 @@ class AuditOrchestrator:
                         (child_full, child_name, depth + 1, child_sha, child_chain)
                     )
 
+        completeness = self._build_completeness()
         with open(self.args.out, "w") as f:
             json.dump(
                 {
                     "meta": {
                         "root": self.args.repo,
                         "ecosystem": self.args.ecosystem,
-                        "schemaVersion": "2.0",
+                        "schemaVersion": "2.3",
+                        "completeness": completeness,
                     },
                     "nodes": list(self.nodes_map.values()),
                     "edges": self.edges_list,
@@ -2097,10 +3097,70 @@ class AuditOrchestrator:
                 f,
                 indent=2,
             )
-        root_log.info(
-            "Audit graph generation completed successfully.",
-            extra={"output_file": self.args.out},
+        self.citations.save()
+        if completeness["complete"]:
+            root_log.info(
+                "Audit graph generation completed successfully (COMPLETE).",
+                extra={"output_file": self.args.out},
+            )
+        else:
+            root_log.warning(
+                "Audit graph generation completed but is INCOMPLETE — see "
+                "meta.completeness; a re-run may differ until the failing "
+                "sources recover.",
+                extra={
+                    "output_file": self.args.out,
+                    "warnings": completeness["warnings"],
+                },
+            )
+
+    def _build_completeness(self):
+        """Aggregate every partial-search signal into one run-level verdict, so
+        it is obvious when the graph is NOT a complete search. Deterministic:
+        sorted node lists, sorted warnings."""
+        warnings = []
+
+        # Discovery (Sourcegraph) — dependent edges.
+        discovery_incomplete = bool(getattr(self.plugin, "search_incomplete", False))
+        discovery_warnings = sorted(getattr(self.plugin, "search_warnings", []))
+        warnings.extend(discovery_warnings)
+
+        # Citations — per node, plus run-level JOSS seminal index.
+        incomplete_nodes = sorted(set(self.incomplete_nodes))
+        for repo in incomplete_nodes:
+            node = self.nodes_map.get(repo)
+            for w in (node or {}).get("data", {}).get(
+                "paperDiagnostics", {}
+            ).get("warnings", []):
+                warnings.append(f"{repo} citations — {w}")
+
+        joss_failed = getattr(self.citations.joss_plugin, "pages_failed", 0)
+        joss_incomplete = joss_failed > 0
+        if joss_incomplete:
+            warnings.append(
+                f"JOSS seminal index: {joss_failed} page(s) failed to load; "
+                "some seminal DOIs may be missing"
+            )
+
+        complete = not (
+            discovery_incomplete or incomplete_nodes or joss_incomplete
         )
+        return {
+            "complete": complete,
+            "warnings": sorted(set(warnings)),
+            "discovery": {
+                "complete": not discovery_incomplete,
+                "warnings": discovery_warnings,
+            },
+            "citations": {
+                "complete": not incomplete_nodes,
+                "incompleteNodes": incomplete_nodes,
+            },
+            "seminalIndex": {
+                "complete": not joss_incomplete,
+                "jossPagesFailed": joss_failed,
+            },
+        }
 
 
 if __name__ == "__main__":
@@ -2134,6 +3194,43 @@ if __name__ == "__main__":
         help="Hops to crawl the reverse-citation graph from seminal DOIs at the "
         "root node (1 = direct citers only; higher = citers-of-citers). "
         "Non-root nodes always use depth 1.",
+    )
+    parser.add_argument(
+        "--no-paper-relevance",
+        action="store_true",
+        help="Disable paper-relevance scoring; emit every discovered paper "
+        "unscored (historical behavior).",
+    )
+    parser.add_argument(
+        "--paper-relevance-floor",
+        choices=["low", "medium", "high"],
+        default=os.environ.get("PAPER_RELEVANCE_FLOOR", "medium"),
+        help="Lowest relevance tier kept in output when filtering is on "
+        "(default: medium). Seminal papers are always kept.",
+    )
+    parser.add_argument(
+        "--no-paper-filter",
+        action="store_true",
+        help="Keep low-relevance papers in output (scored but not dropped), "
+        "so false positives stay scannable.",
+    )
+    parser.add_argument(
+        "--relevance-llm-url",
+        default=os.environ.get("RELEVANCE_LLM_URL"),
+        help="Base URL of an OpenAI-compatible chat endpoint (llama.cpp / "
+        "LMStudio / vLLM / Ollama) used to break ties on borderline papers. "
+        "Off unless set. Bearer token via RELEVANCE_LLM_TOKEN.",
+    )
+    parser.add_argument(
+        "--relevance-llm-model",
+        default=os.environ.get("RELEVANCE_LLM_MODEL", "local-model"),
+        help="Model name passed to the relevance LLM endpoint.",
+    )
+    parser.add_argument(
+        "--paper-cache",
+        default=os.environ.get("PAPER_CACHE", ".paper_cache.json"),
+        help="Path to the persistent DOI-metadata backfill cache "
+        "(empty string disables).",
     )
     parser.add_argument("--verbose", action="store_true")
     parser.add_argument("--forks", action="store_true")
