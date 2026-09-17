@@ -57,11 +57,15 @@ def _plugin(no_defaults=False, custom_string=None, no_idf=True):
     return A.CppSourcegraphPlugin(args)
 
 
-def _prep(plugin, headers=None, build_paths=None, cmake="", bazel=""):
+def _prep(plugin, headers=None, build_paths=None, cmake="", bazel="", modules=None):
     """Stub all provider-file discovery so compilation touches no network."""
     plugin._discover_header_paths = lambda *a, **k: list(headers or [])
     plugin._discover_build_paths = lambda *a, **k: list(build_paths or [])
     plugin._fetch_build_blobs = lambda *a, **k: {"cmake": cmake, "bazel": bazel}
+    plugin._extract_module_identifiers = lambda *a, **k: [
+        A.Identifier(m, K.MODULE_NAME, "module_unit", A.KIND_WEIGHTS[K.MODULE_NAME])
+        for m in (modules or [])
+    ]
     return plugin
 
 
@@ -316,6 +320,74 @@ def test_score_consumer():
     print("PASS test_score_consumer")
 
 
+# --- Phase A: evidence-layer scoring ---------------------------------------
+
+
+def test_evidence_layers():
+    p = _plugin()
+    assert p._evidence_layers({HP: 3}) == [A.LAYER_SOURCE]
+    assert p._evidence_layers({CP: 5}) == [A.LAYER_BUILD]
+    # two source-layer kinds collapse to a single layer
+    assert p._evidence_layers({HP: 3, HB: 2}) == [A.LAYER_SOURCE]
+    # cross-layer stays distinct and sorted
+    assert p._evidence_layers({HB: 2, CP: 5}) == [A.LAYER_SOURCE, A.LAYER_BUILD]
+    # a repo-slug/vcs reference is build-manifest, not source
+    assert p._evidence_layers({K.REPO_SLUG: 6}) == [A.LAYER_BUILD]
+    # the declared-registry pseudo-kind sits at the registry layer
+    assert p._evidence_layers({"declared": 5.0}) == [A.LAYER_REGISTRY]
+    # unknown kinds default to source-consumption
+    assert p._evidence_layers({"mystery": 1}) == [A.LAYER_SOURCE]
+    print("PASS test_evidence_layers")
+
+
+def test_cross_layer_corroboration():
+    p = _plugin()
+    lone = p._score_consumer({HP: 3}, 1)[0]
+    # Two same-layer signals do NOT corroborate (cross-reach de-dupe): the same
+    # #include seen twice is one fact, not two.
+    same = p._score_consumer({HP: 3, HB: 3}, 1)[0]
+    assert same == lone, (same, lone)
+    # Cross-layer (source + build) DOES corroborate: +CORROBORATION_BONUS.
+    cross = p._score_consumer({HP: 3, CP: 3}, 1)[0]
+    assert cross == round(lone + p.CORROBORATION_BONUS, 2), (cross, lone)
+    print("PASS test_cross_layer_corroboration")
+
+
+def test_narrative_only_capped_low():
+    p = _plugin()
+    orig = dict(A.EVIDENCE_LAYER)
+    A.EVIDENCE_LAYER["prose"] = A.LAYER_NARRATIVE
+    try:
+        # A strong raw weight stays low when the only evidence is narrative.
+        _, tier = p._score_consumer({"prose": 6}, 5)
+        assert tier == "low", tier
+        # A higher layer corroborating lifts it out of the cap.
+        _, tier2 = p._score_consumer({"prose": 6, CP: 5}, 5)
+        assert tier2 == "high", tier2
+    finally:
+        A.EVIDENCE_LAYER.clear()
+        A.EVIDENCE_LAYER.update(orig)
+    print("PASS test_narrative_only_capped_low")
+
+
+def test_high_layer_outranks_lone_source():
+    p = _plugin()
+    orig = dict(A.EVIDENCE_LAYER)
+    A.EVIDENCE_LAYER["soname"] = A.LAYER_BINARY
+    try:
+        # Equal raw weight: a lone binary/link (layer 5) edge outscores a lone
+        # source-consumption (layer 2) edge by LAYER_WEIGHT[5], and clears a
+        # higher tier — a real link beats an inferred #include.
+        src_score, src_tier = p._score_consumer({HP: 4}, 1)
+        bin_score, bin_tier = p._score_consumer({"soname": 4}, 1)
+        assert bin_score == round(src_score + A.LAYER_WEIGHT[A.LAYER_BINARY], 2)
+        assert bin_tier == "high" and src_tier == "medium", (bin_tier, src_tier)
+    finally:
+        A.EVIDENCE_LAYER.clear()
+        A.EVIDENCE_LAYER.update(orig)
+    print("PASS test_high_layer_outranks_lone_source")
+
+
 def test_classify_relationship():
     p = _plugin()
     assert p._classify_relationship(4, 6) == "VENDORED"  # 0.67, enough headers
@@ -489,6 +561,9 @@ def test_end_to_end_emits_identifiers():
     assert c["relationship"] == "DEPENDS_ON", c["relationship"]
     assert c["provenance"] == ["convention", "header_search"], c["provenance"]
     assert c["confidenceScore"] >= 5.5, c["confidenceScore"]
+    # an #include (layer 2) + a find_package (layer 3) span two evidence layers
+    assert c["layers"] == [2, 3], c["layers"]
+    assert c["evidenceLayer"] == 3, c["evidenceLayer"]
     # internal accumulators are cleaned up before returning
     assert "kindWeights" not in c and "matchedHeaders" not in c
     print("PASS test_end_to_end_emits_identifiers")
@@ -579,6 +654,462 @@ def test_stream_search_auth_fast_fail():
         A.requests.get = orig
         log.removeHandler(cap)
     print("PASS test_stream_search_auth_fast_fail")
+# --- paper-relevance scoring (citation discovery) --------------------------
+
+
+def test_deinvert_abstract():
+    f = A.OpenAlexPublicationPlugin._deinvert_abstract
+    assert f({"fast": [1], "zfp": [0], "compression": [2]}) == "zfp fast compression"
+    # a token can appear at several positions
+    assert f({"a": [0, 2], "b": [1]}) == "a b a"
+    # malformed / empty inputs degrade to ""
+    assert f({}) == ""
+    assert f(None) == ""
+    assert f({"x": "nope"}) == ""
+    print("PASS test_deinvert_abstract")
+
+
+def test_parse_work():
+    work = {
+        "doi": "https://doi.org/10.1/ABC",
+        "title": "Fast Compression",
+        "abstract_inverted_index": {"Fast": [0], "lossy": [1]},
+        "authorships": [
+            {"author": {"display_name": "Jane Doe"}},
+            {"author": {"display_name": "John Roe"}},
+        ],
+        "concepts": [{"display_name": "Data compression"}],
+        "topics": [{"display_name": "Floating point"}],
+        "publication_year": 2020,
+        "primary_location": {"source": {"display_name": "SC Proceedings"}},
+        "cited_by_count": 42,
+        "id": "https://openalex.org/W1",
+    }
+    meta = A.OpenAlexPublicationPlugin._parse_work(work, "reverse_citation")
+    assert meta["doi"] == "10.1/ABC", meta["doi"]
+    assert meta["title"] == "Fast Compression"
+    assert meta["abstract"] == "Fast lossy"
+    assert meta["authors"] == ["Jane Doe", "John Roe"], meta["authors"]
+    assert "Data compression" in meta["concepts"]
+    assert "Floating point" in meta["concepts"]
+    assert meta["year"] == 2020
+    assert meta["venue"] == "SC Proceedings"
+    assert meta["openalex_citations"] == 42
+    assert meta["openalex_id"] == "https://openalex.org/W1"
+    assert meta["provenance"] == {"reverse_citation"}
+    print("PASS test_parse_work")
+
+
+def test_provenance_merge():
+    # Regression guard: the old `seminal ∪ general` set-union collapsed every
+    # channel into one bucket, destroying the per-DOI provenance that is the
+    # strongest relevance signal. _merge_meta must UNION provenance and keep
+    # both channels' content (fill blanks, dedupe authors/concepts).
+    merge = A.CitationEngine._merge_meta
+    doi_meta = {}
+    merge(
+        doi_meta,
+        "10.1/x",
+        {
+            "title": "T",
+            "abstract": "",
+            "authors": ["A"],
+            "concepts": ["c1"],
+            "provenance": {"reverse_citation"},
+        },
+    )
+    merge(
+        doi_meta,
+        "10.1/x",
+        {
+            "title": "",
+            "abstract": "abs",
+            "authors": ["B"],
+            "concepts": ["c2"],
+            "provenance": {"keyword_search"},
+        },
+    )
+    m = doi_meta["10.1/x"]
+    assert m["provenance"] == {"reverse_citation", "keyword_search"}, m["provenance"]
+    assert m["title"] == "T"  # non-empty original kept
+    assert m["abstract"] == "abs"  # blank backfilled from second channel
+    assert m["authors"] == ["A", "B"], m["authors"]
+    assert m["concepts"] == ["c1", "c2"], m["concepts"]
+    # empty DOI is a no-op
+    merge(doi_meta, "", {"provenance": {"seminal"}})
+    assert "" not in doi_meta
+    print("PASS test_provenance_merge")
+
+
+def test_paper_relevance_scores():
+    scorer = A.PaperRelevanceScorer()
+    profile = {
+        "name": "zfp",
+        "owner": "LLNL",
+        "topics": {"data compression", "floating point"},
+        "terms": {"lossy", "array", "rate", "tolerance"},
+        "seminal_authors": {"Peter Lindstrom"},
+        "seminal_venues": {"IEEE Transactions on Visualization"},
+    }
+
+    # Seminal paper -> always high on provenance alone.
+    s, tier, _ = scorer.score({}, {"seminal"}, profile)
+    assert tier == "high", (s, tier)
+
+    # A reverse-citation hit clears medium on provenance weight alone.
+    s, tier, _ = scorer.score({}, {"reverse_citation"}, profile)
+    assert tier == "medium", (s, tier)
+
+    # The "zfp" false positive: a bare keyword-search hit on an unrelated
+    # protein paper, no content overlap -> low, dropped by default.
+    protein = {
+        "title": "Structural basis of the ZFP protein domain",
+        "abstract": "We study a zinc finger protein in cells.",
+        "authors": ["Unrelated Author"],
+        "concepts": ["Molecular biology"],
+        "venue": "Cell",
+    }
+    s, tier, ev = scorer.score(protein, {"keyword_search"}, profile)
+    assert tier == "low", (s, tier)
+    assert ev["provenance"] == ["keyword_search"]
+
+    # A real keyword-search hit that corroborates (shared author + concept +
+    # terms) is lifted out of low.
+    real = {
+        "title": "Lossy array compression with fixed rate and tolerance",
+        "abstract": "A lossy compression scheme for floating point arrays.",
+        "authors": ["Peter Lindstrom"],
+        "concepts": ["Data compression"],
+        "venue": "IEEE Transactions on Visualization",
+    }
+    s, tier, ev = scorer.score(real, {"keyword_search"}, profile)
+    assert tier == "high", (s, tier, ev)
+    assert "peter lindstrom" in ev["sharedAuthors"]
+    assert "data compression" in ev["matchedConcepts"]
+    assert ev["matchedTerms"]
+    print("PASS test_paper_relevance_scores")
+
+
+def test_profile_terms_exclude_bare_name():
+    # The bare project-name token must never enter the profile term set, or a
+    # colliding-name paper would corroborate itself.
+    terms = A._significant_terms(
+        "zfp zfp zfp lossy lossy compression array", exclude={"zfp"}
+    )
+    assert "zfp" not in terms
+    assert "lossy" in terms and "compression" in terms
+    print("PASS test_profile_terms_exclude_bare_name")
+
+
+def test_citation_diagnostics():
+    d = A.CitationDiagnostics()
+    assert d.complete is True
+    assert d.summary()["complete"] is True and d.summary()["warnings"] == []
+
+    d.record_http("openalex", A.CitationDiagnostics.RATE_LIMITED)
+    d.record_http("openalex", A.CitationDiagnostics.RATE_LIMITED)
+    d.record_http("crossref", A.CitationDiagnostics.SERVER_ERROR)
+    d.record_cap("citation_total")
+    d.dois_unresolved = 3
+    assert d.complete is False
+    s = d.summary()
+    assert s["complete"] is False
+    assert s["httpFailures"]["openalex"]["rate_limited"] == 2
+    assert s["capsHit"] == ["citation_total"]
+    # warnings are deterministic + human-readable
+    w = d.warnings()
+    assert any("openalex: 2 dropped request(s)" in x for x in w), w
+    assert any("citation_total" in x for x in w)
+    assert any("3 DOI(s) could not be resolved" in x for x in w)
+    # summary is stably ordered (sorted channels/kinds)
+    assert list(s["httpFailures"].keys()) == sorted(s["httpFailures"].keys())
+    print("PASS test_citation_diagnostics")
+
+
+def test_frontier_rank_deterministic():
+    rank = A.CitationEngine._frontier_rank
+    meta = {
+        "10.1/a": {"openalex_citations": 5},
+        "10.1/b": {"openalex_citations": 50},
+        "10.1/c": {},  # unknown count -> 0
+        "10.1/d": {"openalex_citations": 5},
+    }
+    dois = ["10.1/d", "10.1/a", "10.1/c", "10.1/b"]
+    # Most-cited first; ties broken by DOI ascending -> fully deterministic.
+    assert sorted(dois, key=lambda x: rank(meta, x)) == [
+        "10.1/b", "10.1/a", "10.1/d", "10.1/c"
+    ]
+    # Same result regardless of input order (the determinism property).
+    import random as _r
+    shuffled = dois[:]
+    _r.Random(0).shuffle(shuffled)
+    assert sorted(shuffled, key=lambda x: rank(meta, x)) == sorted(
+        dois, key=lambda x: rank(meta, x)
+    )
+    print("PASS test_frontier_rank_deterministic")
+
+
+def test_paper_sort_key_deterministic():
+    key = A.CitationEngine._paper_sort_key
+    papers = [
+        {"doi": "z", "relevanceTier": "low", "relevanceScore": 1.0, "citationDepth": 1},
+        {"doi": "a", "relevanceTier": "high", "relevanceScore": 9.0, "citationDepth": 1},
+        {"doi": "b", "relevanceTier": "high", "relevanceScore": 9.0, "citationDepth": 1},
+        {"doi": "m", "relevanceTier": "medium", "relevanceScore": 5.0, "citationDepth": 0},
+    ]
+    ordered = [p["doi"] for p in sorted(papers, key=key)]
+    # high before medium before low; ties (a,b both 9.0 high) broken by DOI.
+    assert ordered == ["a", "b", "m", "z"], ordered
+    print("PASS test_paper_sort_key_deterministic")
+
+
+def test_expand_citations_caps_and_determinism():
+    # Build an engine without __init__ (which would hit the JOSS network).
+    eng = object.__new__(A.CitationEngine)
+    eng.openalex_plugin = types.SimpleNamespace(
+        discover_citing=lambda batch, log: {}
+    )
+    eng.opencitations_plugin = types.SimpleNamespace(
+        citing_dois=lambda batch, log: set()
+    )
+    saved_cap = A.CITATION_MAX_PER_LEVEL
+    try:
+        A.CITATION_MAX_PER_LEVEL = 2
+        diag = A.CitationDiagnostics()
+        doi_meta = {
+            "s1": {"openalex_citations": 5},
+            "s2": {"openalex_citations": 10},
+            "s3": {"openalex_citations": 1},
+        }
+        depth_of = eng._expand_citations(
+            {"s1", "s2", "s3"}, 1, doi_meta, A.defaultdict(set), LOG, diag
+        )
+        # Frontier (3) exceeded per-level cap (2) -> recorded, not swallowed.
+        assert "citation_per_level" in diag.caps_hit
+        assert diag.complete is False
+        # seminal DOIs are all at depth 0 regardless of truncation.
+        assert all(depth_of[d] == 0 for d in ("s1", "s2", "s3"))
+    finally:
+        A.CITATION_MAX_PER_LEVEL = saved_cap
+    print("PASS test_expand_citations_caps_and_determinism")
+
+
+def test_http_get_json_records_channel_failure():
+    plugin = A.PublicationPlugin("e@x.com")
+    plugin.diag = A.CitationDiagnostics()
+
+    class Resp:
+        def __init__(self, status):
+            self.status_code = status
+            self.headers = {}
+
+        def json(self):
+            return {}
+
+    saved_get, saved_sleep = A.requests.get, A.time.sleep
+    try:
+        A.time.sleep = lambda s: None
+        # Exhausted 429 -> recorded against the named channel as rate_limited.
+        A.requests.get = lambda *a, **k: Resp(429)
+        assert plugin._http_get_json("http://x", max_attempts=2, channel="openalex") is None
+        assert plugin.diag.http_failures["openalex"]["rate_limited"] == 1
+        # A definitive 404 is a complete answer -> NOT recorded as a failure.
+        A.requests.get = lambda *a, **k: Resp(404)
+        assert plugin._http_get_json("http://x", max_attempts=2, channel="crossref") is None
+        assert "crossref" not in plugin.diag.http_failures
+    finally:
+        A.requests.get, A.time.sleep = saved_get, saved_sleep
+    print("PASS test_http_get_json_records_channel_failure")
+
+
+def test_http_get_json_retry_after_cap():
+    # Regression: a quota-limited service (OpenAlex was observed sending
+    # Retry-After: 30474) must not stall the crawl. A Retry-After beyond the
+    # cap abandons the single optional call instead of sleeping for hours.
+    plugin = A.PublicationPlugin("e@x.com")
+
+    class Resp:
+        def __init__(self, status, retry_after=None, body=None):
+            self.status_code = status
+            self.headers = {}
+            if retry_after is not None:
+                self.headers["Retry-After"] = retry_after
+            self._body = body
+
+        def json(self):
+            return self._body
+
+    slept = []
+    saved_get, saved_sleep = A.requests.get, A.time.sleep
+    try:
+        A.time.sleep = lambda s: slept.append(s)
+
+        # Huge Retry-After -> give up immediately, no sleep, return None.
+        A.requests.get = lambda *a, **k: Resp(429, retry_after="30474")
+        assert plugin._http_get_json("http://x", max_attempts=4) is None
+        assert slept == [], slept  # never slept the multi-hour cool-off
+
+        # A sane Retry-After within the cap IS honored (bounded), then success.
+        seq = [Resp(429, retry_after="3"), Resp(200, body={"ok": True})]
+        A.requests.get = lambda *a, **k: seq.pop(0)
+        assert plugin._http_get_json("http://x", max_attempts=4) == {"ok": True}
+        assert slept and max(slept) <= A.HTTP_RETRY_AFTER_CAP
+    finally:
+        A.requests.get, A.time.sleep = saved_get, saved_sleep
+    print("PASS test_http_get_json_retry_after_cap")
+
+
+def test_llm_judge_offline():
+    # No URL -> disabled, never calls out.
+    off = A.LLMRelevanceJudge(None, "m")
+    assert off.enabled is False
+    assert off.judge({"name": "zfp"}, {"title": "t"}, LOG) is None
+
+    judge = A.LLMRelevanceJudge("http://localhost:9", "local-model", token="secret")
+    assert judge.enabled is True
+
+    captured = {}
+
+    class Resp:
+        status_code = 200
+
+        def __init__(self, content):
+            self._content = content
+
+        def json(self):
+            return {"choices": [{"message": {"content": self._content}}]}
+
+    saved = A.requests.post
+    try:
+        # A well-formed verdict embedded in prose is extracted; auth header set.
+        def post_ok(url, headers=None, json=None, timeout=None):
+            captured["url"] = url
+            captured["headers"] = headers
+            captured["json"] = json
+            return Resp(
+                'Sure! {"relevant": true, "confidence": 0.9, "reason": "cites zfp"}'
+            )
+
+        A.requests.post = post_ok
+        v = judge.judge(
+            {"name": "zfp", "owner": "LLNL", "topics": set(), "terms": set()},
+            {"title": "Lossy compression", "abstract": "uses zfp", "venue": "SC"},
+            LOG,
+        )
+        assert v == {"relevant": True, "confidence": 0.9, "reason": "cites zfp"}, v
+        assert captured["url"] == "http://localhost:9/v1/chat/completions"
+        assert captured["headers"]["Authorization"] == "Bearer secret"
+        assert captured["json"]["model"] == "local-model"
+
+        # Non-200 -> None (graceful).
+        def post_500(*a, **k):
+            r = Resp("")
+            r.status_code = 500
+            return r
+
+        A.requests.post = post_500
+        assert judge.judge({}, {}, LOG) is None
+
+        # Malformed body (no JSON object) -> None.
+        A.requests.post = lambda *a, **k: Resp("no json here")
+        assert judge.judge({}, {}, LOG) is None
+
+        # A raised exception (server down) -> None, degrades to heuristic.
+        def boom(*a, **k):
+            raise A.requests.exceptions.RequestException("refused")
+
+        A.requests.post = boom
+        assert judge.judge({}, {}, LOG) is None
+    finally:
+        A.requests.post = saved
+    print("PASS test_llm_judge_offline")
+
+
+def test_llm_apply_and_borderline():
+    E = A.CitationEngine
+    # Borderline == within the margin just under a cutoff.
+    assert E._is_borderline(A.PAPER_TIER_MEDIUM - 0.5) is True
+    assert E._is_borderline(A.PAPER_TIER_HIGH - 0.5) is True
+    assert E._is_borderline(0.5) is False  # comfortably low
+    assert E._is_borderline(A.PAPER_TIER_MEDIUM) is False  # already clears
+
+    below = A.PAPER_TIER_MEDIUM - 0.5
+    # Confident "relevant" promotes across the nearest cutoff -> medium.
+    score, tier = E._apply_llm(below, "low", {"relevant": True, "confidence": 0.9})
+    assert tier == "medium" and score >= A.PAPER_TIER_MEDIUM, (score, tier)
+    # Confident "not relevant" demotes.
+    score, tier = E._apply_llm(
+        A.PAPER_TIER_MEDIUM + 0.2, "medium", {"relevant": False, "confidence": 0.9}
+    )
+    assert tier == "low", (score, tier)
+    # Low confidence changes nothing.
+    score, tier = E._apply_llm(below, "low", {"relevant": True, "confidence": 0.1})
+    assert tier == "low" and score == round(below, 2), (score, tier)
+    print("PASS test_llm_apply_and_borderline")
+
+
+# --- Phase B: C++20 modules ------------------------------------------------
+
+
+def _content(*lines):
+    return {"type": "content", "chunkMatches": [{"content": ln} for ln in lines]}
+
+
+def test_extract_module_identifiers():
+    p = _plugin()
+    p._stream_search = lambda q, log: [
+        _content("export module fmt;"),
+        _content("  export module boost.json;"),
+        _content("export module fmt:core;"),  # partition -> primary fmt (dup)
+        _content("export module std;"),  # stoplisted
+        _content("module fmt;"),  # not an interface decl (no `export`)
+    ]
+    ids = p._extract_module_identifiers("github.com/o/r", LOG)
+    vals = sorted(i.value for i in ids)
+    assert vals == ["boost.json", "fmt"], vals
+    assert all(i.kind == K.MODULE_NAME for i in ids)
+    assert all(i.provenance == "module_unit" for i in ids)
+    print("PASS test_extract_module_identifiers")
+
+
+def test_module_consumer_pattern():
+    p = _plugin()
+    (regex, ev), = p._patterns_for_identifier(
+        A.Identifier("boost.json", K.MODULE_NAME, "t", 4)
+    )
+    assert ev == "import"
+    assert re.search(regex, "import boost.json;")
+    assert re.search(regex, "export import boost.json;")
+    assert re.search(regex, "  import boost.json ;")
+    # dotted name is escaped: `boost.json` must not match `boostxjson`
+    assert not re.search(regex, "import boostxjson;")
+    # a Python-style import without a semicolon is not a C++ module import
+    assert not re.search(regex, "import boost.json")
+    print("PASS test_module_consumer_pattern")
+
+
+def test_header_unit_import_patterns():
+    p = _plugin()
+    pats = p._patterns_for_identifier(A.Identifier("zfp.h", K.HEADER_BASENAME, "t", 2))
+    evs = {ev for _, ev in pats}
+    assert evs == {"include", "header_unit"}, evs
+    inc = next(r for r, ev in pats if ev == "include")
+    imp = next(r for r, ev in pats if ev == "header_unit")
+    assert re.search(inc, "#include <zfp.h>")
+    assert re.search(imp, "import <zfp.h>;")
+    assert re.search(imp, 'import "subdir/zfp.h";')
+    assert not re.search(imp, "#include <zfp.h>")  # include is not a header-unit import
+    print("PASS test_header_unit_import_patterns")
+
+
+def test_module_kind_weight_layer_and_ungated():
+    p = _plugin()
+    idf = A.Identifier("fmt", K.MODULE_NAME, "module_unit", A.KIND_WEIGHTS[K.MODULE_NAME])
+    assert A.KIND_WEIGHTS[K.MODULE_NAME] == 4
+    assert A.EVIDENCE_LAYER[K.MODULE_NAME] == A.LAYER_SOURCE
+    # module names are distinctive by context -> never IDF-gated
+    assert p._is_gated(idf, frozenset()) is False
+    print("PASS test_module_kind_weight_layer_and_ungated")
 
 
 if __name__ == "__main__":

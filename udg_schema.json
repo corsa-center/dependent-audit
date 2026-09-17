@@ -9,7 +9,18 @@
       "properties": {
         "root": {"type": "string"},
         "ecosystem": {"type": "string"},
-        "schemaVersion": {"type": "string"}
+        "schemaVersion": {"type": "string"},
+        "completeness": {
+          "type": "object",
+          "description": "Whether this graph is a COMPLETE search. Determinism guarantee: two runs over the same live data agree; when a transient failure (rate limit, timeout) or a bounded cap makes a run partial, it is reported here rather than silently producing a smaller graph.",
+          "properties": {
+            "complete": {"type": "boolean", "description": "True only when discovery, citations, and the seminal index all completed without dropped requests or truncation."},
+            "warnings": {"type": "array", "items": {"type": "string"}, "description": "Deterministic, human-readable list of everything that made the run partial."},
+            "discovery": {"type": "object", "description": "Sourcegraph dependent-search completeness (truncation / abandoned / interrupted streams)."},
+            "citations": {"type": "object", "description": "Per-node citation completeness; incompleteNodes lists repos whose paper search was partial."},
+            "seminalIndex": {"type": "object", "description": "JOSS seminal-DOI index load status (jossPagesFailed > 0 can hide seminal papers)."}
+          }
+        }
       }
     },
     "nodes": {
@@ -49,6 +60,16 @@
                 "description": "How the matched identifiers were learned (include_tree, cmake_config, cmake_project, pc_file, bazel_module, vcs, convention, ...).",
                 "items": {"type": "string"}
               },
+              "evidenceLayer": {
+                "type": ["integer", "null"],
+                "description": "Strongest Axis-A evidence layer observed for this edge: 1 narrative, 2 source-consumption, 3 build-manifest, 4 package-registry, 5 binary/link, 6 attestation/SBOM, 7 bibliometric.",
+                "enum": [1, 2, 3, 4, 5, 6, 7, null]
+              },
+              "layers": {
+                "type": "array",
+                "description": "All distinct Axis-A evidence layers observed for this edge (sorted). Cross-layer corroboration drives confidence.",
+                "items": {"type": "integer", "enum": [1, 2, 3, 4, 5, 6, 7]}
+              },
               "relationship": {
                 "type": ["string", "null"],
                 "description": "Edge relationship: DEPENDS_ON | VENDORED (reproduces most of the provider's headers) | MIRROR (GitHub fork).",
@@ -66,8 +87,28 @@
                     "url": {"type": "string"},
                     "citations": {"type": "integer", "description": "Crossref is-referenced-by count."},
                     "citationDepth": {"type": "integer", "description": "Hops from a seminal DOI in the reverse-citation crawl: 0 = seminal (the repo's own paper) or a direct text/full-text seed hit, 1 = direct citer, 2+ = citer-of-citer."},
-                    "relation": {"type": "string", "enum": ["seminal", "citing"], "description": "seminal when citationDepth == 0, else citing."}
+                    "relation": {"type": "string", "enum": ["seminal", "citing"], "description": "seminal when citationDepth == 0, else citing."},
+                    "authors": {"type": "array", "items": {"type": "string"}, "description": "Author display names (OpenAlex or Crossref)."},
+                    "year": {"type": ["integer", "null"], "description": "Publication year."},
+                    "concepts": {"type": "array", "items": {"type": "string"}, "description": "OpenAlex concepts/topics (+ Crossref subjects) for the work."},
+                    "provenance": {"type": "array", "items": {"type": "string", "enum": ["seminal", "reverse_citation", "reverse_citation_oc", "text_scrape", "web_scrape", "keyword_search"]}, "description": "Discovery channels that surfaced this DOI; strongest relevance signal."},
+                    "relevanceScore": {"type": "number", "description": "Paper-relevance corroboration score (provenance + author/term/concept/venue overlap)."},
+                    "relevanceTier": {"type": "string", "enum": ["low", "medium", "high"], "description": "Relevance band from relevanceScore. Low-tier citing papers are dropped by default (see --no-paper-filter)."},
+                    "relevanceEvidence": {"type": "object", "description": "Per-signal breakdown: provenance, sharedAuthors, matchedTerms, matchedConcepts, venue, channels, and optional llm verdict."}
                   }
+                }
+              },
+              "paperDiagnostics": {
+                "type": "object",
+                "description": "Completeness of THIS node's citation search. complete=false means a rate limit / timeout / cap dropped data, so the papers list may differ on another run.",
+                "properties": {
+                  "complete": {"type": "boolean"},
+                  "warnings": {"type": "array", "items": {"type": "string"}},
+                  "httpFailures": {"type": "object", "description": "Per-channel (openalex, opencitations, crossref) counts of dropped requests by kind (rate_limited, server_error, request_error, bad_response)."},
+                  "capsHit": {"type": "array", "items": {"type": "string"}, "description": "Bounded caps reached: citation_per_level, citation_total."},
+                  "doisSeen": {"type": "integer"},
+                  "doisUnresolved": {"type": "integer", "description": "DOIs that resolved to no metadata at all (dropped for lack of data, not low relevance)."},
+                  "seminalFound": {"type": "integer"}
                 }
               }
             }
@@ -96,6 +137,14 @@
           "provenance": {
             "type": "array",
             "items": {"type": "string"}
+          },
+          "evidenceLayer": {
+            "type": ["integer", "null"],
+            "enum": [1, 2, 3, 4, 5, 6, 7, null]
+          },
+          "layers": {
+            "type": "array",
+            "items": {"type": "integer", "enum": [1, 2, 3, 4, 5, 6, 7]}
           },
           "relationship": {
             "type": "string",
