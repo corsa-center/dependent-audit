@@ -239,8 +239,14 @@ class PublicationPlugin:
             )
 
     def _http_get_json(
-        self, url, params=None, headers=None, timeout=10, max_attempts=4,
-        log=None, channel=None,
+        self,
+        url,
+        params=None,
+        headers=None,
+        timeout=10,
+        max_attempts=4,
+        log=None,
+        channel=None,
     ):
         """GET returning parsed JSON with exponential backoff on 429/5xx and
         transient request errors. Modeled on `_graphql_query`. Returns the
@@ -493,9 +499,7 @@ class OpenAlexPublicationPlugin(PublicationPlugin):
         return {
             "doi": doi,
             "title": work.get("title") or "",
-            "abstract": cls._deinvert_abstract(
-                work.get("abstract_inverted_index")
-            ),
+            "abstract": cls._deinvert_abstract(work.get("abstract_inverted_index")),
             "authors": authors,
             "concepts": concepts,
             "year": work.get("publication_year"),
@@ -594,7 +598,9 @@ class OpenCitationsPlugin(PublicationPlugin):
         for doi in dois:
             log.debug("OpenCitations reverse-citation lookup", extra={"doi": doi})
             data = self._http_get_json(
-                f"{OPENCITATIONS_API_URL}{doi}", timeout=10, log=log,
+                f"{OPENCITATIONS_API_URL}{doi}",
+                timeout=10,
+                log=log,
                 channel="opencitations",
             )
             if isinstance(data, list):
@@ -628,16 +634,17 @@ class CrossrefPublicationPlugin(PublicationPlugin):
         containers = item.get("container-title") or ["Unknown"]
         authors = []
         for a in item.get("author", []) or []:
-            name = " ".join(
-                filter(None, [a.get("given"), a.get("family")])
-            ).strip()
+            name = " ".join(filter(None, [a.get("given"), a.get("family")])).strip()
             if name:
                 authors.append(name)
         year = None
-        parts = (item.get("published") or item.get("issued") or {}).get(
-            "date-parts"
-        )
-        if isinstance(parts, list) and parts and isinstance(parts[0], list) and parts[0]:
+        parts = (item.get("published") or item.get("issued") or {}).get("date-parts")
+        if (
+            isinstance(parts, list)
+            and parts
+            and isinstance(parts[0], list)
+            and parts[0]
+        ):
             year = parts[0][0]
         return {
             "title": titles[0] if titles else "",
@@ -674,9 +681,7 @@ class PaperRelevanceScorer:
         signals = {}
         evidence = {}
 
-        prov_weight = max(
-            (PROVENANCE_WEIGHT.get(p, 0) for p in provenance), default=0
-        )
+        prov_weight = max((PROVENANCE_WEIGHT.get(p, 0) for p in provenance), default=0)
         if prov_weight:
             signals["provenance"] = float(prov_weight)
         evidence["provenance"] = sorted(provenance)
@@ -697,9 +702,7 @@ class PaperRelevanceScorer:
             matched_terms = sorted(paper_tokens & profile_terms)
             if matched_terms:
                 fraction = len(matched_terms) / len(profile_terms)
-                signals["term_overlap"] = PAPER_TERM_OVERLAP_WEIGHT * min(
-                    1.0, fraction
-                )
+                signals["term_overlap"] = PAPER_TERM_OVERLAP_WEIGHT * min(1.0, fraction)
                 evidence["matchedTerms"] = matched_terms
 
         profile_topics = {t.lower() for t in profile.get("topics", set())}
@@ -785,13 +788,9 @@ class LLMRelevanceJudge:
             )
             if resp.status_code != 200:
                 if log:
-                    log.debug(
-                        "LLM judge non-200", extra={"status": resp.status_code}
-                    )
+                    log.debug("LLM judge non-200", extra={"status": resp.status_code})
                 return None
-            content = (
-                resp.json()["choices"][0]["message"]["content"]
-            )
+            content = resp.json()["choices"][0]["message"]["content"]
             match = re.search(r"\{.*\}", content, re.DOTALL)
             if not match:
                 return None
@@ -893,9 +892,7 @@ class CitationEngine:
             # Bound the fan-out deterministically: rank the frontier (most-cited
             # first, DOI tiebreak) BEFORE slicing, so which DOIs get expanded
             # when the cap bites does not depend on set-iteration order.
-            ranked = sorted(
-                frontier, key=lambda d: self._frontier_rank(doi_meta, d)
-            )
+            ranked = sorted(frontier, key=lambda d: self._frontier_rank(doi_meta, d))
             batch = ranked[:CITATION_MAX_PER_LEVEL]
             if len(frontier) > CITATION_MAX_PER_LEVEL:
                 log.warning(
@@ -921,9 +918,7 @@ class CitationEngine:
             for d in new:
                 depth_of[d] = depth
 
-            log.info(
-                f"Citation hop {depth}: +{len(new)} DOIs ({len(depth_of)} total)"
-            )
+            log.info(f"Citation hop {depth}: +{len(new)} DOIs ({len(depth_of)} total)")
 
             if len(depth_of) >= CITATION_MAX_TOTAL:
                 log.warning(
@@ -981,15 +976,29 @@ class CitationEngine:
         )
 
     def get_publications(
-        self, repo_url, repo_meta, target_urls, all_text, keywords, log,
-        citation_depth=CITATION_DEFAULT_DEPTH, profile=None,
+        self,
+        repo_url,
+        repo_meta,
+        target_urls,
+        all_text,
+        keywords,
+        log,
+        citation_depth=CITATION_DEFAULT_DEPTH,
+        profile=None,
     ):
         diag = CitationDiagnostics()
         self._apply_diag(diag)
         try:
             papers = self._get_publications(
-                repo_url, repo_meta, target_urls, all_text, keywords, log,
-                citation_depth, profile, diag,
+                repo_url,
+                repo_meta,
+                target_urls,
+                all_text,
+                keywords,
+                log,
+                citation_depth,
+                profile,
+                diag,
             )
         finally:
             self._apply_diag(None)  # don't leak this node's collector to the next
@@ -1001,8 +1010,16 @@ class CitationEngine:
         return papers, diag.summary()
 
     def _get_publications(
-        self, repo_url, repo_meta, target_urls, all_text, keywords, log,
-        citation_depth, profile, diag,
+        self,
+        repo_url,
+        repo_meta,
+        target_urls,
+        all_text,
+        keywords,
+        log,
+        citation_depth,
+        profile,
+        diag,
     ):
         seminal_dois = set()
         seminal_dois.update(self.joss_plugin.discover_seminal(repo_url, repo_meta, log))
@@ -1068,8 +1085,13 @@ class CitationEngine:
         log.debug(f"Resolving/scoring {len(depth_of)} unique DOIs")
         for doi, doi_depth in depth_of.items():
             paper = self._resolve_and_score(
-                doi, doi_depth, doi_meta.get(doi), doi_provenance.get(doi, set()),
-                seminal_records.get(doi), profile, log,
+                doi,
+                doi_depth,
+                doi_meta.get(doi),
+                doi_provenance.get(doi, set()),
+                seminal_records.get(doi),
+                profile,
+                log,
             )
             if paper is None:
                 # No metadata at all resolved for this DOI — a gap, not a low
@@ -1331,58 +1353,52 @@ class GitHubEnricher:
             return {}
 
         return {
-                "isFork": data.get("isFork", False),
-                "stars": data.get("stargazerCount", 0),
-                "description": data.get("description", ""),
-                "homepageUrl": data.get("homepageUrl", ""),
-                "license": data.get("licenseInfo", {}).get("name", "None")
-                if data.get("licenseInfo")
-                else "None",
-                "lastUpdate": data.get("updatedAt", ""),
-                "commitSha": data.get("defaultBranchRef", {})
-                .get("target", {})
-                .get("oid", "HEAD")
-                if data.get("defaultBranchRef")
-                else "HEAD",
-                "commits": data.get("defaultBranchRef", {})
-                .get("target", {})
-                .get("history", {})
-                .get("totalCount", 0)
-                if data.get("defaultBranchRef")
-                else 0,
-                "latestRelease": data.get("releases", {})
-                .get("nodes", [{"publishedAt": ""}])[0]
-                .get("publishedAt", "")
-                if data.get("releases", {}).get("nodes")
-                else "",
-                "contributors": data.get("mentionableUsers", {}).get(
-                    "totalCount", 0
-                )
-                if data.get("mentionableUsers")
-                else 0,
-                "readme": data.get("readme", {}).get("text", "")
-                if data.get("readme")
-                else "",
-                "cff": data.get("cff", {}).get("text", "")
-                if data.get("cff")
-                else "",
-                "codemeta": data.get("codemeta", {}).get("text", "")
-                if data.get("codemeta")
-                else "",
-                "zenodo": data.get("zenodo", {}).get("text", "")
-                if data.get("zenodo")
-                else "",
-                "zenodo_alt": data.get("zenodo_alt", {}).get("text", "")
-                if data.get("zenodo_alt")
-                else "",
-                "topics": [
-                    n["topic"]["name"]
-                    for n in (
-                        data.get("repositoryTopics", {}) or {}
-                    ).get("nodes", [])
-                    if n.get("topic", {}).get("name")
-                ],
-            }
+            "isFork": data.get("isFork", False),
+            "stars": data.get("stargazerCount", 0),
+            "description": data.get("description", ""),
+            "homepageUrl": data.get("homepageUrl", ""),
+            "license": data.get("licenseInfo", {}).get("name", "None")
+            if data.get("licenseInfo")
+            else "None",
+            "lastUpdate": data.get("updatedAt", ""),
+            "commitSha": data.get("defaultBranchRef", {})
+            .get("target", {})
+            .get("oid", "HEAD")
+            if data.get("defaultBranchRef")
+            else "HEAD",
+            "commits": data.get("defaultBranchRef", {})
+            .get("target", {})
+            .get("history", {})
+            .get("totalCount", 0)
+            if data.get("defaultBranchRef")
+            else 0,
+            "latestRelease": data.get("releases", {})
+            .get("nodes", [{"publishedAt": ""}])[0]
+            .get("publishedAt", "")
+            if data.get("releases", {}).get("nodes")
+            else "",
+            "contributors": data.get("mentionableUsers", {}).get("totalCount", 0)
+            if data.get("mentionableUsers")
+            else 0,
+            "readme": data.get("readme", {}).get("text", "")
+            if data.get("readme")
+            else "",
+            "cff": data.get("cff", {}).get("text", "") if data.get("cff") else "",
+            "codemeta": data.get("codemeta", {}).get("text", "")
+            if data.get("codemeta")
+            else "",
+            "zenodo": data.get("zenodo", {}).get("text", "")
+            if data.get("zenodo")
+            else "",
+            "zenodo_alt": data.get("zenodo_alt", {}).get("text", "")
+            if data.get("zenodo_alt")
+            else "",
+            "topics": [
+                n["topic"]["name"]
+                for n in (data.get("repositoryTopics", {}) or {}).get("nodes", [])
+                if n.get("topic", {}).get("name")
+            ],
+        }
 
     @staticmethod
     def _rate_limit_wait(resp, cap=60):
@@ -2081,9 +2097,7 @@ class CppSourcegraphPlugin(EcosystemPlugin):
 
     def _parse_bazel(self, text):
         """Extract the Bazel module name from MODULE.bazel."""
-        m = re.search(
-            r"module\s*\(\s*[^)]*?name\s*=\s*[\x22']([^\x22']+)[\x22']", text
-        )
+        m = re.search(r"module\s*\(\s*[^)]*?name\s*=\s*[\x22']([^\x22']+)[\x22']", text)
         if m:
             return [
                 Identifier(
@@ -2177,8 +2191,7 @@ class CppSourcegraphPlugin(EcosystemPlugin):
         legitimately contain regex metacharacters (e.g. `libsigc++`, `libxml++`),
         and an unescaped `+`/`*` would corrupt the combined search regex."""
         return "".join(
-            f"[{c.lower()}{c.upper()}]" if c.isalpha() else re.escape(c)
-            for c in name
+            f"[{c.lower()}{c.upper()}]" if c.isalpha() else re.escape(c) for c in name
         )
 
     # --- declared-dependent registries (opt-in via --declared-sources) ------
@@ -2263,7 +2276,9 @@ class CppSourcegraphPlugin(EcosystemPlugin):
                 dep_paths |= self._registry_manifest_paths(
                     cfg, content_re, log, cap=self.DECLARED_CAP
                 )
-            blobs = self._fetch_blobs(cfg["repo"], list(dep_paths)[: self.DECLARED_CAP], log)
+            blobs = self._fetch_blobs(
+                cfg["repo"], list(dep_paths)[: self.DECLARED_CAP], log
+            )
             for content in blobs.values():
                 m = re.search(cfg["url_re"], content or "")
                 if not m:
@@ -2323,9 +2338,7 @@ class CppSourcegraphPlugin(EcosystemPlugin):
                 IdentifierKind.CMAKE_PACKAGE,
                 IdentifierKind.PKGCONFIG,
             ):
-                idset.add(
-                    Identifier(curr_name, kind, "convention", KIND_WEIGHTS[kind])
-                )
+                idset.add(Identifier(curr_name, kind, "convention", KIND_WEIGHTS[kind]))
 
             for idf in self._extract_build_identifiers(search_id, log):
                 idset.add(idf)
@@ -2512,9 +2525,7 @@ class CppSourcegraphPlugin(EcosystemPlugin):
     def _evidence_layers(kind_weights):
         """The distinct Axis-A evidence layers present in a match set, sorted.
         Unknown kinds default to LAYER_SOURCE (the historical assumption)."""
-        return sorted(
-            {EVIDENCE_LAYER.get(kind, LAYER_SOURCE) for kind in kind_weights}
-        )
+        return sorted({EVIDENCE_LAYER.get(kind, LAYER_SOURCE) for kind in kind_weights})
 
     def _score_consumer(self, kind_weights, match_count):
         """Corroboration score + tier from the per-kind best pattern weights.
@@ -2784,18 +2795,14 @@ class CppSourcegraphPlugin(EcosystemPlugin):
             if self._enabled_registries()
             else {}
         )
-        idset = self._compile_identifier_set(
-            curr_id, curr_name, log, declared_aliases
-        )
+        idset = self._compile_identifier_set(curr_id, curr_name, log, declared_aliases)
         protected_stems = {curr_name.lower()}
         patterns = self._patterns_from(idset, log, protected_stems)
         self.specificity.save()
         if not patterns:
             log.info("No search heuristics determined. Skipping.")
             return []
-        compiled_patterns = [
-            (p, re.compile(p.regex, re.IGNORECASE)) for p in patterns
-        ]
+        compiled_patterns = [(p, re.compile(p.regex, re.IGNORECASE)) for p in patterns]
 
         full_regex = f"({'|'.join(p.regex for p in patterns)})"
         fork_filter = "fork:yes" if self.args.forks else "fork:no"
@@ -2995,8 +3002,14 @@ class AuditOrchestrator:
         }
 
         papers, paper_diag = self.citations.get_publications(
-            full_url, meta, target_urls, all_text, keywords, log,
-            citation_depth=citation_depth, profile=profile,
+            full_url,
+            meta,
+            target_urls,
+            all_text,
+            keywords,
+            log,
+            citation_depth=citation_depth,
+            profile=profile,
         )
         if not paper_diag.get("complete"):
             self.incomplete_nodes.append(repo_name)
@@ -3234,9 +3247,12 @@ class AuditOrchestrator:
         incomplete_nodes = sorted(set(self.incomplete_nodes))
         for repo in incomplete_nodes:
             node = self.nodes_map.get(repo)
-            for w in (node or {}).get("data", {}).get(
-                "paperDiagnostics", {}
-            ).get("warnings", []):
+            for w in (
+                (node or {})
+                .get("data", {})
+                .get("paperDiagnostics", {})
+                .get("warnings", [])
+            ):
                 warnings.append(f"{repo} citations — {w}")
 
         joss_failed = getattr(self.citations.joss_plugin, "pages_failed", 0)
@@ -3247,9 +3263,7 @@ class AuditOrchestrator:
                 "some seminal DOIs may be missing"
             )
 
-        complete = not (
-            discovery_incomplete or incomplete_nodes or joss_incomplete
-        )
+        complete = not (discovery_incomplete or incomplete_nodes or joss_incomplete)
         return {
             "complete": complete,
             "warnings": sorted(set(warnings)),
