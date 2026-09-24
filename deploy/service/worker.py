@@ -69,7 +69,12 @@ def _run_job(store, job_id):
         return
 
     env = auditlib.build_env(payload)
-    log.info("start job=%s repo=%s depth=%s", job_id, payload.get("repo"), payload.get("depth"))
+    log.info(
+        "start job=%s repo=%s depth=%s",
+        job_id,
+        payload.get("repo"),
+        payload.get("depth"),
+    )
     started = time.time()
     try:
         proc = subprocess.run(
@@ -157,7 +162,9 @@ def main():
     store = JobStore(JOBS_DIR)
     log.info(
         "worker up jobs_dir=%s concurrency=%s timeout=%ss",
-        JOBS_DIR, CONCURRENCY, AUDIT_TIMEOUT,
+        JOBS_DIR,
+        CONCURRENCY,
+        AUDIT_TIMEOUT,
     )
 
     signal.signal(signal.SIGTERM, lambda *_: _stop.set())
@@ -189,9 +196,7 @@ def main():
                         with lock:
                             inflight.add(job_id)
                         fut = pool.submit(_run_job, store, job_id)
-                        fut.add_done_callback(
-                            lambda f, jid=job_id: _done(jid, f)
-                        )
+                        fut.add_done_callback(lambda f, jid=job_id: _done(jid, f))
 
             if JOB_TTL > 0 and time.time() - last_sweep > max(JOB_TTL, 60):
                 _sweep_expired(store)
