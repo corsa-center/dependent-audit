@@ -14,7 +14,7 @@ COPY deploy/service/requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir -r /app/requirements.txt
 
 # The crawler (single-file) plus the service code.
-COPY audit_dependents.py /app/audit_dependents.py
+COPY src/dependent_audit/audit_dependents.py /app/audit_dependents.py
 COPY deploy/service/auditlib.py /app/auditlib.py
 COPY deploy/service/app.py /app/app.py
 COPY deploy/service/worker.py /app/worker.py
