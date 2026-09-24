@@ -21,15 +21,16 @@ dependencies = [
     "requests>=2.31.0",
 ]
 
-[project.urls]
-Homepage = "https://github.com/corsa-center/dependent-audit"
-Source = "https://github.com/corsa-center/dependent-audit"
-
 [dependency-groups]
 dev = [
+    "pytest>=8.3.5",
     "ruff>=0.16.8",
     "ty>=0.0.83",
 ]
+
+[project.urls]
+Homepage = "https://github.com/corsa-center/dependent-audit"
+Source = "https://github.com/corsa-center/dependent-audit"
 
 [tool.uv]
 package = true

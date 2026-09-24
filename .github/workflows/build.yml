@@ -15,7 +15,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: astral-sh/setup-uv@v5
+      - uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
           version: "latest"
@@ -35,13 +35,13 @@ jobs:
           if-no-files-found: error
 
   test-package:
-    name: Test Wheel
+    name: Integration Tests
     needs: build-package
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - uses: astral-sh/setup-uv@v5
+      - uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
           version: "latest"
@@ -62,4 +62,7 @@ jobs:
           uv pip install dist/*.whl pytest
 
       - name: Test wheel
-        run: uv run pytest --import-mode=importlib
+        run: |
+          mkdir test_env
+          cd test_env
+          uv run pytest --pyargs dependent_audit --rootdir=../
