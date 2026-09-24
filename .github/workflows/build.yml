@@ -65,4 +65,5 @@ jobs:
         run: |
           mkdir test_env
           cd test_env
-          uv run pytest --pyargs dependent_audit --rootdir=../
+          uv run pytest ../tests
+          uv run pytest ../deploy/service/tests/
