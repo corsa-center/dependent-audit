@@ -16,11 +16,11 @@ jobs:
 
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.7'
 
       - name: Install runtime dep
         # audit_dependents.py (imported by the identifier-set suite) needs requests.
-        run: pip install requests
+        run: uv sync
 
       - name: Identifier-set / discovery tests
         run: python tests/test_identifier_set.py
@@ -54,3 +54,27 @@ jobs:
         if: always()
         run: |
           docker compose -f docker-compose.yml -f deploy/ci/docker-compose.ci.yml down -v
+      
+  lint:
+    name: Format Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          version: "latest"
+
+      - uses: actions/setup-python@v5
+        with:
+            python-version: '3.7'
+      
+      - run: uv sync --all-extras --dev
+
+      - name: Lint 
+        run: |
+          uv run ruff format --check .
+      
+      - name: Type check
+        run: uv run ty check
