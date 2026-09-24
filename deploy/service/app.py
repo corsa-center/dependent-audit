@@ -100,7 +100,9 @@ def get_job_spdx(job_id):
         return jsonify(error="unknown job"), 404
     snippets = store.snippets_dir(job_id)
     if not os.path.isdir(snippets) or not os.listdir(snippets):
-        return jsonify(error="no spdx snippets for this job", status=meta["status"]), 404
+        return jsonify(
+            error="no spdx snippets for this job", status=meta["status"]
+        ), 404
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
         for root, _dirs, files in os.walk(snippets):

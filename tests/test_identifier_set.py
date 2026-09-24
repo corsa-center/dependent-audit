@@ -24,7 +24,7 @@ import types
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-import audit_dependents as A  # noqa: E402
+from dependent_audit import audit_dependents as A
 
 LOG = logging.getLogger("test")
 LOG.addHandler(logging.NullHandler())
@@ -295,9 +295,7 @@ def test_build_ids_survive_idf_saturation():
     plugin.specificity._probe = lambda regex, log: 10_000  # would drop gated tokens
     plugin.specificity.cache = {}
     idset = plugin._compile_identifier_set("owner/repo", "foo", LOG)
-    kinds = {
-        p.identifier.kind for p in plugin._patterns_from(idset, LOG, {"foo"})
-    }
+    kinds = {p.identifier.kind for p in plugin._patterns_from(idset, LOG, {"foo"})}
     assert CP in kinds, "cmake package must survive (ungated)"
     assert BM in kinds, "bazel module must survive (ungated)"
     print("PASS test_build_ids_survive_idf_saturation")
@@ -426,7 +424,11 @@ def test_declared_alias_and_dependents():
 def test_declared_merge_corroborates_and_injects():
     plugin = _plugin()
     plugin._find_declared_dependents = lambda aliases, log: [
-        {"name": "a/existing", "url": "https://github.com/a/existing", "source": "spack"},
+        {
+            "name": "a/existing",
+            "url": "https://github.com/a/existing",
+            "source": "spack",
+        },
         {"name": "b/new", "url": "https://github.com/b/new", "source": "spack"},
     ]
     consumers = {
@@ -611,7 +613,11 @@ def test_search_alert_and_error_are_warnings():
         # not INFO — it is the difference between "no dependents" and "the search
         # never ran".
         assert (
-            list(p._emit_sse("alert", json.dumps({"title": "x", "description": "bad"}), log))
+            list(
+                p._emit_sse(
+                    "alert", json.dumps({"title": "x", "description": "bad"}), log
+                )
+            )
             == []
         )
         assert any(r.levelno == logging.WARNING for r in cap.records), [
@@ -655,6 +661,8 @@ def test_stream_search_auth_fast_fail():
         A.requests.get = orig
         log.removeHandler(cap)
     print("PASS test_stream_search_auth_fast_fail")
+
+
 # --- paper-relevance scoring (citation discovery) --------------------------
 
 
@@ -838,10 +846,14 @@ def test_frontier_rank_deterministic():
     dois = ["10.1/d", "10.1/a", "10.1/c", "10.1/b"]
     # Most-cited first; ties broken by DOI ascending -> fully deterministic.
     assert sorted(dois, key=lambda x: rank(meta, x)) == [
-        "10.1/b", "10.1/a", "10.1/d", "10.1/c"
+        "10.1/b",
+        "10.1/a",
+        "10.1/d",
+        "10.1/c",
     ]
     # Same result regardless of input order (the determinism property).
     import random as _r
+
     shuffled = dois[:]
     _r.Random(0).shuffle(shuffled)
     assert sorted(shuffled, key=lambda x: rank(meta, x)) == sorted(
@@ -854,9 +866,24 @@ def test_paper_sort_key_deterministic():
     key = A.CitationEngine._paper_sort_key
     papers = [
         {"doi": "z", "relevanceTier": "low", "relevanceScore": 1.0, "citationDepth": 1},
-        {"doi": "a", "relevanceTier": "high", "relevanceScore": 9.0, "citationDepth": 1},
-        {"doi": "b", "relevanceTier": "high", "relevanceScore": 9.0, "citationDepth": 1},
-        {"doi": "m", "relevanceTier": "medium", "relevanceScore": 5.0, "citationDepth": 0},
+        {
+            "doi": "a",
+            "relevanceTier": "high",
+            "relevanceScore": 9.0,
+            "citationDepth": 1,
+        },
+        {
+            "doi": "b",
+            "relevanceTier": "high",
+            "relevanceScore": 9.0,
+            "citationDepth": 1,
+        },
+        {
+            "doi": "m",
+            "relevanceTier": "medium",
+            "relevanceScore": 5.0,
+            "citationDepth": 0,
+        },
     ]
     ordered = [p["doi"] for p in sorted(papers, key=key)]
     # high before medium before low; ties (a,b both 9.0 high) broken by DOI.
@@ -867,9 +894,7 @@ def test_paper_sort_key_deterministic():
 def test_expand_citations_caps_and_determinism():
     # Build an engine without __init__ (which would hit the JOSS network).
     eng = object.__new__(A.CitationEngine)
-    eng.openalex_plugin = types.SimpleNamespace(
-        discover_citing=lambda batch, log: {}
-    )
+    eng.openalex_plugin = types.SimpleNamespace(discover_citing=lambda batch, log: {})
     eng.opencitations_plugin = types.SimpleNamespace(
         citing_dois=lambda batch, log: set()
     )
@@ -912,11 +937,17 @@ def test_http_get_json_records_channel_failure():
         A.time.sleep = lambda s: None
         # Exhausted 429 -> recorded against the named channel as rate_limited.
         A.requests.get = lambda *a, **k: Resp(429)
-        assert plugin._http_get_json("http://x", max_attempts=2, channel="openalex") is None
+        assert (
+            plugin._http_get_json("http://x", max_attempts=2, channel="openalex")
+            is None
+        )
         assert plugin.diag.http_failures["openalex"]["rate_limited"] == 1
         # A definitive 404 is a complete answer -> NOT recorded as a failure.
         A.requests.get = lambda *a, **k: Resp(404)
-        assert plugin._http_get_json("http://x", max_attempts=2, channel="crossref") is None
+        assert (
+            plugin._http_get_json("http://x", max_attempts=2, channel="crossref")
+            is None
+        )
         assert "crossref" not in plugin.diag.http_failures
     finally:
         A.requests.get, A.time.sleep = saved_get, saved_sleep
@@ -1075,7 +1106,7 @@ def test_extract_module_identifiers():
 
 def test_module_consumer_pattern():
     p = _plugin()
-    (regex, ev), = p._patterns_for_identifier(
+    ((regex, ev),) = p._patterns_for_identifier(
         A.Identifier("boost.json", K.MODULE_NAME, "t", 4)
     )
     assert ev == "import"
@@ -1105,7 +1136,9 @@ def test_header_unit_import_patterns():
 
 def test_module_kind_weight_layer_and_ungated():
     p = _plugin()
-    idf = A.Identifier("fmt", K.MODULE_NAME, "module_unit", A.KIND_WEIGHTS[K.MODULE_NAME])
+    idf = A.Identifier(
+        "fmt", K.MODULE_NAME, "module_unit", A.KIND_WEIGHTS[K.MODULE_NAME]
+    )
     assert A.KIND_WEIGHTS[K.MODULE_NAME] == 4
     assert A.EVIDENCE_LAYER[K.MODULE_NAME] == A.LAYER_SOURCE
     # module names are distinctive by context -> never IDF-gated
@@ -1152,9 +1185,13 @@ def test_identifier_values_are_regex_escaped():
     fp = f"find_package\\s*\\(\\s*{ci}[\\s)]"
     assert not _has_nested_repeat(fp), fp
     # still case-insensitive on the letters
-    assert re.search(f"find_package\\s*\\(\\s*{p._ci_regex('hdf5')}[\\s)]", "find_package(HDF5)")
+    assert re.search(
+        f"find_package\\s*\\(\\s*{p._ci_regex('hdf5')}[\\s)]", "find_package(HDF5)"
+    )
 
     print("PASS test_identifier_values_are_regex_escaped")
+
+
 def test_rate_limit_wait_capped():
     E = A.GitHubEnricher("tok")
 
@@ -1165,7 +1202,9 @@ def test_rate_limit_wait_capped():
     assert E._rate_limit_wait(R({"Retry-After": "5"})) == 5
     assert E._rate_limit_wait(R({"Retry-After": "99999"}), cap=60) == 60
     # X-RateLimit-Reset -> seconds until reset, capped and floored at 1
-    assert E._rate_limit_wait(R({"X-RateLimit-Reset": str(int(time.time()) + 10)})) == 10
+    assert (
+        E._rate_limit_wait(R({"X-RateLimit-Reset": str(int(time.time()) + 10)})) == 10
+    )
     assert E._rate_limit_wait(R({"X-RateLimit-Reset": "1"})) == 1  # past -> floor 1
     assert E._rate_limit_wait(R({})) == 60  # nothing advertised -> cap
     print("PASS test_rate_limit_wait_capped")
