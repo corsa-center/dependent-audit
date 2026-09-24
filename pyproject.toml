@@ -1,0 +1,36 @@
+[build-system]
+requires = ["hatchling >= 1.26"]
+build-backend = "hatchling.build"
+
+[project]
+name = "dependent_audit"
+version = "0.0.1"
+authors = [
+    { name="John Parent", email="john.parent@kitware.com"}
+]
+description = "A tool to map your software supply chain using Sourcegraph and GitHub GraphQL APIs."
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+license = "MIT"
+license-files = ["LICEN[CS]E*"]
+dependencies = [
+    "requests>=2.31.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3.5",
+    "ruff>=0.16.8",
+    "ty>=0.0.83",
+]
+
+[project.urls]
+Homepage = "https://github.com/corsa-center/dependent-audit"
+Source = "https://github.com/corsa-center/dependent-audit"
+
+[tool.uv]
+package = true
