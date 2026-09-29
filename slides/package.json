@@ -1,0 +1,20 @@
+{
+  "name": "whos-including-you-slides",
+  "private": true,
+  "type": "module",
+  "description": "CppCon 2026 talk: Who's #include-ing you? Measuring the impact of C++ libraries",
+  "scripts": {
+    "dev": "slidev --open",
+    "present": "slidev",
+    "build": "slidev build",
+    "export": "slidev export"
+  },
+  "dependencies": {
+    "@fontsource/barlow": "^5.1.0",
+    "@fontsource/barlow-semi-condensed": "^5.1.0",
+    "@fontsource/jetbrains-mono": "^5.1.0",
+    "@slidev/cli": "^0.50.0",
+    "@slidev/theme-default": "^0.25.0",
+    "vue": "^3.5.13"
+  }
+}
