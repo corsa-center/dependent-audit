@@ -85,8 +85,13 @@ PAPER_TIER_MEDIUM = 3.0
 PAPER_LLM_BORDERLINE_MARGIN = 1.0
 PAPER_TIER_ORDER = {"low": 0, "medium": 1, "high": 2}
 
-# Default models 
-DEFAULT_MODELS = {"llama": "llama3.2:3b", "phi":"phi4-mini:latest", "gemma":"gemma2:9b"}
+# Default models
+DEFAULT_MODELS = {
+    "llama": "llama3.2:3b",
+    "phi": "phi4-mini:latest",
+    "gemma": "gemma2:9b",
+}
+
 
 class JSONFormatter(logging.Formatter):
     def format(self, record):
@@ -767,16 +772,16 @@ class LLMRelevanceJudge:
             '{"relevant": true|false, "confidence": 0.0-100.0, "reason": "..."}.\n'
             "Confidence score reflects certainty of relevance. Direct project references should produce a higher confidence, "
             "a paper with no relation produces lower confidence, and papers with overlapping topics may be somewhere in the middle, to your discretion. "
-            "You may use an author's larger body of work or study as evidence.\n\n" 
+            "You may use an author's larger body of work or study as evidence.\n\n"
         )
         user_prompt = (
-             "Project information: \n"
+            "Project information: \n"
             f"PROJECT: {profile.get('name')} (owner: {profile.get('owner')})\n"
             f"PROJECT TOPICS: {', '.join(sorted(profile.get('topics', set())))}\n"
             f"PROJECT SEMINAL AUTHORS: {', '.join(profile.get('seminal_authors', set()))}\n"
             f"PROJECT SEMINAL VENUES: {', '.join(profile.get('seminal_venues', set()))}\n"
             f"PROJECT TERMS: {', '.join(sorted(list(profile.get('terms', set()))[:30]))}\n\n"
-             "Paper information: \n"
+            "Paper information: \n"
             f"PAPER TITLE: {meta.get('title', '')}\n\n"
             f"PAPER AUTHORS: {', '.join(meta.get('authors', ''))}\n"
             f"PAPER JOURNAL: {meta.get('journal') or ''}\n"
@@ -790,10 +795,10 @@ class LLMRelevanceJudge:
             "model": self.model,
             "messages": [
                 {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt}
+                {"role": "user", "content": user_prompt},
             ],
-            "format":"json",
-            "response_format":{"type":"json_object"},
+            "format": "json",
+            "response_format": {"type": "json_object"},
             "temperature": 0.0,
             "max_tokens": 200,
         }
@@ -3355,9 +3360,9 @@ if __name__ == "__main__":
     parser.add_argument(
         "--default-llm",
         choices=["gemma", "phi", "llama"],
-        help="Use a supported default model to break ties on " \
-        "borderline papers. Off unless set. See --relevance-llm-model and " \
-        "--relevance-llm-url for custom model usage."
+        help="Use a supported default model to break ties on "
+        "borderline papers. Off unless set. See --relevance-llm-model and "
+        "--relevance-llm-url for custom model usage.",
     )
     parser.add_argument(
         "--relevance-llm-url",
@@ -3369,7 +3374,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--relevance-llm-model",
         default=os.environ.get("RELEVANCE_LLM_MODEL", None),
-        help="Model name passed to the relevance LLM endpoint. " \
+        help="Model name passed to the relevance LLM endpoint. "
         "See --use-llm-model for using default models.",
     )
     parser.add_argument(
