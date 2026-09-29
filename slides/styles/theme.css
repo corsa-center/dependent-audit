@@ -1,0 +1,332 @@
+/* =========================================================================
+   "Who Is #include-ing You?" · CppCon 2026 theme
+   Derived from the official title slide: deep navy radial field,
+   bright orange + gold accents, condensed geometric headings.
+   ========================================================================= */
+
+:root {
+  --cpp-navy-900: #121A30;
+  --cpp-navy-850: #172038;
+  --cpp-navy-800: #1B2540;
+  --cpp-navy-700: #212C49;
+  --cpp-navy-600: #2A375C;
+  --cpp-navy-500: #35456F;
+  --cpp-navy-glow: #3E5488;
+
+  --cpp-orange: #FF8933;
+  --cpp-orange-deep: #F26F1F;
+  --cpp-gold: #FDB040;
+  --cpp-gold-soft: #FFC766;
+
+  --cpp-white: #FFFFFF;
+  --cpp-text: #EAEFFA;
+  --cpp-mute: #A6B2CE;
+  --cpp-faint: #6E7B9C;
+  --cpp-line: rgba(255, 255, 255, 0.12);
+  --cpp-line-strong: rgba(255, 255, 255, 0.22);
+
+  --cpp-code-bg: #10182C;
+
+  --slidev-theme-primary: var(--cpp-orange);
+
+  --cpp-font-display: 'Barlow Semi Condensed', 'Barlow', system-ui, sans-serif;
+  --cpp-font-body: 'Barlow', system-ui, sans-serif;
+  --cpp-font-mono: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+/* ---- Base surface ------------------------------------------------------- */
+
+.slidev-layout {
+  font-family: var(--cpp-font-body);
+  color: var(--cpp-text);
+  background-color: var(--cpp-navy-800);
+  background-image:
+    radial-gradient(ellipse 80% 70% at 50% 38%, var(--cpp-navy-glow) 0%, var(--cpp-navy-700) 42%, var(--cpp-navy-900) 100%);
+  padding: 2.6rem 3.2rem 2.8rem;
+  line-height: 1.5;
+  --slidev-code-font-family: var(--cpp-font-mono);
+}
+
+/* faint diagonal chevron watermark echoing the title slide's lower-right art */
+.slidev-layout::after {
+  content: '';
+  position: absolute;
+  right: -4%;
+  bottom: -8%;
+  width: 42%;
+  height: 58%;
+  background-image:
+    linear-gradient(135deg, transparent 48%, rgba(255, 255, 255, 0.04) 48%, rgba(255, 255, 255, 0.04) 52%, transparent 52%),
+    linear-gradient(135deg, transparent 62%, rgba(255, 255, 255, 0.03) 62%, rgba(255, 255, 255, 0.03) 66%, transparent 66%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.slidev-layout > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* ---- Typography --------------------------------------------------------- */
+
+.slidev-layout h1,
+.slidev-layout h2,
+.slidev-layout h3 {
+  font-family: var(--cpp-font-display);
+  font-weight: 700;
+  color: var(--cpp-white);
+  letter-spacing: -0.005em;
+  line-height: 1.08;
+}
+
+.slidev-layout h1 {
+  font-size: 2.9rem;
+  font-weight: 800;
+  margin-bottom: 0.2em;
+}
+
+.slidev-layout h1 + p {
+  color: var(--cpp-mute);
+  font-size: 1.15rem;
+  margin-top: -0.2em;
+}
+
+.slidev-layout h2 {
+  font-size: 1.9rem;
+  color: var(--cpp-gold);
+  margin-bottom: 0.5em;
+}
+
+.slidev-layout h3 {
+  font-size: 1.3rem;
+  color: var(--cpp-white);
+}
+
+/* accent underline under the page's leading heading */
+.slidev-layout h1::after {
+  content: '';
+  display: block;
+  width: 3.4rem;
+  height: 4px;
+  margin-top: 0.42rem;
+  border-radius: 3px;
+  background: linear-gradient(90deg, var(--cpp-orange), var(--cpp-gold));
+}
+
+.slidev-layout p,
+.slidev-layout li {
+  font-size: 1.12rem;
+}
+
+.slidev-layout strong { color: var(--cpp-white); font-weight: 700; }
+.slidev-layout em { color: var(--cpp-gold-soft); font-style: normal; font-weight: 600; }
+
+.slidev-layout a {
+  color: var(--cpp-orange);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(255, 137, 51, 0.4);
+}
+
+/* lists with orange markers */
+.slidev-layout ul { list-style: none; padding-left: 0; }
+.slidev-layout ul > li {
+  position: relative;
+  padding-left: 1.4rem;
+  margin: 0.36rem 0;
+}
+.slidev-layout ul > li::before {
+  content: '';
+  position: absolute;
+  left: 0.1rem;
+  top: 0.62em;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 1px;
+  background: var(--cpp-orange);
+  transform: rotate(45deg);
+}
+.slidev-layout ul ul > li::before { background: var(--cpp-faint); }
+
+.slidev-layout blockquote {
+  border-left: 3px solid var(--cpp-orange);
+  background: rgba(255, 137, 51, 0.06);
+  padding: 0.6rem 1rem;
+  color: var(--cpp-text);
+  font-style: normal;
+}
+
+/* ---- Code --------------------------------------------------------------- */
+
+.slidev-layout :not(pre) > code {
+  font-family: var(--cpp-font-mono);
+  font-size: 0.9em;
+  color: var(--cpp-gold-soft);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--cpp-line);
+  border-radius: 5px;
+  padding: 0.08em 0.38em;
+}
+
+.slidev-layout pre {
+  border: 1px solid var(--cpp-line);
+  border-radius: 10px;
+  background: var(--cpp-code-bg) !important;
+  box-shadow: 0 18px 40px -22px rgba(0, 0, 0, 0.7);
+}
+.slidev-layout .shiki,
+.slidev-layout .slidev-code {
+  font-family: var(--cpp-font-mono) !important;
+  font-size: 0.92rem;
+  background: transparent !important;
+}
+
+/* ---- Reusable helpers --------------------------------------------------- */
+
+.eyebrow {
+  font-family: var(--cpp-font-display);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 0.82rem;
+  color: var(--cpp-orange);
+}
+
+.muted { color: var(--cpp-mute); }
+.faint { color: var(--cpp-faint); }
+.grey { color: #C4CBD6; }
+.gold { color: var(--cpp-gold); }
+.orange { color: var(--cpp-orange); }
+.mono { font-family: var(--cpp-font-mono); }
+
+.card {
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid var(--cpp-line);
+  border-radius: 12px;
+  padding: 1rem 1.15rem;
+}
+.card-accent { border-left: 3px solid var(--cpp-orange); }
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--cpp-font-mono);
+  font-size: 0.82rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid var(--cpp-line-strong);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--cpp-text);
+}
+
+.tier-high { color: #6EE7A8; }
+.tier-med { color: var(--cpp-gold); }
+.tier-low { color: #FF8C74; }
+
+kbd {
+  font-family: var(--cpp-font-mono);
+  font-size: 0.8em;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid var(--cpp-line-strong);
+  border-bottom-width: 2px;
+  border-radius: 5px;
+  padding: 0.05em 0.4em;
+}
+
+/* ---- Scrollbar & misc --------------------------------------------------- */
+
+::selection { background: rgba(255, 137, 51, 0.35); }
+
+/* The Slidev "Goto…" dialog lives off-screen (class `-top-20`) when closed, but
+   its autocomplete list can overflow back into view with an empty query. Keep
+   the whole dialog hidden unless it is actually opened (class `top-5`). */
+#slidev-goto-dialog.-top-20 { opacity: 0; pointer-events: none; visibility: hidden; }
+
+/* ---- Cover content ------------------------------------------------------ */
+
+.cover-title { display: flex; flex-direction: column; }
+.cover-title .ct-lead {
+  font-family: var(--cpp-font-display);
+  font-weight: 800;
+  font-size: 4rem;
+  line-height: 1.02;
+  color: var(--cpp-gold);
+}
+.cover-title .ct-lead .hash { color: var(--cpp-gold-soft); }
+.cover-title .ct-sub {
+  font-family: var(--cpp-font-display);
+  font-weight: 700;
+  font-size: 1.9rem;
+  color: #fff;
+  margin-top: 0.35rem;
+}
+.cover-speaker {
+  margin-top: 3.4rem;
+  font-family: var(--cpp-font-display);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  font-size: 1.5rem;
+  color: var(--cpp-gold);
+}
+.cover-speaker .cs-org { color: var(--cpp-mute); font-weight: 600; }
+
+/* ---- Two-column & grid helpers ----------------------------------------- */
+.cols-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.4rem; }
+.cols-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+.center-col { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.dash-slide-grid { display: grid; grid-template-columns: 560px 1fr; gap: 1.6rem; align-items: center; }
+.graph-img {
+  width: 560px;
+  border-radius: 12px;
+  border: 1px solid var(--cpp-line-strong);
+  background: #0C1322;
+  box-shadow: 0 24px 60px -28px rgba(0, 0, 0, 0.8);
+}
+.legend-dot { display: inline-block; width: 0.72rem; height: 0.72rem; border-radius: 50%; vertical-align: middle; margin-right: 0.15rem; }
+.legend-dot.red { background: #e8433a; box-shadow: 0 0 8px rgba(232,67,58,0.6); }
+.legend-dot.blue { background: #2f86d8; box-shadow: 0 0 8px rgba(47,134,216,0.6); }
+.lead-in { color: var(--cpp-mute); font-size: 1.18rem; }
+
+/* colleague talk shout-out cards */
+.talk-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 1.8rem; max-width: 900px; margin: 1.1rem 0 0; }
+.talk-card { display: flex; flex-direction: column; gap: 0.55rem; }
+.talk-card img {
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid var(--cpp-line-strong);
+  box-shadow: 0 22px 55px -26px rgba(0, 0, 0, 0.85);
+}
+.talk-card .tc-cap { font-size: 0.98rem; color: var(--cpp-mute); line-height: 1.35; }
+.talk-card .tc-cap .tc-name { font-family: var(--cpp-font-display); font-weight: 700; color: var(--cpp-gold); }
+
+/* a bullet list that flows into two newspaper-style columns */
+.two-col-list ul { column-count: 2; column-gap: 3rem; }
+.two-col-list ul > li { break-inside: avoid; margin: 0.3rem 0 0.6rem; }
+
+/* tighten list vertical rhythm where a slide is running long */
+.tight-list ul > li { margin: 0.16rem 0; }
+.tight-list ul ul > li { margin: 0.08rem 0; }
+.tight-list p, .tight-list li { line-height: 1.32; }
+
+/* motivator cards */
+.motiv { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.1rem; margin-top: 0.4rem; }
+.motiv .card h3 { color: var(--cpp-gold); font-size: 1.12rem; margin: 0.2rem 0 0.4rem; }
+.motiv .card .m-icon { font-size: 1.5rem; }
+.motiv .card p { font-size: 0.95rem; color: var(--cpp-mute); }
+
+.slidev-layout table {
+  border-collapse: collapse;
+  font-size: 0.98rem;
+}
+.slidev-layout th {
+  text-align: left;
+  font-family: var(--cpp-font-display);
+  color: var(--cpp-gold);
+  border-bottom: 2px solid var(--cpp-line-strong);
+  padding: 0.4rem 0.9rem 0.4rem 0;
+}
+.slidev-layout td {
+  border-bottom: 1px solid var(--cpp-line);
+  padding: 0.36rem 0.9rem 0.36rem 0;
+  color: var(--cpp-text);
+}
