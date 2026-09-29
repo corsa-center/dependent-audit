@@ -85,6 +85,13 @@ PAPER_TIER_MEDIUM = 3.0
 PAPER_LLM_BORDERLINE_MARGIN = 1.0
 PAPER_TIER_ORDER = {"low": 0, "medium": 1, "high": 2}
 
+# Default models
+DEFAULT_MODELS = {
+    "llama": "llama3.2:3b",
+    "phi": "phi4-mini:latest",
+    "gemma": "gemma2:9b",
+}
+
 
 class JSONFormatter(logging.Formatter):
     def format(self, record):
@@ -747,7 +754,7 @@ class LLMRelevanceJudge:
 
     def __init__(self, base_url, model, token=None, email=None):
         self.base_url = (base_url or "").rstrip("/")
-        self.model = model or "local-model"
+        self.model = model or DEFAULT_MODELS["gemma"]
         self.token = token
         self.email = email
 
@@ -759,15 +766,26 @@ class LLMRelevanceJudge:
         """Return a small verdict dict {relevant, confidence, reason} or None."""
         if not self.enabled:
             return None
-        prompt = (
-            "You judge whether an academic paper references or uses a specific "
-            "software project. Answer ONLY with compact JSON: "
-            '{"relevant": true|false, "confidence": 0.0-1.0, "reason": "..."}.\n\n'
+        system_prompt = (
+            "You judge whether an academic paper references or uses a specific software project. "
+            "Answer ONLY with compact JSON, and no preamble text: "
+            '{"relevant": true|false, "confidence": 0.0-100.0, "reason": "..."}.\n'
+            "Confidence score reflects certainty of relevance. Direct project references should produce a higher confidence, "
+            "a paper with no relation produces lower confidence, and papers with overlapping topics may be somewhere in the middle, to your discretion. "
+            "You may use an author's larger body of work or study as evidence.\n\n"
+        )
+        user_prompt = (
+            "Project information: \n"
             f"PROJECT: {profile.get('name')} (owner: {profile.get('owner')})\n"
             f"PROJECT TOPICS: {', '.join(sorted(profile.get('topics', set())))}\n"
+            f"PROJECT SEMINAL AUTHORS: {', '.join(profile.get('seminal_authors', set()))}\n"
+            f"PROJECT SEMINAL VENUES: {', '.join(profile.get('seminal_venues', set()))}\n"
             f"PROJECT TERMS: {', '.join(sorted(list(profile.get('terms', set()))[:30]))}\n\n"
-            f"PAPER TITLE: {meta.get('title', '')}\n"
-            f"PAPER VENUE: {meta.get('venue') or meta.get('journal') or ''}\n"
+            "Paper information: \n"
+            f"PAPER TITLE: {meta.get('title', '')}\n\n"
+            f"PAPER AUTHORS: {', '.join(meta.get('authors', ''))}\n"
+            f"PAPER JOURNAL: {meta.get('journal') or ''}\n"
+            f"PAPER VENUE: {meta.get('venue') or ''}\n"
             f"PAPER ABSTRACT: {(meta.get('abstract') or '')[:1500]}\n"
         )
         headers = {"Content-Type": "application/json"}
@@ -775,7 +793,12 @@ class LLMRelevanceJudge:
             headers["Authorization"] = f"Bearer {self.token}"
         payload = {
             "model": self.model,
-            "messages": [{"role": "user", "content": prompt}],
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+            "format": "json",
+            "response_format": {"type": "json_object"},
             "temperature": 0.0,
             "max_tokens": 200,
         }
@@ -836,9 +859,10 @@ class CitationEngine:
         floor = getattr(args, "paper_relevance_floor", "medium") or "medium"
         self.relevance_floor = PAPER_TIER_ORDER.get(floor, 1)
 
+        default_model = getattr(args, "default_llm", None) or "gemma"
         self.judge = LLMRelevanceJudge(
             getattr(args, "relevance_llm_url", None),
-            getattr(args, "relevance_llm_model", None),
+            getattr(args, "relevance_llm_model", None) or DEFAULT_MODELS[default_model],
             token=os.environ.get("RELEVANCE_LLM_TOKEN"),
             email=email,
         )
@@ -3334,6 +3358,13 @@ if __name__ == "__main__":
         "so false positives stay scannable.",
     )
     parser.add_argument(
+        "--default-llm",
+        choices=["gemma", "phi", "llama"],
+        help="Use a supported default model to break ties on "
+        "borderline papers. Off unless set. See --relevance-llm-model and "
+        "--relevance-llm-url for custom model usage.",
+    )
+    parser.add_argument(
         "--relevance-llm-url",
         default=os.environ.get("RELEVANCE_LLM_URL"),
         help="Base URL of an OpenAI-compatible chat endpoint (llama.cpp / "
@@ -3342,8 +3373,9 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--relevance-llm-model",
-        default=os.environ.get("RELEVANCE_LLM_MODEL", "local-model"),
-        help="Model name passed to the relevance LLM endpoint.",
+        default=os.environ.get("RELEVANCE_LLM_MODEL", None),
+        help="Model name passed to the relevance LLM endpoint. "
+        "See --use-llm-model for using default models.",
     )
     parser.add_argument(
         "--paper-cache",
