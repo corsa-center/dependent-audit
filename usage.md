@@ -14,6 +14,43 @@ The crawler searches global open-source indices to find projects utilizing a tar
 
 For each project it compiles an **identifier set** (header, CMake/Bazel/pkg-config, and repository-URL identifiers) from the project's own files and searches for the ways consumers reference them. Every dependency edge in the graph carries a **confidence** tier and score, the **evidence** and **identifiers** behind it, its **provenance**, and a **relationship** label (`DEPENDS_ON`, or `VENDORED`/`MIRROR` for bundled copies and forks) — so the dashboard can sort and filter dependents by how strongly the evidence supports them. See `OVERVIEW.md` for the methodology.
 
+### Configuration file
+
+Automatic identifier detection is heuristic and misfits many real layouts (no `include/` root, source roots nested under tool/namespace directories, generic top-level directory names, or a bundled third-party build config). For reliable results a project should **declare its public interface** in a TOML config, which you can check into the repository as `.dependent-audit.toml` (auto-loaded from the target repo's HEAD) or pass explicitly with `--config PATH`.
+
+The file can set **any** command-line option (by its long name, hyphens or underscores; at the top level or under an `[options]`/`[audit]` table) plus an `[interface]` table describing the API:
+
+```toml
+repo = "myorg/mylib"
+name = "mylib"
+depth = 1
+
+[interface]
+# What consumers write after < or " when including your headers.
+include_prefix = "mylib"
+# The files that make up your public interface (repo-relative globs).
+headers = ["include/**/*.h", "mylib/**/*.hpp"]
+
+# The exact strings other people use to consume your project. Each is tagged
+# with a kind so it is weighted and corroborated correctly.
+[[interface.consume]]
+literal = "#include <mylib/"          # matched literally
+kind = "header_path"
+[[interface.consume]]
+literal = "find_package(mylib"
+kind = "cmake_package"
+[[interface.consume]]
+literal = "execute_process(mylib-tool" # a tool/binary invocation
+kind = "executable"
+[[interface.consume]]
+regex = "@mylib//"                     # a raw regex, used verbatim
+kind = "bazel_module"
+```
+
+Precedence, highest first: an explicit command-line flag, then `--config`, then an auto-loaded repo config, then defaults/environment. Tokens are never read from an auto-loaded repo config — supply them via the command line, environment, or an explicit `--config`. Header globs resolve against a local checkout when `--repo-checkout` is given, otherwise remotely against the target repo. The `[interface]` block applies only to the audited (root) project.
+
+Declared headers replace automatic header detection, but automatic build/repository detection still runs so common build references are found for free. If your repository bundles a third-party build config (e.g. a vendored `pybind11Config.cmake`) or uses very generic directory names, that automatic step is a source of false positives — set `no_defaults = true` alongside the `[interface]` block to search **only** your declared interface.
+
 ### Data Generation
 The crawler is deployed primarily as a GitHub Action. Upon execution, the action outputs an archive containing all graph data and SPDX manifests. This archive is required to initialize the dashboard.
 
