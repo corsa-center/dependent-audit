@@ -47,9 +47,11 @@ STRING_OPTS = {
 INT_OPTS = {
     "depth": "--depth",
     "idf_cap": "--idf-cap",
+    "citation_graph_depth": "--citation-graph-depth",
 }
 FLOAT_OPTS = {
     "sg_delay": "--sg-delay",
+    "openalex_delay": "--openalex-delay",
 }
 FLAG_OPTS = {
     "verbose": "--verbose",
@@ -64,6 +66,7 @@ FLAG_OPTS = {
 TOKEN_ENV = {
     "sg_token": "SG_TOKEN",
     "gh_token": "GH_TOKEN",
+    "openalex_api_key": "OPENALEX_API_KEY",
 }
 
 REQUIRED = ("repo", "name")

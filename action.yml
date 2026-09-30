@@ -81,6 +81,17 @@ inputs:
   academic_keywords:
     description: 'Comma separated list of unique keywords to search in full-text publications (e.g. "dyninst")'
     required: false
+  openalex_api_key:
+    description: 'OpenAlex premium API key (authenticated lane; passed via env, not the command line). Cuts rate-limiting on citation lookups.'
+    required: false
+  openalex_delay:
+    description: 'Seconds to wait before each OpenAlex request (throttle valve; usually unnecessary with an api_key)'
+    required: false
+    default: '0'
+  citation_graph_depth:
+    description: 'Max dependency-graph depth at which to run paper/citation analysis (1 = root + direct consumers only). Deeper nodes skip the OpenAlex-heavy lookup.'
+    required: false
+    default: '1'
   use_defaults:
     description: 'If false, disables standard C++ header/pragma searching'
     required: false
@@ -104,11 +115,15 @@ runs:
 
     - name: Run Audit Script
       shell: bash
+      env:
+        # Secret: passed via env so it never lands in the command line / logs.
+        OPENALEX_API_KEY: ${{ inputs.openalex_api_key }}
       run: |
         CMD="python ${{ github.action_path }}/audit_dependents.py \
           --repo '${{ inputs.root_repo }}' \
           --name '${{ inputs.project_name }}' \
           --depth ${{ inputs.max_depth }} \
+          --citation-graph-depth '${{ inputs.citation_graph_depth }}' \
           --out '${{ inputs.output_file }}' \
           --gh-token '${{ inputs.github_token }}' \
           --email '${{ inputs.email }}'"
@@ -127,6 +142,9 @@ runs:
         fi
         if [ -n "${{ inputs.search_delay }}" ]; then
           CMD="$CMD --sg-delay '${{ inputs.search_delay }}'"
+        fi
+        if [ -n "${{ inputs.openalex_delay }}" ]; then
+          CMD="$CMD --openalex-delay '${{ inputs.openalex_delay }}'"
         fi
         if [ -n "${{ inputs.search_count }}" ]; then
           CMD="$CMD --sg-count '${{ inputs.search_count }}'"

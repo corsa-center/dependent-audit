@@ -14,6 +14,8 @@ The crawler searches global open-source indices to find projects utilizing a tar
 
 For each project it compiles an **identifier set** (header, CMake/Bazel/pkg-config, and repository-URL identifiers) from the project's own files and searches for the ways consumers reference them. Every dependency edge in the graph carries a **confidence** tier and score, the **evidence** and **identifiers** behind it, its **provenance**, and a **relationship** label (`DEPENDS_ON`, or `VENDORED`/`MIRROR` for bundled copies and forks) — so the dashboard can sort and filter dependents by how strongly the evidence supports them. See `OVERVIEW.md` for the methodology.
 
+Each node can also carry the **academic papers** related to that project (its seminal work plus the works that cite it), discovered via OpenAlex/Crossref. This citation analysis is the most rate-limited stage, so by default it runs only for the root project and its direct consumers (`citation_graph_depth` = 1); raise it to analyze papers further out in the graph. Set an OpenAlex API key (`openalex_api_key` input / `OPENALEX_API_KEY`) to use the authenticated lane and greatly reduce throttling on large crawls.
+
 ### Data Generation
 The crawler is deployed primarily as a GitHub Action. Upon execution, the action outputs an archive containing all graph data and SPDX manifests. This archive is required to initialize the dashboard.
 

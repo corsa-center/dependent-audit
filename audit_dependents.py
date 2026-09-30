@@ -28,6 +28,17 @@ CITATION_MAX_TOTAL = 2000
 
 OPENALEX_API_URL = "https://api.openalex.org/works"
 
+# OpenAlex request-shaping. Page size and OR-batch width come from the OpenAlex
+# limits table (per_page max 100; OR values per filter max 100). Batching the
+# reverse-citation lookups (many DOIs per request instead of one query each) and
+# using full pages are the main levers against OpenAlex rate limiting.
+OPENALEX_PER_PAGE = 100
+OPENALEX_MAX_OR = 100
+
+# Placeholder polite-pool contact. A run left on this default (and without an
+# api_key) shares a heavily throttled common pool, so we warn when we see it.
+OPENALEX_PLACEHOLDER_EMAIL = "audit-bot@example.com"
+
 # Longest Retry-After (seconds) an optional publication call will honor before
 # giving up. A quota-limited service can send a multi-hour Retry-After; honoring
 # it literally would stall the whole crawl for a *best-effort* enrichment call,
@@ -446,6 +457,40 @@ class WebScrapePublicationPlugin(PublicationPlugin):
 
 
 class OpenAlexPublicationPlugin(PublicationPlugin):
+    def __init__(self, email, api_key=None, delay=0.0):
+        super().__init__(email)
+        # Premium api_key (OpenAlex authenticated lane) and an optional
+        # per-request throttle, mirroring the Sourcegraph --sg-delay valve.
+        self.api_key = api_key or None
+        self.delay = delay or 0.0
+
+    def _base_params(self, extra=None):
+        """Common params for every OpenAlex call: polite-pool mailto and, when
+        configured, the premium api_key. `extra` overlays the per-call params."""
+        params = {"mailto": self.email}
+        if self.api_key:
+            params["api_key"] = self.api_key
+        if extra:
+            params.update(extra)
+        return params
+
+    def _throttle(self):
+        if self.delay > 0:
+            time.sleep(self.delay)
+
+    @staticmethod
+    def _chunk(items, size):
+        items = list(items)
+        for i in range(0, len(items), size):
+            yield items[i:i + size]
+
+    @staticmethod
+    def _bare_work_id(work_id):
+        """OpenAlex work id URL -> bare 'W...' form usable in a cites: filter."""
+        if not work_id:
+            return None
+        return work_id.rstrip("/").rsplit("/", 1)[-1] or None
+
     @staticmethod
     def _deinvert_abstract(inv_index):
         """Reconstruct plain abstract text from OpenAlex's inverted index
@@ -511,14 +556,14 @@ class OpenAlexPublicationPlugin(PublicationPlugin):
         out = {}
         cursor = "*"
         while cursor:
+            self._throttle()
             data = self._http_get_json(
                 OPENALEX_API_URL,
-                params={
+                params=self._base_params({
                     **params,
-                    "mailto": self.email,
-                    "per-page": 50,
+                    "per-page": OPENALEX_PER_PAGE,
                     "cursor": cursor,
-                },
+                }),
                 timeout=10,
                 log=log,
                 channel="openalex",
@@ -560,25 +605,77 @@ class OpenAlexPublicationPlugin(PublicationPlugin):
                 found.setdefault(doi, meta)
         return found
 
-    def discover_citing(self, dois, log):
-        """Reverse-citation lookup: works that cite any DOI in `dois`.
-        Returns {doi: meta} tagged `reverse_citation`."""
-        found = {}
+    def _resolve_work_ids(self, dois, log, id_hint=None):
+        """Return (set of bare OpenAlex work IDs for `dois`, {doi: parsed meta}).
+
+        Uses `id_hint` (doi -> OpenAlex work id already known from a prior parse)
+        to skip lookups, and resolves the rest with OR'd `doi:` filters, up to
+        OPENALEX_MAX_OR DOIs per request, instead of one query per DOI."""
+        id_hint = id_hint or {}
+        work_ids = set()
+        meta_by_doi = {}
+        pending = []
         for doi in dois:
-            log.debug("OpenAlex reverse-citation lookup", extra={"doi": doi})
+            bid = self._bare_work_id(id_hint.get(doi))
+            if bid:
+                work_ids.add(bid)
+            else:
+                pending.append(doi)
+        for batch in self._chunk(pending, OPENALEX_MAX_OR):
+            works = self._paginate_works(
+                {"filter": "doi:" + "|".join(batch)}, "reverse_citation", log
+            )
+            for cdoi, meta in works.items():
+                meta_by_doi[cdoi] = meta
+                bid = self._bare_work_id(meta.get("openalex_id"))
+                if bid:
+                    work_ids.add(bid)
+        return work_ids, meta_by_doi
+
+    def discover_citing(self, dois, log, id_hint=None):
+        """Reverse-citation lookup: works that cite any DOI in `dois`.
+        Returns {doi: meta} tagged `reverse_citation`.
+
+        Batches aggressively to keep OpenAlex request volume down: resolve the
+        seed DOIs to OpenAlex work IDs with OR'd `doi:` filters, then query
+        citing works with OR'd `cites:` filters (up to OPENALEX_MAX_OR ids per
+        request) rather than one full paginated query per DOI. The crawl only
+        consumes the *union* of citers per hop, so folding all seeds into shared
+        batches is behavior-preserving."""
+        found = {}
+        dois = [d for d in dois if d]
+        if not dois:
+            return found
+        log.debug("OpenAlex reverse-citation lookup", extra={"seeds": len(dois)})
+        work_ids, _seed_meta = self._resolve_work_ids(dois, log, id_hint)
+        # sorted() so the setdefault "winner" on a collision is run-stable.
+        for batch in self._chunk(sorted(work_ids), OPENALEX_MAX_OR):
             for cdoi, meta in self._paginate_works(
-                {"filter": f"cites:doi:{doi}"}, "reverse_citation", log
+                {"filter": "cites:" + "|".join(batch)}, "reverse_citation", log
             ).items():
                 found.setdefault(cdoi, meta)
         return found
+
+    def fetch_by_dois(self, dois, log):
+        """Batch backfill: parsed meta for many DOIs via OR'd `doi:` filters.
+        Returns {doi: meta} tagged `backfill` for the subset that resolved."""
+        out = {}
+        for batch in self._chunk([d for d in dois if d], OPENALEX_MAX_OR):
+            out.update(
+                self._paginate_works(
+                    {"filter": "doi:" + "|".join(batch)}, "backfill", log
+                )
+            )
+        return out
 
     def fetch_by_doi(self, doi, log):
         """Backfill a single work's meta by DOI. Used when a DOI arrived via a
         non-OpenAlex channel (text/web scrape, OpenCitations) but we still want
         its authors/concepts/abstract for relevance scoring."""
+        self._throttle()
         data = self._http_get_json(
             f"{OPENALEX_API_URL}/https://doi.org/{doi}",
-            params={"mailto": self.email},
+            params=self._base_params(),
             timeout=10,
             log=log,
             channel="openalex",
@@ -816,7 +913,11 @@ class CitationEngine:
         self.zenodo_plugin = ZenodoPublicationPlugin(email)
         self.text_plugin = TextMatchPublicationPlugin(email)
         self.scrape_plugin = WebScrapePublicationPlugin(email)
-        self.openalex_plugin = OpenAlexPublicationPlugin(email)
+        self.openalex_plugin = OpenAlexPublicationPlugin(
+            email,
+            api_key=getattr(args, "openalex_api_key", None),
+            delay=getattr(args, "openalex_delay", 0.0) or 0.0,
+        )
         self.opencitations_plugin = OpenCitationsPlugin(email)
         self.crossref_plugin = CrossrefPublicationPlugin(email)
 
@@ -905,7 +1006,12 @@ class CitationEngine:
                 if diag is not None:
                     diag.record_cap("citation_per_level")
 
-            citing_meta = self.openalex_plugin.discover_citing(batch, log)
+            # Hand over any OpenAlex work IDs we already parsed for the frontier
+            # so deeper hops skip re-resolving DOIs -> IDs.
+            id_hint = {d: (doi_meta.get(d) or {}).get("openalex_id") for d in batch}
+            citing_meta = self.openalex_plugin.discover_citing(
+                batch, log, id_hint=id_hint
+            )
             for cdoi, meta in citing_meta.items():
                 self._merge_meta(doi_meta, cdoi, meta)
                 doi_provenance[cdoi].add("reverse_citation")
@@ -963,6 +1069,21 @@ class CitationEngine:
                 existing[key] = merged
         if meta.get("openalex_citations") and not existing.get("openalex_citations"):
             existing["openalex_citations"] = meta["openalex_citations"]
+
+    def _batch_backfill(self, dois, doi_meta, log):
+        """Pre-fetch OpenAlex meta in OR'd batches for DOIs with no OpenAlex meta
+        and no cache entry, persisting into `paper_cache` for the scoring loop."""
+        missing = [
+            d for d in dois
+            if d and d not in doi_meta and d not in self.paper_cache
+        ]
+        if not missing:
+            return
+        fetched = self.openalex_plugin.fetch_by_dois(missing, log)
+        for d, meta in fetched.items():
+            meta = dict(meta)
+            meta["provenance"] = sorted(meta.get("provenance", set()))
+            self.paper_cache[d] = meta
 
     def _apply_diag(self, diag):
         for p in self._net_plugins:
@@ -1064,6 +1185,14 @@ class CitationEngine:
             depth_of.setdefault(d, 0)
 
         diag.dois_seen = len(depth_of)
+
+        # Batch-backfill OpenAlex metadata for DOIs that no OpenAlex channel
+        # surfaced (text/web scrape, OpenCitations) before per-DOI scoring, so we
+        # spend a handful of OR'd requests instead of one GET per DOI. Misses
+        # still fall back to the single-DOI fetch in _resolve_and_score.
+        if self.relevance_enabled:
+            self._batch_backfill(depth_of.keys(), doi_meta, log)
+
         papers = []
         log.debug(f"Resolving/scoring {len(depth_of)} unique DOIs")
         for doi, doi_depth in depth_of.items():
@@ -2972,34 +3101,48 @@ class AuditOrchestrator:
         if depth == 0 and self.args.academic_keyword:
             keywords = [kw.strip() for kw in self.args.academic_keyword.split(",")]
 
-        # The deeper (multi-hop) citation crawl is expensive and noisy, so run
-        # it only at the root node; every other node gets the direct-citer pass.
-        citation_depth = CITATION_DEFAULT_DEPTH
-        if depth == 0:
-            citation_depth = self.args.citation_depth
+        # Paper analysis is the OpenAlex-heavy stage. By default run it only for
+        # the root project and its direct consumers (graph depth <= 1); deeper
+        # nodes are skipped unless --citation-graph-depth raises the bound.
+        graph_depth_cap = getattr(self.args, "citation_graph_depth", 1)
+        if depth > graph_depth_cap:
+            papers = []
+            paper_diag = {
+                "complete": True,
+                "skipped": "beyond-citation-graph-depth",
+                "citationGraphDepthCap": graph_depth_cap,
+            }
+        else:
+            # The deeper (multi-hop) citation crawl is expensive and noisy, so
+            # run it only at the root node; every other node gets the
+            # direct-citer pass.
+            citation_depth = CITATION_DEFAULT_DEPTH
+            if depth == 0:
+                citation_depth = self.args.citation_depth
 
-        # Repo "profile" used by the paper-relevance scorer. Topics come from
-        # GitHub repo topics plus any injected academic keywords; terms are the
-        # most frequent significant tokens in the repo's own text. The bare
-        # project-name token is EXCLUDED from terms (the "zfp" fix): a colliding
-        # name must not corroborate an unrelated keyword-search paper.
-        name_tokens = set(_tokenize(label)) | {label.lower()}
-        profile = {
-            "name": label,
-            "owner": owner,
-            "topics": {t.lower() for t in meta.get("topics", [])}
-            | {k.lower() for k in keywords},
-            "terms": _significant_terms(all_text, exclude=name_tokens),
-            "seminal_authors": set(),
-            "seminal_venues": set(),
-        }
+            # Repo "profile" used by the paper-relevance scorer. Topics come from
+            # GitHub repo topics plus any injected academic keywords; terms are
+            # the most frequent significant tokens in the repo's own text. The
+            # bare project-name token is EXCLUDED from terms (the "zfp" fix): a
+            # colliding name must not corroborate an unrelated keyword-search
+            # paper.
+            name_tokens = set(_tokenize(label)) | {label.lower()}
+            profile = {
+                "name": label,
+                "owner": owner,
+                "topics": {t.lower() for t in meta.get("topics", [])}
+                | {k.lower() for k in keywords},
+                "terms": _significant_terms(all_text, exclude=name_tokens),
+                "seminal_authors": set(),
+                "seminal_venues": set(),
+            }
 
-        papers, paper_diag = self.citations.get_publications(
-            full_url, meta, target_urls, all_text, keywords, log,
-            citation_depth=citation_depth, profile=profile,
-        )
-        if not paper_diag.get("complete"):
-            self.incomplete_nodes.append(repo_name)
+            papers, paper_diag = self.citations.get_publications(
+                full_url, meta, target_urls, all_text, keywords, log,
+                citation_depth=citation_depth, profile=profile,
+            )
+            if not paper_diag.get("complete"):
+                self.incomplete_nodes.append(repo_name)
 
         return {
             "id": repo_name,
@@ -3285,7 +3428,21 @@ if __name__ == "__main__":
     parser.add_argument("--sg-token", default=os.environ.get("SG_TOKEN"))
     parser.add_argument("--gh-token", default=os.environ.get("GH_TOKEN"))
     parser.add_argument(
-        "--email", default=os.environ.get("AUDIT_EMAIL", "audit-bot@example.com")
+        "--email",
+        default=os.environ.get("AUDIT_EMAIL", OPENALEX_PLACEHOLDER_EMAIL),
+    )
+    parser.add_argument(
+        "--openalex-api-key",
+        default=os.environ.get("OPENALEX_API_KEY"),
+        help="OpenAlex premium API key (authenticated lane). Sent as the api_key "
+        "param on every OpenAlex request. Defaults to OPENALEX_API_KEY.",
+    )
+    parser.add_argument(
+        "--openalex-delay",
+        type=float,
+        default=float(os.environ.get("OPENALEX_DELAY", 0.0)),
+        help="Seconds to wait before each OpenAlex request (throttle valve; "
+        "usually unnecessary with an api_key).",
     )
 
     parser.add_argument(
@@ -3299,6 +3456,15 @@ if __name__ == "__main__":
         help="Hops to crawl the reverse-citation graph from seminal DOIs at the "
         "root node (1 = direct citers only; higher = citers-of-citers). "
         "Non-root nodes always use depth 1.",
+    )
+    parser.add_argument(
+        "--citation-graph-depth",
+        type=int,
+        default=int(os.environ.get("CITATION_GRAPH_DEPTH", 1)),
+        help="Max dependency-graph depth at which to run paper/citation analysis "
+        "(default 1 = root project + direct consumers only). Deeper dependent "
+        "nodes skip the OpenAlex-heavy paper lookup. Raise to analyze further "
+        "out; distinct from --depth (graph crawl) and --citation-depth (hops).",
     )
     parser.add_argument(
         "--no-paper-relevance",
@@ -3388,6 +3554,15 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     base_logger = setup_logger(args.verbose)
+
+    if not args.openalex_api_key and (
+        not args.email or args.email == OPENALEX_PLACEHOLDER_EMAIL
+    ):
+        base_logger.warning(
+            "No OpenAlex api_key and no real contact email set: requests use the "
+            "shared polite pool and will be throttled harder. Set OPENALEX_API_KEY "
+            "(or --openalex-api-key), or --email/AUDIT_EMAIL to a real contact."
+        )
 
     if args.ecosystem == "cpp":
         if not args.sg_token and args.depth > 0:
