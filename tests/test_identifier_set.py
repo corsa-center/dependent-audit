@@ -27,6 +27,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from dependent_audit import audit_dependents as A
 from typing import TypedDict, cast
 
+
 class DictTypes(TypedDict, total=False):
     name: str
     url: str
@@ -45,6 +46,7 @@ class DictTypes(TypedDict, total=False):
     layers: list[int]
     relationship: str
     evidenceLayer: int | None
+
 
 LOG = logging.getLogger("test")
 LOG.addHandler(logging.NullHandler())
@@ -537,7 +539,7 @@ def test_doc_path_downweights(monkeypatch):
         _prep(_plugin(no_idf=True), headers=["absl/strings/str_cat.h"]),
         "README.md",
         line,
-        monkeypatch
+        monkeypatch,
     )
     assert doc["confidenceScore"] < src["confidenceScore"], (doc, src)
     assert src["confidence"] == "medium" and doc["confidence"] == "low"
@@ -931,20 +933,14 @@ def test_expand_citations_caps_and_determinism(monkeypatch):
 
     class MockOpenCitationsPlugin:
         def citing_dois(batch, log):
-            return set() 
+            return set()
 
     # Build an engine without __init__ (which would hit the JOSS network).
     eng = object.__new__(A.CitationEngine)
 
-    mock_openalex = cast(
-        A.OpenAlexPublicationPlugin,
-        MockOpenAlexPlugin
-    )
+    mock_openalex = cast(A.OpenAlexPublicationPlugin, MockOpenAlexPlugin)
 
-    mock_opencitations = cast(
-        A.OpenCitationsPlugin,
-        MockOpenCitationsPlugin
-    )
+    mock_opencitations = cast(A.OpenCitationsPlugin, MockOpenCitationsPlugin)
 
     monkeypatch.setattr(eng, "openalex_plugin", mock_openalex, raising=False)
     monkeypatch.setattr(eng, "opencitations_plugin", mock_opencitations, raising=False)
@@ -1115,6 +1111,7 @@ def test_llm_judge_offline(monkeypatch):
         # Malformed body (no JSON object) -> None.
         def fake_json(*a, **k):
             return Resp("no json here")
+
         monkeypatch.setattr(A.requests, "post", fake_json)
         assert judge.judge({}, {}, LOG) is None
 
