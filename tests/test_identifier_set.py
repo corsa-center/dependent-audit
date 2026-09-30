@@ -25,6 +25,28 @@ import types
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from dependent_audit import audit_dependents as A
+from typing import TypedDict, cast
+
+
+class DictTypes(TypedDict, total=False):
+    name: str
+    url: str
+    oid: str
+    evidence: dict[str, int]
+    identifiers: set[str]
+    identifiersSorted: list[str]
+    kindWeights: dict[str, float]
+    matchedHeaders: set[str]
+    provenance: set[str]
+    provenanceSorted: list[str]
+    matchCount: int
+    declared: float
+    confidence: str
+    confidenceScore: float
+    layers: list[int]
+    relationship: str
+    evidenceLayer: int | None
+
 
 LOG = logging.getLogger("test")
 LOG.addHandler(logging.NullHandler())
@@ -431,7 +453,7 @@ def test_declared_merge_corroborates_and_injects():
         },
         {"name": "b/new", "url": "https://github.com/b/new", "source": "spack"},
     ]
-    consumers = {
+    consumers: dict[str, DictTypes] = {
         "github.com/a/existing": {
             "name": "github.com/a/existing",
             "url": "https://github.com/a/existing",
@@ -446,7 +468,7 @@ def test_declared_merge_corroborates_and_injects():
     }
     plugin._merge_declared_dependents(consumers, {"spack": {"zfp"}}, LOG)
 
-    existing = consumers["github.com/a/existing"]
+    existing: DictTypes = consumers["github.com/a/existing"]
     assert existing["kindWeights"]["declared"] == 5.0
     assert "declared:spack" in existing["provenance"]
     assert "github.com/b/new" in consumers  # injected
@@ -471,7 +493,7 @@ def test_doc_path_detection():
     print("PASS test_doc_path_detection")
 
 
-def _run_single_match(plugin, path, content, name="proj"):
+def _run_single_match(plugin, path, content, monkeypatch, name="proj"):
     def sse(event, data):
         return [f"event: {event}", f"data: {json.dumps(data)}", ""]
 
@@ -495,21 +517,29 @@ def _run_single_match(plugin, path, content, name="proj"):
         def close(self):
             pass
 
-    A.requests.get = lambda *a, **k: S()
+    response = S()
+
+    def fake_get(*a, **k):
+        return response
+
+    monkeypatch.setattr(A.requests, "get", fake_get)
+
     return plugin.discover_dependents("a/b_root", name, "HEAD", LOG)[0]
 
 
-def test_doc_path_downweights():
+def test_doc_path_downweights(monkeypatch):
     line = "#include <absl/strings/str_cat.h>"
     src = _run_single_match(
         _prep(_plugin(no_idf=True), headers=["absl/strings/str_cat.h"]),
         "src/x.cpp",
         line,
+        monkeypatch,
     )
     doc = _run_single_match(
         _prep(_plugin(no_idf=True), headers=["absl/strings/str_cat.h"]),
         "README.md",
         line,
+        monkeypatch,
     )
     assert doc["confidenceScore"] < src["confidenceScore"], (doc, src)
     assert src["confidence"] == "medium" and doc["confidence"] == "low"
@@ -519,7 +549,7 @@ def test_doc_path_downweights():
 # --- end to end ------------------------------------------------------------
 
 
-def test_end_to_end_emits_identifiers():
+def test_end_to_end_emits_identifiers(monkeypatch):
     plugin = _prep(
         _plugin(no_idf=True), headers=["include/zfp.h", "include/zfp/array.hpp"]
     )
@@ -554,15 +584,20 @@ def test_end_to_end_emits_identifiers():
         def close(self):
             pass
 
-    A.requests.get = lambda *a, **k: Stream()
+    response = Stream()
+
+    def fake_get(*a, **k):
+        return response
+
+    monkeypatch.setattr(A.requests, "get", fake_get)
     out = plugin.discover_dependents("a/b_root", "zfp", "HEAD", LOG)
     assert len(out) == 1
     c = out[0]
     assert c["evidence"] == {"include": 1, "find_package": 1}, c["evidence"]
     assert c["confidence"] == "high"
-    assert c["identifiers"] == ["zfp", "zfp.h"], c["identifiers"]
+    assert c["identifiersSorted"] == ["zfp", "zfp.h"], c["identifiers"]
     assert c["relationship"] == "DEPENDS_ON", c["relationship"]
-    assert c["provenance"] == ["convention", "header_search"], c["provenance"]
+    assert c["provenanceSorted"] == ["convention", "header_search"], c["provenance"]
     assert c["confidenceScore"] >= 5.5, c["confidenceScore"]
     # an #include (layer 2) + a find_package (layer 3) span two evidence layers
     assert c["layers"] == [2, 3], c["layers"]
@@ -584,7 +619,7 @@ def test_regexp_literal_slash_delimits_and_escapes():
     assert f(r"x\/y") == r"/x\/y/"  # already-escaped slash passed through
     # The literal is a valid regex whose body round-trips once slashes unescape.
     body = f(r"a(b|c)/d")[1:-1]
-    assert re.compile(body.replace(r"\/", "/"))
+    re.compile(body.replace(r"\/", "/"))
     print("PASS test_regexp_literal_slash_delimits_and_escapes")
 
 
@@ -631,7 +666,7 @@ def test_search_alert_and_error_are_warnings():
     print("PASS test_search_alert_and_error_are_warnings")
 
 
-def test_stream_search_auth_fast_fail():
+def test_stream_search_auth_fast_fail(monkeypatch):
     p = _plugin()
     calls = {"n": 0}
 
@@ -649,7 +684,7 @@ def test_stream_search_auth_fast_fail():
 
     log, cap = _capturing_logger("test_authfail")
     orig = A.requests.get
-    A.requests.get = fake_get
+    monkeypatch.setattr(A.requests, "get", fake_get)
     try:
         # 401 must fail fast (one request, no 6x backoff storm) and loudly.
         assert list(p._stream_search("q", log)) == []
@@ -891,16 +926,27 @@ def test_paper_sort_key_deterministic():
     print("PASS test_paper_sort_key_deterministic")
 
 
-def test_expand_citations_caps_and_determinism():
+def test_expand_citations_caps_and_determinism(monkeypatch):
+    class MockOpenAlexPlugin:
+        def discover_citing(batch, log):
+            return {}
+
+    class MockOpenCitationsPlugin:
+        def citing_dois(batch, log):
+            return set()
+
     # Build an engine without __init__ (which would hit the JOSS network).
     eng = object.__new__(A.CitationEngine)
-    eng.openalex_plugin = types.SimpleNamespace(discover_citing=lambda batch, log: {})
-    eng.opencitations_plugin = types.SimpleNamespace(
-        citing_dois=lambda batch, log: set()
-    )
+
+    mock_openalex = cast(A.OpenAlexPublicationPlugin, MockOpenAlexPlugin)
+
+    mock_opencitations = cast(A.OpenCitationsPlugin, MockOpenCitationsPlugin)
+
+    monkeypatch.setattr(eng, "openalex_plugin", mock_openalex, raising=False)
+    monkeypatch.setattr(eng, "opencitations_plugin", mock_opencitations, raising=False)
     saved_cap = A.CITATION_MAX_PER_LEVEL
     try:
-        A.CITATION_MAX_PER_LEVEL = 2
+        monkeypatch.setattr(A, "CITATION_MAX_PER_LEVEL", 2, raising=False)
         diag = A.CitationDiagnostics()
         doi_meta = {
             "s1": {"openalex_citations": 5},
@@ -920,7 +966,7 @@ def test_expand_citations_caps_and_determinism():
     print("PASS test_expand_citations_caps_and_determinism")
 
 
-def test_http_get_json_records_channel_failure():
+def test_http_get_json_records_channel_failure(monkeypatch):
     plugin = A.PublicationPlugin("e@x.com")
     plugin.diag = A.CitationDiagnostics()
 
@@ -932,18 +978,27 @@ def test_http_get_json_records_channel_failure():
         def json(self):
             return {}
 
+    def fake_sleep(s):
+        return None
+
+    def fake_get(*a, **k):
+        return Resp(404)
+
+    def fake_rate_limit(*a, **k):
+        return Resp(429)
+
     saved_get, saved_sleep = A.requests.get, A.time.sleep
     try:
-        A.time.sleep = lambda s: None
+        monkeypatch.setattr(A.time, "sleep", fake_sleep)
         # Exhausted 429 -> recorded against the named channel as rate_limited.
-        A.requests.get = lambda *a, **k: Resp(429)
+        monkeypatch.setattr(A.requests, "get", fake_rate_limit)
         assert (
             plugin._http_get_json("http://x", max_attempts=2, channel="openalex")
             is None
         )
         assert plugin.diag.http_failures["openalex"]["rate_limited"] == 1
         # A definitive 404 is a complete answer -> NOT recorded as a failure.
-        A.requests.get = lambda *a, **k: Resp(404)
+        monkeypatch.setattr(A.requests, "get", fake_get)
         assert (
             plugin._http_get_json("http://x", max_attempts=2, channel="crossref")
             is None
@@ -954,7 +1009,7 @@ def test_http_get_json_records_channel_failure():
     print("PASS test_http_get_json_records_channel_failure")
 
 
-def test_http_get_json_retry_after_cap():
+def test_http_get_json_retry_after_cap(monkeypatch):
     # Regression: a quota-limited service (OpenAlex was observed sending
     # Retry-After: 30474) must not stall the crawl. A Retry-After beyond the
     # cap abandons the single optional call instead of sleeping for hours.
@@ -973,17 +1028,28 @@ def test_http_get_json_retry_after_cap():
 
     slept = []
     saved_get, saved_sleep = A.requests.get, A.time.sleep
+
+    def fake_sleep(s):
+        return slept.append(s)
+
+    def S(*a, **k):
+        return seq.pop(0)
+
+    def fake_retry(*a, **k):
+        return Resp(429, retry_after="30474")
+
     try:
-        A.time.sleep = lambda s: slept.append(s)
+        monkeypatch.setattr(A.time, "sleep", fake_sleep)
 
         # Huge Retry-After -> give up immediately, no sleep, return None.
-        A.requests.get = lambda *a, **k: Resp(429, retry_after="30474")
+        monkeypatch.setattr(A.requests, "get", fake_retry)
         assert plugin._http_get_json("http://x", max_attempts=4) is None
         assert slept == [], slept  # never slept the multi-hour cool-off
 
         # A sane Retry-After within the cap IS honored (bounded), then success.
         seq = [Resp(429, retry_after="3"), Resp(200, body={"ok": True})]
-        A.requests.get = lambda *a, **k: seq.pop(0)
+
+        monkeypatch.setattr(A.requests, "get", S)
         assert plugin._http_get_json("http://x", max_attempts=4) == {"ok": True}
         assert slept and max(slept) <= A.HTTP_RETRY_AFTER_CAP
     finally:
@@ -991,7 +1057,7 @@ def test_http_get_json_retry_after_cap():
     print("PASS test_http_get_json_retry_after_cap")
 
 
-def test_llm_judge_offline():
+def test_llm_judge_offline(monkeypatch):
     # No URL -> disabled, never calls out.
     off = A.LLMRelevanceJudge(None, "m")
     assert off.enabled is False
@@ -1022,7 +1088,7 @@ def test_llm_judge_offline():
                 'Sure! {"relevant": true, "confidence": 0.9, "reason": "cites zfp"}'
             )
 
-        A.requests.post = post_ok
+        monkeypatch.setattr(A.requests, "post", post_ok)
         v = judge.judge(
             {"name": "zfp", "owner": "LLNL", "topics": set(), "terms": set()},
             {"title": "Lossy compression", "abstract": "uses zfp", "venue": "SC"},
@@ -1039,18 +1105,21 @@ def test_llm_judge_offline():
             r.status_code = 500
             return r
 
-        A.requests.post = post_500
+        monkeypatch.setattr(A.requests, "post", post_500)
         assert judge.judge({}, {}, LOG) is None
 
         # Malformed body (no JSON object) -> None.
-        A.requests.post = lambda *a, **k: Resp("no json here")
+        def fake_json(*a, **k):
+            return Resp("no json here")
+
+        monkeypatch.setattr(A.requests, "post", fake_json)
         assert judge.judge({}, {}, LOG) is None
 
         # A raised exception (server down) -> None, degrades to heuristic.
         def boom(*a, **k):
             raise A.requests.exceptions.RequestException("refused")
 
-        A.requests.post = boom
+        monkeypatch.setattr(A.requests, "post", boom)
         assert judge.judge({}, {}, LOG) is None
     finally:
         A.requests.post = saved
@@ -1210,7 +1279,7 @@ def test_rate_limit_wait_capped():
     print("PASS test_rate_limit_wait_capped")
 
 
-def test_get_metadata_guards_and_null_repo():
+def test_get_metadata_guards_and_null_repo(monkeypatch):
     # Guards short-circuit to empty with no request at all.
     assert A.GitHubEnricher("").get_metadata("github.com/a/b", LOG) == {}
     assert A.GitHubEnricher("tok").get_metadata("gitlab.com/a/b", LOG) == {}
@@ -1226,7 +1295,11 @@ def test_get_metadata_guards_and_null_repo():
             return {"data": {"repository": None}, "errors": [{"message": "NOT_FOUND"}]}
 
     orig = A.requests.post
-    A.requests.post = lambda *a, **k: Resp()
+
+    def fake_post(*a, **k):
+        return Resp()
+
+    monkeypatch.setattr(A.requests, "post", fake_post)
     try:
         assert (
             A.GitHubEnricher("tok").get_metadata("github.com/dyninst/dyninst", LOG)

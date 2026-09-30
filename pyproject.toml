@@ -23,6 +23,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "flask>=3.0.3",
     "pytest>=8.3.5",
     "ruff>=0.16.8",
     "ty>=0.0.83",

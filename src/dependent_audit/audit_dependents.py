@@ -9,7 +9,43 @@ import math
 import uuid
 import logging
 from collections import deque, defaultdict
+from typing import cast, TypedDict, TypeAlias
 from dataclasses import dataclass
+
+
+class DictTypes(TypedDict, total=False):
+    name: str
+    url: str
+    oid: str
+    evidence: dict[str, int]
+    identifiers: set[str]
+    identifiersSorted: list[str]
+    kindWeights: dict[str, float]
+    matchedHeaders: set[str]
+    provenance: set[str]
+    provenanceSorted: list[str]
+    matchCount: int
+    declared: float
+    confidence: str
+    confidenceScore: float
+    layers: list[int]
+    relationship: str
+    evidenceLayer: int | None
+
+
+class PaperInfo(TypedDict, total=False):
+    title: str
+    abstract: str
+    authors: list[str]
+    concepts: list[str]
+    provenance: set[str] | list[str]
+    kindWeights: dict[str, float]
+    venue: str
+    journal: str
+    year: int
+    openalex_id: int
+    openalex_citations: int
+
 
 SNIPPETS_DIR = "spdx_snippets"
 SOURCEGRAPH_URL = "https://sourcegraph.com/.api/graphql"
@@ -118,7 +154,7 @@ class TerseFormatter(logging.Formatter):
 
 class ContextAdapter(logging.LoggerAdapter):
     def process(self, msg, kwargs):
-        extra = self.extra.copy()
+        extra = dict(self.extra or {})
         if "extra" in kwargs:
             extra["extra_meta"] = kwargs.pop("extra")
         kwargs["extra"] = extra
@@ -963,7 +999,7 @@ class CitationEngine:
         non-empty content but always merging provenance and concepts."""
         if not doi:
             return
-        existing = doi_meta.get(doi)
+        existing: PaperInfo = doi_meta.get(doi)
         if existing is None:
             doi_meta[doi] = dict(meta)
             doi_meta[doi]["provenance"] = set(meta.get("provenance", set()))
@@ -1174,14 +1210,14 @@ class CitationEngine:
             "title": res.get("title") or meta.get("title") or "",
             "abstract": meta.get("abstract") or res.get("abstract") or "",
             "authors": meta.get("authors") or res.get("authors") or [],
-            "concepts": meta.get("concepts") or [],
+            "concepts": cast(list[str], meta.get("concepts")) or [],
             "venue": meta.get("venue") or res.get("journal") or "",
             "journal": res.get("journal") or meta.get("venue") or "Unknown",
             "year": res.get("year") or meta.get("year"),
         }
         if res.get("subjects"):
             content["concepts"] = list(
-                dict.fromkeys(content["concepts"] + res["subjects"])
+                dict.fromkeys(content["concepts"] + cast(list[str], res["subjects"]))
             )
 
         paper = {
@@ -2296,7 +2332,7 @@ class CppSourcegraphPlugin(EcosystemPlugin):
             cfg = DECLARED_REGISTRIES[source]
             dep_paths = set()
             for alias in names:
-                content_re = cfg["depends_tmpl"].format(alias=re.escape(alias))
+                content_re = str(cfg["depends_tmpl"]).format(alias=re.escape(alias))
                 dep_paths |= self._registry_manifest_paths(
                     cfg, content_re, log, cap=self.DECLARED_CAP
                 )
@@ -2304,7 +2340,7 @@ class CppSourcegraphPlugin(EcosystemPlugin):
                 cfg["repo"], list(dep_paths)[: self.DECLARED_CAP], log
             )
             for content in blobs.values():
-                m = re.search(cfg["url_re"], content or "")
+                m = re.search(str(cfg["url_re"]), content or "")
                 if not m:
                     continue
                 dep_slug = m.group(1).removesuffix(".git")
@@ -2324,7 +2360,7 @@ class CppSourcegraphPlugin(EcosystemPlugin):
         rest as declared-only consumers."""
         for rec in self._find_declared_dependents(aliases, log):
             rn = f"github.com/{rec['name']}"
-            entry = consumers.get(rn)
+            entry: DictTypes = consumers.get(rn)
             if entry is None:
                 entry = consumers[rn] = {
                     "name": rn,
@@ -2796,11 +2832,11 @@ class CppSourcegraphPlugin(EcosystemPlugin):
                             return
                     event, data_lines = None, []
                     continue
-                if raw.startswith(":"):
+                if isinstance(raw, str) and raw.startswith(":"):
                     continue  # keep-alive comment
-                if raw.startswith("event:"):
+                if isinstance(raw, str) and raw.startswith("event:"):
                     event = raw[len("event:") :].strip()
-                elif raw.startswith("data:"):
+                elif isinstance(raw, str) and raw.startswith("data:"):
                     data_lines.append(raw[len("data:") :].lstrip())
         except requests.exceptions.RequestException as e:
             log.warning(
@@ -2848,7 +2884,7 @@ class CppSourcegraphPlugin(EcosystemPlugin):
             time.sleep(self.args.sg_delay)
 
         log.info("Initiating Sourcegraph streaming dependency search")
-        consumers = {}
+        consumers: dict[str, DictTypes] = {}
         for match in self._stream_search(full_query, log):
             if match.get("type") != "content":
                 continue
@@ -2867,7 +2903,20 @@ class CppSourcegraphPlugin(EcosystemPlugin):
                     "provenance": set(),
                     "matchCount": 0,
                 }
-            entry = consumers[rn]
+            entry: DictTypes = consumers[rn]
+            if entry is None:
+                entry = consumers[rn] = {
+                    "name": rn,
+                    "url": rec["url"],
+                    "oid": "HEAD",
+                    "evidence": {},
+                    "identifiers": set(),
+                    "kindWeights": {},
+                    "matchedHeaders": set(),
+                    "provenance": set(),
+                    "matchCount": 0,
+                }
+
             # A match inside documentation is weaker evidence of real usage than
             # one in source/build files; scale its weight contribution down.
             ctx = 0.3 if self._is_doc_path(match.get("path", "")) else 1.0
@@ -2894,7 +2943,7 @@ class CppSourcegraphPlugin(EcosystemPlugin):
             score, tier = self._score_consumer(
                 entry["kindWeights"], entry["matchCount"]
             )
-            layers = self._evidence_layers(entry["kindWeights"])
+            layers: list[int] = self._evidence_layers(entry["kindWeights"])
             entry["confidenceScore"] = score
             entry["confidence"] = tier
             entry["layers"] = layers
@@ -2902,10 +2951,12 @@ class CppSourcegraphPlugin(EcosystemPlugin):
             entry["relationship"] = self._classify_relationship(
                 len(entry["matchedHeaders"]), provider_headers
             )
-            entry["identifiers"] = sorted(entry["identifiers"])
-            entry["provenance"] = sorted(entry["provenance"])
+            entry["identifiersSorted"] = sorted(entry["identifiers"])
+            entry["provenanceSorted"] = sorted(entry["provenance"])
             del entry["kindWeights"]
             del entry["matchedHeaders"]
+            del entry["identifiers"]
+            del entry["provenance"]
 
         log.info(
             f"Sourcegraph dependency search completed. Found {len(consumers)} total consumers."
@@ -3207,8 +3258,8 @@ class AuditOrchestrator:
                         "source": clean_child,
                         "target": curr_id.replace("github.com/", ""),
                         "evidence": child.get("evidence", {}),
-                        "identifiers": child.get("identifiers", []),
-                        "provenance": child.get("provenance", []),
+                        "identifiers": child.get("identifiersSorted", []),
+                        "provenance": child.get("provenanceSorted", []),
                         "evidenceLayer": child.get("evidenceLayer"),
                         "layers": child.get("layers", []),
                         "relationship": relationship,
