@@ -21,17 +21,31 @@ import auditlib  # noqa: E402
 def test_normalize_and_truthy():
     assert auditlib.normalize({"academic-keyword": "x"}) == {"academic_keyword": "x"}
     assert auditlib.truthy(True) and auditlib.truthy("yes") and auditlib.truthy("1")
-    assert not auditlib.truthy("no") and not auditlib.truthy(False) and not auditlib.truthy("")
+    assert (
+        not auditlib.truthy("no")
+        and not auditlib.truthy(False)
+        and not auditlib.truthy("")
+    )
     print("PASS test_normalize_and_truthy")
 
 
 def test_build_argv_maps_every_kind():
-    payload = auditlib.normalize({
-        "repo": "LLNL/zfp", "name": "zfp", "depth": 2, "ecosystem": "cpp",
-        "declared-sources": "spack", "sg_delay": 0.5, "idf_cap": 300,
-        "verbose": True, "no_idf": False, "include_vendored": True,
-        "sg_count": "5000", "out": "/ignored",
-    })
+    payload = auditlib.normalize(
+        {
+            "repo": "LLNL/zfp",
+            "name": "zfp",
+            "depth": 2,
+            "ecosystem": "cpp",
+            "declared-sources": "spack",
+            "sg_delay": 0.5,
+            "idf_cap": 300,
+            "verbose": True,
+            "no_idf": False,
+            "include_vendored": True,
+            "sg_count": "5000",
+            "out": "/ignored",
+        }
+    )
     argv = auditlib.build_argv(payload, "/work/graph.json")
     # service owns --out; client value dropped
     assert argv[argv.index("--out") + 1] == "/work/graph.json"
@@ -61,8 +75,9 @@ def test_validation_errors():
 
 
 def test_tokens_go_to_env_not_argv():
-    payload = auditlib.normalize({"repo": "a/b", "name": "b",
-                                  "sg_token": "SG", "gh_token": "GH"})
+    payload = auditlib.normalize(
+        {"repo": "a/b", "name": "b", "sg_token": "SG", "gh_token": "GH"}
+    )
     argv = auditlib.build_argv(payload, "/x")
     assert "SG" not in argv and "GH" not in argv
     env = auditlib.build_env(payload, base_env={})
@@ -73,7 +88,8 @@ def test_tokens_go_to_env_not_argv():
 def _fake_crawler(tmp):
     path = os.path.join(tmp, "fake.py")
     with open(path, "w") as f:
-        f.write(textwrap.dedent('''
+        f.write(
+            textwrap.dedent("""
             import sys, os, json
             out = sys.argv[sys.argv.index("--out")+1]
             os.makedirs("spdx_snippets", exist_ok=True)
@@ -81,7 +97,8 @@ def _fake_crawler(tmp):
             json.dump({"meta":{"root":sys.argv[sys.argv.index("--repo")+1],
                                "sg":os.environ.get("SG_TOKEN")},
                        "nodes":[],"edges":[]}, open(out,"w"))
-        '''))
+        """)
+        )
     return path
 
 
@@ -92,8 +109,9 @@ def test_jobstore_lifecycle_and_atomic_claim():
     store = auditlib.JobStore(os.path.join(tmp, "jobs"))
     auditlib.AUDIT_SCRIPT = _fake_crawler(tmp)
 
-    payload = auditlib.normalize({"repo": "LLNL/zfp", "name": "zfp",
-                                  "depth": 1, "sg_token": "SECRET"})
+    payload = auditlib.normalize(
+        {"repo": "LLNL/zfp", "name": "zfp", "depth": 1, "sg_token": "SECRET"}
+    )
     auditlib.validate(payload)
     meta = store.create(payload)
     jid = meta["id"]
@@ -102,9 +120,11 @@ def test_jobstore_lifecycle_and_atomic_claim():
 
     # Exactly one of many concurrent claimers wins.
     winners = []
+
     def race():
         if store.try_claim(jid):
             winners.append(1)
+
     ts = [threading.Thread(target=race) for _ in range(8)]
     [t.start() for t in ts]
     [t.join() for t in ts]
@@ -117,6 +137,7 @@ def test_jobstore_lifecycle_and_atomic_claim():
     m = store.get_meta(jid)
     assert m["status"] == auditlib.STATUS_SUCCEEDED, m
     import json
+
     graph = json.load(open(store.graph_path(jid)))
     assert graph["meta"]["root"] == "LLNL/zfp"
     assert graph["meta"]["sg"] == "SECRET"

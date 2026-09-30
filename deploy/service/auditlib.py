@@ -295,9 +295,7 @@ class JobStore:
             )
         except OSError:
             return False  # already claimed or gone
-        self.update_meta(
-            job_id, status=STATUS_RUNNING, started_at=time.time()
-        )
+        self.update_meta(job_id, status=STATUS_RUNNING, started_at=time.time())
         return True
 
     def update_meta(self, job_id, **fields):
