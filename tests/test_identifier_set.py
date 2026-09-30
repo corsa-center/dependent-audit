@@ -560,9 +560,9 @@ def test_end_to_end_emits_identifiers():
     c = out[0]
     assert c["evidence"] == {"include": 1, "find_package": 1}, c["evidence"]
     assert c["confidence"] == "high"
-    assert c["identifiers"] == ["zfp", "zfp.h"], c["identifiers"]
+    assert c["identifiersSorted"] == ["zfp", "zfp.h"], c["identifiers"]
     assert c["relationship"] == "DEPENDS_ON", c["relationship"]
-    assert c["provenance"] == ["convention", "header_search"], c["provenance"]
+    assert c["provenanceSorted"] == ["convention", "header_search"], c["provenance"]
     assert c["confidenceScore"] >= 5.5, c["confidenceScore"]
     # an #include (layer 2) + a find_package (layer 3) span two evidence layers
     assert c["layers"] == [2, 3], c["layers"]
