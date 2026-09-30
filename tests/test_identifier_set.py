@@ -868,7 +868,7 @@ def test_expand_citations_caps_and_determinism():
     # Build an engine without __init__ (which would hit the JOSS network).
     eng = object.__new__(A.CitationEngine)
     eng.openalex_plugin = types.SimpleNamespace(
-        discover_citing=lambda batch, log: {}
+        discover_citing=lambda batch, log, id_hint=None: {}
     )
     eng.opencitations_plugin = types.SimpleNamespace(
         citing_dois=lambda batch, log: set()
@@ -1196,6 +1196,136 @@ def test_get_metadata_guards_and_null_repo():
     finally:
         A.requests.post = orig
     print("PASS test_get_metadata_guards_and_null_repo")
+
+
+def test_paginate_works_page_size_and_api_key():
+    # Full pages + the premium api_key ride on every OpenAlex request; mailto
+    # stays for the polite-pool fallback.
+    plugin = A.OpenAlexPublicationPlugin("e@x.com", api_key="SECRET")
+    captured = {}
+
+    def fake_get(url, params=None, timeout=None, log=None, channel=None):
+        captured.update(params)
+        return {"results": [], "meta": {"next_cursor": None}}
+
+    plugin._http_get_json = fake_get
+    plugin._paginate_works({"filter": "doi:10.1/a"}, "backfill", LOG)
+    assert captured["per-page"] == A.OPENALEX_PER_PAGE
+    assert captured["api_key"] == "SECRET"
+    assert captured["mailto"] == "e@x.com"
+    assert captured["filter"] == "doi:10.1/a"
+
+    # No key -> no api_key param leaks in.
+    plain = A.OpenAlexPublicationPlugin("e@x.com")
+    seen = {}
+    plain._http_get_json = lambda url, params=None, timeout=None, log=None, channel=None: (
+        seen.update(params) or {"results": [], "meta": {"next_cursor": None}}
+    )
+    plain._paginate_works({"filter": "x"}, "backfill", LOG)
+    assert "api_key" not in seen
+    print("PASS test_paginate_works_page_size_and_api_key")
+
+
+def test_discover_citing_batches_or_filters():
+    # 150 seeds must collapse from 150 per-DOI queries to a handful of OR'd
+    # batches: ceil(150/100) doi: resolution queries + ceil(150/100) cites:.
+    plugin = A.OpenAlexPublicationPlugin("e@x.com")
+    calls = []
+
+    def fake_paginate(params, provenance, log):
+        filt = params["filter"]
+        calls.append(filt)
+        if filt.startswith("doi:"):
+            out = {}
+            for d in filt[len("doi:"):].split("|"):
+                # Unique OpenAlex id per seed DOI.
+                out[d] = {"doi": d, "openalex_id": "https://openalex.org/W" + d.split("/")[-1]}
+            return out
+        if filt.startswith("cites:"):
+            return {"10.c/" + filt[-1:]: {"doi": "10.c/" + filt[-1:]}}
+        return {}
+
+    plugin._paginate_works = fake_paginate
+    dois = [f"10.s/{i}" for i in range(150)]
+    found = plugin.discover_citing(dois, LOG)
+
+    doi_filters = [f for f in calls if f.startswith("doi:")]
+    cites_filters = [f for f in calls if f.startswith("cites:")]
+    assert len(doi_filters) == 2, doi_filters  # ceil(150/100)
+    assert len(cites_filters) == 2, cites_filters  # 150 unique ids
+    # No batch OR's more than the documented cap of values.
+    assert all(f.count("|") + 1 <= A.OPENALEX_MAX_OR for f in calls), calls
+    # The union of citers is returned (never the seeds themselves).
+    assert found and all(k.startswith("10.c/") for k in found), found
+    print("PASS test_discover_citing_batches_or_filters")
+
+
+def test_discover_citing_uses_id_hint():
+    # When the caller already knows the OpenAlex ids (deeper hops), skip the
+    # doi: resolution round-trip entirely.
+    plugin = A.OpenAlexPublicationPlugin("e@x.com")
+    calls = []
+
+    def fake_paginate(params, provenance, log):
+        calls.append(params["filter"])
+        if params["filter"].startswith("cites:"):
+            return {"10.c/x": {"doi": "10.c/x"}}
+        return {}
+
+    plugin._paginate_works = fake_paginate
+    hint = {
+        "10.s/1": "https://openalex.org/W1",
+        "10.s/2": "https://openalex.org/W2",
+    }
+    plugin.discover_citing(["10.s/1", "10.s/2"], LOG, id_hint=hint)
+    assert not any(f.startswith("doi:") for f in calls), calls
+    assert any(f.startswith("cites:") for f in calls), calls
+    print("PASS test_discover_citing_uses_id_hint")
+
+
+def test_batch_backfill_only_fetches_missing():
+    eng = object.__new__(A.CitationEngine)
+    eng.relevance_enabled = True
+    eng.paper_cache = {"10/cached": {"title": "x"}}
+    requested = {}
+
+    def fake_fetch(dois, log):
+        requested["dois"] = list(dois)
+        return {"10/new": {"title": "n", "provenance": {"backfill"}}}
+
+    eng.openalex_plugin = types.SimpleNamespace(fetch_by_dois=fake_fetch)
+    doi_meta = {"10/hasmeta": {"title": "m"}}
+    eng._batch_backfill(["10/hasmeta", "10/cached", "10/new"], doi_meta, LOG)
+    # Only DOIs absent from both doi_meta and the cache are fetched.
+    assert requested["dois"] == ["10/new"], requested
+    # Persisted with provenance normalized to a sorted list (JSON-serializable).
+    assert eng.paper_cache["10/new"]["provenance"] == ["backfill"]
+    print("PASS test_batch_backfill_only_fetches_missing")
+
+
+def test_service_option_plumbing():
+    # The queue/worker layer must forward the new knobs: graph-depth + throttle
+    # on the CLI, and the api_key as a secret env var (never argv).
+    sys.path.insert(0, os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        "deploy", "service",
+    ))
+    import auditlib
+
+    argv = auditlib.build_argv(
+        {"repo": "r", "name": "n", "citation_graph_depth": 2, "openalex_delay": 0.5},
+        out_path="/dev/null",
+    )
+    assert "--citation-graph-depth" in argv and argv[argv.index("--citation-graph-depth") + 1] == "2"
+    assert "--openalex-delay" in argv and argv[argv.index("--openalex-delay") + 1] == "0.5"
+
+    env = auditlib.build_env(
+        {"openalex_api_key": "SECRET"}, base_env={}
+    )
+    assert env["OPENALEX_API_KEY"] == "SECRET"
+    # Secret is env-only, never on the command line (process table leak).
+    assert not any("SECRET" in a for a in argv)
+    print("PASS test_service_option_plumbing")
 
 
 if __name__ == "__main__":
