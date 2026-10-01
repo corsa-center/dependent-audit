@@ -2,6 +2,9 @@ import os
 import time
 import json
 import argparse
+import sys
+import glob as globlib
+import tomllib  # stdlib on Python 3.11+ (the minimum this tool supports)
 import requests
 import re
 import concurrent.futures
@@ -46,6 +49,8 @@ class PaperInfo(TypedDict, total=False):
     openalex_id: int
     openalex_citations: int
 
+if sys.version_info < (3, 11):  # tomllib landed in 3.11; we rely on it for --config
+    raise RuntimeError("audit_dependents requires Python 3.11 or newer.")
 
 SNIPPETS_DIR = "spdx_snippets"
 SOURCEGRAPH_URL = "https://sourcegraph.com/.api/graphql"
@@ -168,6 +173,59 @@ def setup_logger(verbose):
     handler.setFormatter(JSONFormatter() if verbose else TerseFormatter())
     logger.addHandler(handler)
     return logger
+
+
+# Config keys that are secrets: an auto-fetched, checked-in repo config must
+# never be able to set them (they come only from CLI / env / an explicit
+# --config the operator chose to pass). See the config-merge precedence.
+SECRET_CONFIG_DESTS = frozenset({"sg_token", "gh_token"})
+# Filename looked up in the target repo for an auto-fetched config.
+REPO_CONFIG_FILENAME = ".dependent-audit.toml"
+
+
+def _split_config(raw):
+    """Split a parsed TOML mapping into (options, interface). Options may be
+    given at the top level or under an [options]/[audit] table; keys use the
+    CLI long-name (hyphens or underscores)."""
+    if not raw:
+        return {}, None
+    interface = raw.get("interface")
+    opts = {}
+    for k, v in raw.items():
+        if k == "interface":
+            continue
+        if k in ("options", "audit") and isinstance(v, dict):
+            opts.update(v)
+        else:
+            opts[k] = v
+    opts = {k.replace("-", "_"): v for k, v in opts.items()}
+    return opts, (interface if isinstance(interface, dict) else None)
+
+
+def _apply_config_layer(args, opts, claimed, known, coerce, store_true, log,
+                        secrets_ok):
+    """Overlay one config layer onto `args`, lowest-precedence-last. A dest
+    already `claimed` by a higher layer (CLI, or an earlier layer) is skipped;
+    unknown keys warn; secret dests are skipped unless the layer is trusted."""
+    for dest, val in opts.items():
+        if dest not in known:
+            log.info(f"Ignoring unknown config option: {dest}")
+            continue
+        if dest in claimed:
+            continue
+        if dest in SECRET_CONFIG_DESTS and not secrets_ok:
+            log.info(f"Ignoring secret '{dest}' from auto-fetched repo config.")
+            continue
+        if dest in store_true:
+            val = bool(val)
+        elif dest in coerce:
+            try:
+                val = coerce[dest](val)
+            except (TypeError, ValueError):
+                log.info(f"Ignoring config option {dest}: cannot coerce {val!r}.")
+                continue
+        setattr(args, dest, val)
+        claimed.add(dest)
 
 
 class CitationDiagnostics:
@@ -1558,6 +1616,7 @@ class IdentifierKind:
     REPO_URL = "repo_url"
     REPO_SLUG = "repo_slug"
     PROJECT_NAME = "project_name"
+    EXECUTABLE = "executable"
     ALIAS = "alias"
 
 
@@ -1574,6 +1633,10 @@ KIND_WEIGHTS = {
     IdentifierKind.PKGCONFIG: 4,
     IdentifierKind.LIB_ARTIFACT: 3,
     IdentifierKind.HEADER_PATH: 3,
+    # A tool/binary invocation (execute_process(myexe ...)) names the project's
+    # executable interface — build-manifest-level authority, on par with a
+    # library artifact.
+    IdentifierKind.EXECUTABLE: 3,
     IdentifierKind.HEADER_BASENAME: 2,
     IdentifierKind.PROJECT_NAME: 1,
     IdentifierKind.ALIAS: 1,
@@ -1613,6 +1676,9 @@ EVIDENCE_LAYER = {
     IdentifierKind.PKGCONFIG: LAYER_BUILD,
     IdentifierKind.BAZEL_MODULE: LAYER_BUILD,
     IdentifierKind.LIB_ARTIFACT: LAYER_BUILD,
+    # An executable invocation lives in a consumer's build config (CMake
+    # execute_process / add_custom_command), so it is a build-manifest signal.
+    IdentifierKind.EXECUTABLE: LAYER_BUILD,
     "declared": LAYER_REGISTRY,
 }
 
@@ -1643,6 +1709,12 @@ class Identifier:
     provenance: str
     base_weight: int = 1
     specificity: float = 1.0
+    # When set, this identifier is searched by this consumer-side regex verbatim
+    # instead of one derived from its kind. Used by declared-interface `consume`
+    # entries, whose author supplied the exact string consumers write while still
+    # tagging it with a kind (so weight / evidence-layer / corroboration apply).
+    explicit_regex: str | None = None
+    explicit_evidence: str | None = None
 
     @property
     def weight(self):
@@ -2000,18 +2072,25 @@ class CppSourcegraphPlugin(EcosystemPlugin):
 
         The include root is whatever directory is added to the compiler's search
         path; by overwhelming convention that is the last `include/`|`inc/`
-        segment, else a leading `src/`. Everything below it is namespace-invariant
-        across consumers regardless of their -I flags."""
+        segment, else the last `src/`|`source/` segment. Everything below it is
+        namespace-invariant across consumers regardless of their -I flags.
+
+        The src/source marker is scanned anywhere in the path, not just the
+        leading segment: many projects nest their source root under a component
+        directory (Kokkos ships core/src/, containers/src/, algorithms/src/;
+        consumers still `#include <Kokkos_Core.hpp>`, never the core/src/ prefix).
+        A leading `src/` is just the degenerate single-component case."""
         parts = repo_path.split("/")
         lower = [p.lower() for p in parts]
-        marker_idx = -1
-        for i in range(len(parts) - 1):  # never treat the filename as a marker
-            if lower[i] in cls.INCLUDE_ROOT_MARKERS:
-                marker_idx = i
-        if marker_idx >= 0:
-            return "/".join(parts[marker_idx + 1 :])
-        if len(parts) > 1 and lower[0] in cls.SRC_MARKERS:
-            return "/".join(parts[1:])
+        # include/inc takes precedence over src/source wherever both appear
+        # (e.g. googletest/include/ under a source tree).
+        for markers in (cls.INCLUDE_ROOT_MARKERS, cls.SRC_MARKERS):
+            marker_idx = -1
+            for i in range(len(parts) - 1):  # never treat the filename as a marker
+                if lower[i] in markers:
+                    marker_idx = i
+            if marker_idx >= 0:
+                return "/".join(parts[marker_idx + 1 :])
         return repo_path
 
     def _extract_header_identifiers(self, search_id, curr_name, log):
@@ -2072,6 +2151,27 @@ class CppSourcegraphPlugin(EcosystemPlugin):
             },
         )
         return ids
+
+    def fetch_repo_config(self, log, filename=REPO_CONFIG_FILENAME):
+        """Fetch and parse a checked-in TOML config from the target repo's HEAD
+        (Sourcegraph blob query). Returns the parsed mapping, or None if absent
+        or malformed. Ecosystem-agnostic; reuses the retry/backoff path."""
+        repo = self.args.repo or ""
+        search_id = repo if "github.com/" in repo else f"github.com/{repo}"
+        q = 'query($repo: String!, $path: String!) { repository(name: $repo) { commit(rev: "HEAD") { blob(path: $path) { content } } } }'
+        data = self._graphql_query(q, {"repo": search_id, "path": filename}, log)
+        try:
+            content = data["data"]["repository"]["commit"]["blob"]["content"]
+        except (TypeError, KeyError):
+            return None
+        if not content:
+            return None
+        try:
+            log.info(f"Loaded checked-in config {filename} from target repo.")
+            return tomllib.loads(content)
+        except tomllib.TOMLDecodeError as e:
+            log.info(f"Ignoring malformed {filename} in target repo: {e}")
+            return None
 
     def _fetch_build_blobs(self, search_id, log):
         """Fetch the provider's root CMakeLists.txt and MODULE.bazel in one
@@ -2385,13 +2485,28 @@ class CppSourcegraphPlugin(EcosystemPlugin):
         Combines repo-wide header extraction (namespace + basename identifiers),
         convention-based library/CMake/pkg-config names from the project name,
         real CMake/Bazel/pkg-config identifiers from build files, repo-URL
-        identity, registry aliases, and an optional custom string."""
+        identity, registry aliases, and an optional custom string.
+
+        When a declared public interface is configured (root node only), its
+        header and consumption identifiers are added as authoritative signals,
+        and — unless `replace_auto_headers` is disabled — they replace the noisy
+        automatic header extraction for the root while build/VCS auto-discovery
+        still runs (so find_package/@repo are still picked up for free)."""
         search_id = curr_id if "github.com/" in curr_id else f"github.com/{curr_id}"
         idset = IdentifierSet()
 
+        interface = getattr(self.args, "interface", None) if self._is_root(curr_id) else None
+        declared_ids = self._declared_interface_identifiers(interface, search_id, log)
+        # Author-declared headers/consume supersede auto header extraction at the
+        # root unless the author opted out (build/VCS auto-ID is unaffected).
+        skip_auto_headers = bool(declared_ids) and (
+            (interface or {}).get("replace_auto_headers", True)
+        )
+
         if not self.args.no_defaults:
-            for idf in self._extract_header_identifiers(search_id, curr_name, log):
-                idset.add(idf)
+            if not skip_auto_headers:
+                for idf in self._extract_header_identifiers(search_id, curr_name, log):
+                    idset.add(idf)
 
             for kind in (
                 IdentifierKind.LIB_ARTIFACT,
@@ -2433,12 +2548,144 @@ class CppSourcegraphPlugin(EcosystemPlugin):
                     KIND_WEIGHTS[IdentifierKind.ALIAS],
                 )
             )
+
+        # Declared-interface identifiers survive --no-defaults (like custom_string):
+        # they are the strongest, author-asserted signal.
+        for idf in declared_ids:
+            idset.add(idf)
         return idset
+
+    def _is_root(self, curr_id):
+        """Whether this node is the audit's root repo (declared interface, if
+        any, applies only there — child nodes have no config)."""
+        root = getattr(self.args, "repo", None)
+        if not root:
+            return False
+
+        def norm(s):
+            return (s or "").replace("github.com/", "").strip("/").lower()
+
+        return norm(curr_id) == norm(root)
+
+    def _declared_interface_identifiers(self, interface, search_id, log):
+        """Build Identifiers from a declared `[interface]` config: header
+        identifiers from the listed interface files (mapped to consumer-facing
+        include paths) plus explicit `consume` patterns, each tagged with a real
+        kind so weighting / evidence-layer / corroboration apply."""
+        if not interface:
+            return []
+        ids = []
+
+        prefix = (interface.get("include_prefix") or "").strip("/")
+        namespaces, basenames = {}, {}
+        for repo_path in self._resolve_interface_headers(interface, search_id, log):
+            inc = self._include_path(repo_path)  # strip include/src marker
+            if prefix:
+                inc = f"{prefix}/{inc}"
+            parts = inc.split("/")
+            if len(parts) >= 2:
+                namespaces.setdefault("/".join(parts[:-1]), None)
+            basenames.setdefault(parts[-1], None)
+        for ns in sorted(namespaces)[: self.NAMESPACE_CAP]:
+            ids.append(
+                Identifier(
+                    ns,
+                    IdentifierKind.HEADER_PATH,
+                    "declared:interface",
+                    KIND_WEIGHTS[IdentifierKind.HEADER_PATH],
+                )
+            )
+        for base in sorted(basenames)[: self.BASENAME_CAP]:
+            ids.append(
+                Identifier(
+                    base,
+                    IdentifierKind.HEADER_BASENAME,
+                    "declared:interface",
+                    KIND_WEIGHTS[IdentifierKind.HEADER_BASENAME],
+                )
+            )
+
+        for entry in interface.get("consume", []) or []:
+            if not isinstance(entry, dict):
+                continue
+            kind = entry.get("kind", IdentifierKind.ALIAS)
+            if "regex" in entry:
+                value = entry["regex"]
+                regex = value
+            elif "literal" in entry:
+                value = entry["literal"]
+                regex = re.escape(value)
+            else:
+                continue
+            ids.append(
+                Identifier(
+                    value,
+                    kind,
+                    "declared:interface",
+                    KIND_WEIGHTS.get(kind, KIND_WEIGHTS[IdentifierKind.ALIAS]),
+                    explicit_regex=regex,
+                    explicit_evidence=entry.get("evidence"),
+                )
+            )
+        if ids and log:
+            log.info(
+                "Declared interface applied",
+                extra={"identifiers": len(ids)},
+            )
+        return ids
+
+    def _resolve_interface_headers(self, interface, search_id, log):
+        """Repo-relative paths for the declared interface-header globs. Globs the
+        local checkout when --repo-checkout is set, else resolves each glob via a
+        Sourcegraph path search against the target repo."""
+        globs = interface.get("headers") or []
+        if not globs:
+            return []
+        checkout = getattr(self.args, "repo_checkout", None)
+        paths = []
+        if checkout:
+            base = os.path.abspath(checkout)
+            for pat in globs:
+                for hit in globlib.glob(os.path.join(base, pat), recursive=True):
+                    if os.path.isfile(hit):
+                        paths.append(os.path.relpath(hit, base).replace(os.sep, "/"))
+        else:
+            for pat in globs:
+                # Sourcegraph file: filters are regexes; translate a leading
+                # anchor and `**`/`*` globs into an RE2 path pattern.
+                file_re = self._glob_to_file_regex(pat)
+                paths.extend(self._search_paths(search_id, file_re, log, cap=1000))
+        # Dedupe, preserve determinism.
+        return sorted(dict.fromkeys(paths))
+
+    @staticmethod
+    def _glob_to_file_regex(pat):
+        """Translate a shell-style path glob into a Sourcegraph `file:` regex.
+        `**` matches any depth, `*` any run of non-slash chars, `?` one char."""
+        out, i = [], 0
+        while i < len(pat):
+            c = pat[i]
+            if c == "*":
+                if pat[i : i + 2] == "**":
+                    out.append(".*")
+                    i += 2
+                    continue
+                out.append("[^/]*")
+            elif c == "?":
+                out.append("[^/]")
+            else:
+                out.append(re.escape(c))
+            i += 1
+        return "^" + "".join(out) + "$"
 
     def _patterns_for_identifier(self, idf):
         """Consumer-side (regex, evidence) pairs an identifier is searched by.
         Phase 0 mirrors the original patterns and evidence labels verbatim."""
         k = idf.kind
+        # A declared-interface identifier carries the exact regex its author says
+        # consumers write; use it verbatim (its kind still drives weight/layer).
+        if idf.explicit_regex:
+            return [(idf.explicit_regex, idf.explicit_evidence or k)]
         if k == IdentifierKind.HEADER_PATH:
             # Full regex-escape, not just dots: a header path can contain any
             # regex metacharacter (e.g. HDF5's `c++/` C++ bindings dir). An
@@ -2508,6 +2755,16 @@ class CppSourcegraphPlugin(EcosystemPlugin):
                 (f"github\\.com[:/]{o}/{r}(\\.git|/|\\b)", "vcs_ref"),
                 (f"[\\x22']gh:{o}/{r}[@\\x22'/]", "vcs_ref"),
             ]
+        if k == IdentifierKind.EXECUTABLE:
+            # A consumer invoking the project's tool from its build: CMake
+            # execute_process()/add_custom_command(COMMAND ...) naming the exe.
+            n = re.escape(idf.value)
+            return [
+                (
+                    f"(?:execute_process|add_custom_command)\\s*\\([^)]*\\b{n}\\b",
+                    "executable",
+                )
+            ]
         if k == IdentifierKind.ALIAS:
             return [(idf.value, "custom")]
         return []
@@ -2538,6 +2795,11 @@ class CppSourcegraphPlugin(EcosystemPlugin):
         provider's own distinctive token is not dropped merely for being
         popular; generic words (utils/, config.h) remain gated."""
         if idf.kind not in self.GATED_KINDS:
+            return False
+        # A declared-interface identifier is an explicit author assertion of the
+        # public API; never IDF-gate it, even a bare/generic token, mirroring the
+        # never-gated build/target kinds.
+        if (idf.provenance or "").startswith("declared"):
             return False
         if idf.kind == IdentifierKind.HEADER_PATH and "/" in idf.value:
             return False
@@ -3076,16 +3338,14 @@ class AuditOrchestrator:
             "seminal_venues": set(),
         }
 
-        papers, paper_diag = self.citations.get_publications(
-            full_url,
-            meta,
-            target_urls,
-            all_text,
-            keywords,
-            log,
-            citation_depth=citation_depth,
-            profile=profile,
-        )
+        if getattr(self.args, "no_citations", False):
+            papers, paper_diag = [], {"complete": True, "warnings": [],
+                                      "skipped": "no_citations"}
+        else:
+            papers, paper_diag = self.citations.get_publications(
+                full_url, meta, target_urls, all_text, keywords, log,
+                citation_depth=citation_depth, profile=profile,
+            )
         if not paper_diag.get("complete"):
             self.incomplete_nodes.append(repo_name)
 
@@ -3359,8 +3619,22 @@ class AuditOrchestrator:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--repo", required=True)
-    parser.add_argument("--name", required=True)
+    # repo/name may be supplied via --config or a checked-in repo config, so they
+    # are validated after config merge rather than by argparse's `required`.
+    parser.add_argument("--repo")
+    parser.add_argument("--name")
+    parser.add_argument(
+        "--config",
+        help="TOML config file. Any CLI option is settable here (by its long "
+        "name with underscores), plus an [interface] table declaring the "
+        "project's public API. Explicit CLI flags override it.",
+    )
+    parser.add_argument(
+        "--repo-checkout",
+        help="Local checkout of the target repo. When set, declared "
+        "[interface] header globs are resolved against it instead of via "
+        "Sourcegraph.",
+    )
     parser.add_argument(
         "--ecosystem", choices=["cpp", "rust", "python", "node"], default="cpp"
     )
@@ -3479,12 +3753,74 @@ if __name__ == "__main__":
         help="Comma-separated package registries to corroborate against "
         "(e.g. 'spack'). Opt-in; off by default.",
     )
+    parser.add_argument(
+        "--no-citations",
+        action="store_true",
+        help="Skip academic citation mining entirely; emit nodes with empty "
+        "papers[] (fast pure dependency graph).",
+    )
     parser.add_argument("--custom-string")
     parser.add_argument("--custom-file")
     parser.add_argument("--no-defaults", action="store_true")
     args = parser.parse_args()
 
     base_logger = setup_logger(args.verbose)
+
+    # --- Config merge: CLI explicit > --config file > repo config > default/env.
+    # Introspect the parser so the config surface stays in lockstep with the
+    # flags without a hand-maintained list.
+    opt_to_dest, known, coerce, store_true = {}, set(), {}, set()
+    for act in parser._actions:
+        if act.dest in ("help",):
+            continue
+        known.add(act.dest)
+        for opt in act.option_strings:
+            opt_to_dest[opt] = act.dest
+        if act.type in (int, float):
+            coerce[act.dest] = act.type
+        if isinstance(act, argparse._StoreConstAction) and act.const is True:
+            store_true.add(act.dest)
+    explicit = {
+        opt_to_dest[tok.split("=", 1)[0]]
+        for tok in sys.argv[1:]
+        if tok.split("=", 1)[0] in opt_to_dest
+    }
+    claimed = set(explicit)
+
+    # Layer 1: the operator's explicit --config (trusted; may set secrets).
+    file_interface = None
+    if args.config:
+        try:
+            with open(args.config, "rb") as fh:
+                raw_cfg = tomllib.load(fh)
+        except (OSError, tomllib.TOMLDecodeError) as e:
+            parser.error(f"--config {args.config}: {e}")
+        file_opts, file_interface = _split_config(raw_cfg)
+        _apply_config_layer(
+            args, file_opts, claimed, known, coerce, store_true, base_logger,
+            secrets_ok=True,
+        )
+
+    # Layer 2: a config checked into the target repo (auto-fetched; no secrets).
+    repo_interface = None
+    if args.ecosystem == "cpp" and args.repo and args.sg_token:
+        raw_repo = CppSourcegraphPlugin(args).fetch_repo_config(base_logger)
+        if raw_repo:
+            repo_opts, repo_interface = _split_config(raw_repo)
+            _apply_config_layer(
+                args, repo_opts, claimed, known, coerce, store_true, base_logger,
+                secrets_ok=False,
+            )
+
+    # An explicit --config interface wins over the repo's; either becomes the
+    # declared interface consumed at the root node.
+    args.interface = file_interface or repo_interface
+
+    # Config may have changed verbosity; re-init the logger to honor it.
+    base_logger = setup_logger(args.verbose)
+
+    if not args.repo or not args.name:
+        parser.error("--repo and --name are required (via CLI flags or config).")
 
     if args.ecosystem == "cpp":
         if not args.sg_token and args.depth > 0:

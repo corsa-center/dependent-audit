@@ -9,6 +9,9 @@ inputs:
   project_name:
     description: 'The short name of the project'
     required: true
+  config_file:
+    description: 'Path to a TOML config declaring the public interface and/or any CLI option. A checked-in .dependent-audit.toml in the target repo is auto-loaded even without this.'
+    required: false
   sourcegraph_token:
     description: 'Your Sourcegraph Access Token (optional if depth=0)'
     required: false
@@ -96,7 +99,7 @@ runs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.10'
+        python-version: '3.11'
 
     - name: Install Dependencies
       shell: bash
@@ -145,6 +148,9 @@ runs:
         fi
         if [ -n "${{ inputs.custom_filename }}" ]; then
            CMD="$CMD --custom-file '${{ inputs.custom_filename }}'"
+        fi
+        if [ -n "${{ inputs.config_file }}" ]; then
+           CMD="$CMD --config '${{ inputs.config_file }}'"
         fi
         if [ -n "${{ inputs.academic_keywords }}" ]; then
            CMD="$CMD --academic-keyword '${{ inputs.academic_keywords }}'"

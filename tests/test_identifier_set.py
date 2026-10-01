@@ -19,6 +19,7 @@ import logging
 import os
 import re
 import sys
+import tempfile
 import time
 import types
 
@@ -118,6 +119,12 @@ def test_include_path_normalization():
     assert f("include/zfp.h") == "zfp.h"
     assert f("zfp.h") == "zfp.h"
     assert f("inc/foo/bar.hpp") == "foo/bar.hpp"
+    # Component-nested source roots (Kokkos: core/src/, containers/src/) — the
+    # src marker is not required to be the leading segment.
+    assert f("core/src/Kokkos_Core.hpp") == "Kokkos_Core.hpp"
+    assert f("containers/src/impl/Kokkos_DualView.hpp") == "impl/Kokkos_DualView.hpp"
+    # include/inc still wins over a src/ ancestor.
+    assert f("src/mylib/include/mylib/api.h") == "mylib/api.h"
     print("PASS test_include_path_normalization")
 
 
@@ -1308,6 +1315,196 @@ def test_get_metadata_guards_and_null_repo(monkeypatch):
     finally:
         A.requests.post = orig
     print("PASS test_get_metadata_guards_and_null_repo")
+
+
+# --------------------------------------------------------------------------
+# Declared-interface configuration (TOML) + config-merge precedence.
+# --------------------------------------------------------------------------
+
+
+def _iface_plugin(interface, repo="owner/repo", repo_checkout=None,
+                  no_defaults=True):
+    """A plugin whose args carry a declared interface + root repo, for testing
+    _compile_identifier_set's declared-interface path."""
+    args = types.SimpleNamespace(
+        sg_token="x",
+        no_defaults=no_defaults,
+        custom_string=None,
+        custom_file=None,
+        forks=False,
+        include_archived=False,
+        include_vendored=False,
+        sg_delay=0.0,
+        sg_count="5000",
+        no_idf=True,
+        idf_cache=None,
+        idf_cap=300,
+        declared_sources="",
+        repo=repo,
+        repo_checkout=repo_checkout,
+        interface=interface,
+    )
+    return A.CppSourcegraphPlugin(args)
+
+
+def test_glob_to_file_regex():
+    f = A.CppSourcegraphPlugin._glob_to_file_regex
+    rx = f("common/**/*.h")
+    assert rx == r"^common/.*/[^/]*\.h$", rx
+    assert re.fullmatch(rx, "common/a/b/foo.h")
+    assert not re.fullmatch(rx, "common/foo.hpp")
+    # `*` never crosses a path separator.
+    assert re.fullmatch(f("include/*.hpp"), "include/x.hpp")
+    assert not re.fullmatch(f("include/*.hpp"), "include/sub/x.hpp")
+    print("PASS test_glob_to_file_regex")
+
+
+def test_interface_consume_identifiers():
+    """`consume` entries become real Identifiers of the declared kind, searched
+    by the author's exact string, so weight/layer/corroboration apply (unlike a
+    flat ALIAS). Literals are regex-escaped; `regex` entries are used verbatim."""
+    iface = {
+        "consume": [
+            {"literal": "#include <drake/", "kind": K.HEADER_PATH},
+            {"literal": "find_package(drake", "kind": K.CMAKE_PACKAGE},
+            {"regex": r"@drake//", "kind": K.BAZEL_MODULE},
+            {"literal": "execute_process(drake_visualizer", "kind": K.EXECUTABLE},
+        ]
+    }
+    plugin = _iface_plugin(iface)
+    idset = plugin._compile_identifier_set("owner/repo", "drake", LOG)
+    by_kind = {i.kind: i for i in idset}
+    assert set(by_kind) == {
+        K.HEADER_PATH, K.CMAKE_PACKAGE, K.BAZEL_MODULE, K.EXECUTABLE
+    }
+    hp = by_kind[K.HEADER_PATH]
+    assert hp.provenance == "declared:interface"
+    # Literal is regex-escaped (the `<` is not a metachar but the point is the
+    # value is matched literally); the raw-regex entry is passed through.
+    assert hp.explicit_regex == re.escape("#include <drake/")
+    assert by_kind[K.BAZEL_MODULE].explicit_regex == r"@drake//"
+    assert by_kind[K.EXECUTABLE].base_weight == A.KIND_WEIGHTS[K.EXECUTABLE]
+    # _patterns_for_identifier honors the explicit regex verbatim.
+    pats = plugin._patterns_for_identifier(by_kind[K.CMAKE_PACKAGE])
+    assert pats == [(re.escape("find_package(drake"), K.CMAKE_PACKAGE)]
+    # A declared header_path is never IDF-gated even though it's a gated kind.
+    assert plugin._is_gated(hp, {"drake"}) is False
+    assert plugin._is_gated(by_kind[K.EXECUTABLE], set()) is False
+    print("PASS test_interface_consume_identifiers")
+
+
+def test_interface_headers_local_checkout():
+    """Declared header globs resolve against a local checkout, map to consumer
+    include paths via include_prefix, and strip include/src markers."""
+    with tempfile.TemporaryDirectory() as d:
+        for rel in ("common/foo.h", "systems/framework/sys.h",
+                    "pkg/include/proj/util.h", "README.md"):
+            p = os.path.join(d, rel)
+            os.makedirs(os.path.dirname(p), exist_ok=True)
+            open(p, "w").close()
+        iface = {"include_prefix": "drake", "headers": ["**/*.h"]}
+        plugin = _iface_plugin(iface, repo_checkout=d)
+        idset = plugin._compile_identifier_set("owner/repo", "drake", LOG)
+        paths = {i.value for i in idset if i.kind == K.HEADER_PATH}
+        bases = {i.value for i in idset if i.kind == K.HEADER_BASENAME}
+        assert "drake/common" in paths
+        assert "drake/systems/framework" in paths
+        # include/ marker stripped before prefixing: proj/util.h -> drake/proj.
+        assert "drake/proj" in paths
+        assert {"foo.h", "sys.h", "util.h"} <= bases
+        assert all(
+            i.provenance == "declared:interface"
+            for i in idset if i.kind in (K.HEADER_PATH, K.HEADER_BASENAME)
+        )
+    print("PASS test_interface_headers_local_checkout")
+
+
+def test_interface_replaces_auto_headers():
+    """With defaults on, declared headers suppress auto header extraction at the
+    root (build/VCS auto-ID still runs); opting out keeps auto headers."""
+    with tempfile.TemporaryDirectory() as d:
+        os.makedirs(os.path.join(d, "common"))
+        open(os.path.join(d, "common", "foo.h"), "w").close()
+        sentinel = A.Identifier("AUTO_SENTINEL", K.HEADER_PATH, "header_search", 3)
+
+        def make(replace):
+            iface = {
+                "include_prefix": "drake",
+                "headers": ["**/*.h"],
+                "replace_auto_headers": replace,
+            }
+            plugin = _iface_plugin(iface, repo_checkout=d, no_defaults=False)
+            # Stub the network extractors; keep offline vcs extraction.
+            plugin._extract_header_identifiers = lambda *a, **k: [sentinel]
+            plugin._extract_build_identifiers = lambda *a, **k: []
+            plugin._extract_module_identifiers = lambda *a, **k: []
+            return plugin._compile_identifier_set("owner/repo", "drake", LOG)
+
+        replaced = {i.value for i in make(True)}
+        kept = {i.value for i in make(False)}
+        assert "AUTO_SENTINEL" not in replaced
+        assert "drake/common" in replaced
+        assert "AUTO_SENTINEL" in kept  # opt-out preserves auto extraction
+    print("PASS test_interface_replaces_auto_headers")
+
+
+def test_interface_only_at_root():
+    """A declared interface applies only to the root repo, not to crawled
+    children (which have no config of their own)."""
+    iface = {"consume": [{"literal": "find_package(drake", "kind": K.CMAKE_PACKAGE}]}
+    plugin = _iface_plugin(iface, repo="owner/repo")
+    child = plugin._compile_identifier_set("github.com/other/child", "drake", LOG)
+    assert list(child) == []  # no defaults, and interface suppressed off-root
+    root = plugin._compile_identifier_set("github.com/owner/repo", "drake", LOG)
+    assert any(i.provenance == "declared:interface" for i in root)
+    print("PASS test_interface_only_at_root")
+
+
+def test_config_layer_precedence():
+    """CLI-explicit > --config file > repo config; secrets never come from an
+    auto-fetched repo config; unknown keys ignored; types coerced."""
+    args = types.SimpleNamespace(
+        depth=1, no_citations=False, sg_count="5000",
+        sg_token="env-token", repo=None, name=None,
+    )
+    known = {"depth", "no_citations", "sg_count", "sg_token", "repo", "name"}
+    coerce = {"depth": int}
+    store_true = {"no_citations"}
+    claimed = {"depth"}  # pretend --depth was explicit on the CLI
+
+    file_opts = {"depth": 5, "no_citations": True, "name": "drake",
+                 "bogus_key": 1}
+    A._apply_config_layer(args, file_opts, claimed, known, coerce, store_true,
+                          LOG, secrets_ok=True)
+    assert args.depth == 1          # CLI-explicit beat the file
+    assert args.no_citations is True
+    assert args.name == "drake"
+
+    repo_opts = {"no_citations": False, "sg_count": "all", "repo": "o/r",
+                 "sg_token": "leaked"}
+    A._apply_config_layer(args, repo_opts, claimed, known, coerce, store_true,
+                          LOG, secrets_ok=False)
+    assert args.no_citations is True    # already claimed by the file layer
+    assert args.sg_count == "all"       # newly set from repo config
+    assert args.repo == "o/r"
+    assert args.sg_token == "env-token"  # secret NOT taken from repo config
+    print("PASS test_config_layer_precedence")
+
+
+def test_split_config():
+    raw = {
+        "repo": "o/r", "name": "drake",
+        "options": {"depth": 2, "no-citations": True},
+        "interface": {"include_prefix": "drake"},
+    }
+    opts, iface = A._split_config(raw)
+    assert opts["repo"] == "o/r"
+    assert opts["depth"] == 2
+    assert opts["no_citations"] is True   # hyphen normalized, [options] merged
+    assert "interface" not in opts
+    assert iface == {"include_prefix": "drake"}
+    assert A._split_config(None) == ({}, None)
+    print("PASS test_split_config")
 
 
 if __name__ == "__main__":

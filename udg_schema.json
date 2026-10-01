@@ -47,7 +47,7 @@
               "confidenceScore": {"type": "integer"},
               "evidence": {
                 "type": "object",
-                "description": "Map of evidence type (vcs_ref, cmake_target, find_package, bazel, pkg_config, pragma_lib, include, custom) to number of matching lines observed.",
+                "description": "Map of evidence type (vcs_ref, cmake_target, find_package, bazel, pkg_config, pragma_lib, include, executable, custom; a declared-interface consume entry defaults its evidence label to its kind) to number of matching lines observed.",
                 "additionalProperties": {"type": "integer"}
               },
               "identifiers": {
@@ -57,7 +57,7 @@
               },
               "provenance": {
                 "type": "array",
-                "description": "How the matched identifiers were learned (include_tree, cmake_config, cmake_project, pc_file, bazel_module, vcs, convention, ...).",
+                "description": "How the matched identifiers were learned (include_tree, cmake_config, cmake_project, pc_file, bazel_module, vcs, convention, declared:interface, ...).",
                 "items": {"type": "string"}
               },
               "evidenceLayer": {
