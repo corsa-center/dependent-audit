@@ -1,8 +1,8 @@
 import os
-import sys
 import time
 import json
 import argparse
+import sys
 import glob as globlib
 import tomllib  # stdlib on Python 3.11+ (the minimum this tool supports)
 import requests
@@ -12,7 +12,43 @@ import math
 import uuid
 import logging
 from collections import deque, defaultdict
+from typing import cast, TypedDict, TypeAlias
 from dataclasses import dataclass
+
+
+class DictTypes(TypedDict, total=False):
+    name: str
+    url: str
+    oid: str
+    evidence: dict[str, int]
+    identifiers: set[str]
+    identifiersSorted: list[str]
+    kindWeights: dict[str, float]
+    matchedHeaders: set[str]
+    provenance: set[str]
+    provenanceSorted: list[str]
+    matchCount: int
+    declared: float
+    confidence: str
+    confidenceScore: float
+    layers: list[int]
+    relationship: str
+    evidenceLayer: int | None
+
+
+class PaperInfo(TypedDict, total=False):
+    title: str
+    abstract: str
+    authors: list[str]
+    concepts: list[str]
+    provenance: set[str] | list[str]
+    kindWeights: dict[str, float]
+    venue: str
+    journal: str
+    year: int
+    openalex_id: int
+    openalex_citations: int
+
 
 if sys.version_info < (3, 11):  # tomllib landed in 3.11; we rely on it for --config
     raise RuntimeError("audit_dependents requires Python 3.11 or newer.")
@@ -91,6 +127,13 @@ PAPER_TIER_MEDIUM = 3.0
 PAPER_LLM_BORDERLINE_MARGIN = 1.0
 PAPER_TIER_ORDER = {"low": 0, "medium": 1, "high": 2}
 
+# Default models
+DEFAULT_MODELS = {
+    "llama": "llama3.2:3b",
+    "phi": "phi4-mini:latest",
+    "gemma": "gemma2:9b",
+}
+
 
 class JSONFormatter(logging.Formatter):
     def format(self, record):
@@ -117,7 +160,7 @@ class TerseFormatter(logging.Formatter):
 
 class ContextAdapter(logging.LoggerAdapter):
     def process(self, msg, kwargs):
-        extra = self.extra.copy()
+        extra = dict(self.extra or {})
         if "extra" in kwargs:
             extra["extra_meta"] = kwargs.pop("extra")
         kwargs["extra"] = extra
@@ -160,8 +203,9 @@ def _split_config(raw):
     return opts, (interface if isinstance(interface, dict) else None)
 
 
-def _apply_config_layer(args, opts, claimed, known, coerce, store_true, log,
-                        secrets_ok):
+def _apply_config_layer(
+    args, opts, claimed, known, coerce, store_true, log, secrets_ok
+):
     """Overlay one config layer onto `args`, lowest-precedence-last. A dest
     already `claimed` by a higher layer (CLI, or an earlier layer) is skipped;
     unknown keys warn; secret dests are skipped unless the layer is trusted."""
@@ -806,7 +850,7 @@ class LLMRelevanceJudge:
 
     def __init__(self, base_url, model, token=None, email=None):
         self.base_url = (base_url or "").rstrip("/")
-        self.model = model or "local-model"
+        self.model = model or DEFAULT_MODELS["gemma"]
         self.token = token
         self.email = email
 
@@ -818,15 +862,26 @@ class LLMRelevanceJudge:
         """Return a small verdict dict {relevant, confidence, reason} or None."""
         if not self.enabled:
             return None
-        prompt = (
-            "You judge whether an academic paper references or uses a specific "
-            "software project. Answer ONLY with compact JSON: "
-            '{"relevant": true|false, "confidence": 0.0-1.0, "reason": "..."}.\n\n'
+        system_prompt = (
+            "You judge whether an academic paper references or uses a specific software project. "
+            "Answer ONLY with compact JSON, and no preamble text: "
+            '{"relevant": true|false, "confidence": 0.0-100.0, "reason": "..."}.\n'
+            "Confidence score reflects certainty of relevance. Direct project references should produce a higher confidence, "
+            "a paper with no relation produces lower confidence, and papers with overlapping topics may be somewhere in the middle, to your discretion. "
+            "You may use an author's larger body of work or study as evidence.\n\n"
+        )
+        user_prompt = (
+            "Project information: \n"
             f"PROJECT: {profile.get('name')} (owner: {profile.get('owner')})\n"
             f"PROJECT TOPICS: {', '.join(sorted(profile.get('topics', set())))}\n"
+            f"PROJECT SEMINAL AUTHORS: {', '.join(profile.get('seminal_authors', set()))}\n"
+            f"PROJECT SEMINAL VENUES: {', '.join(profile.get('seminal_venues', set()))}\n"
             f"PROJECT TERMS: {', '.join(sorted(list(profile.get('terms', set()))[:30]))}\n\n"
-            f"PAPER TITLE: {meta.get('title', '')}\n"
-            f"PAPER VENUE: {meta.get('venue') or meta.get('journal') or ''}\n"
+            "Paper information: \n"
+            f"PAPER TITLE: {meta.get('title', '')}\n\n"
+            f"PAPER AUTHORS: {', '.join(meta.get('authors', ''))}\n"
+            f"PAPER JOURNAL: {meta.get('journal') or ''}\n"
+            f"PAPER VENUE: {meta.get('venue') or ''}\n"
             f"PAPER ABSTRACT: {(meta.get('abstract') or '')[:1500]}\n"
         )
         headers = {"Content-Type": "application/json"}
@@ -834,7 +889,12 @@ class LLMRelevanceJudge:
             headers["Authorization"] = f"Bearer {self.token}"
         payload = {
             "model": self.model,
-            "messages": [{"role": "user", "content": prompt}],
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+            "format": "json",
+            "response_format": {"type": "json_object"},
             "temperature": 0.0,
             "max_tokens": 200,
         }
@@ -895,9 +955,10 @@ class CitationEngine:
         floor = getattr(args, "paper_relevance_floor", "medium") or "medium"
         self.relevance_floor = PAPER_TIER_ORDER.get(floor, 1)
 
+        default_model = getattr(args, "default_llm", None) or "gemma"
         self.judge = LLMRelevanceJudge(
             getattr(args, "relevance_llm_url", None),
-            getattr(args, "relevance_llm_model", None),
+            getattr(args, "relevance_llm_model", None) or DEFAULT_MODELS[default_model],
             token=os.environ.get("RELEVANCE_LLM_TOKEN"),
             email=email,
         )
@@ -998,7 +1059,7 @@ class CitationEngine:
         non-empty content but always merging provenance and concepts."""
         if not doi:
             return
-        existing = doi_meta.get(doi)
+        existing: PaperInfo = doi_meta.get(doi)
         if existing is None:
             doi_meta[doi] = dict(meta)
             doi_meta[doi]["provenance"] = set(meta.get("provenance", set()))
@@ -1209,14 +1270,14 @@ class CitationEngine:
             "title": res.get("title") or meta.get("title") or "",
             "abstract": meta.get("abstract") or res.get("abstract") or "",
             "authors": meta.get("authors") or res.get("authors") or [],
-            "concepts": meta.get("concepts") or [],
+            "concepts": cast(list[str], meta.get("concepts")) or [],
             "venue": meta.get("venue") or res.get("journal") or "",
             "journal": res.get("journal") or meta.get("venue") or "Unknown",
             "year": res.get("year") or meta.get("year"),
         }
         if res.get("subjects"):
             content["concepts"] = list(
-                dict.fromkeys(content["concepts"] + res["subjects"])
+                dict.fromkeys(content["concepts"] + cast(list[str], res["subjects"]))
             )
 
         paper = {
@@ -2373,7 +2434,7 @@ class CppSourcegraphPlugin(EcosystemPlugin):
             cfg = DECLARED_REGISTRIES[source]
             dep_paths = set()
             for alias in names:
-                content_re = cfg["depends_tmpl"].format(alias=re.escape(alias))
+                content_re = str(cfg["depends_tmpl"]).format(alias=re.escape(alias))
                 dep_paths |= self._registry_manifest_paths(
                     cfg, content_re, log, cap=self.DECLARED_CAP
                 )
@@ -2381,7 +2442,7 @@ class CppSourcegraphPlugin(EcosystemPlugin):
                 cfg["repo"], list(dep_paths)[: self.DECLARED_CAP], log
             )
             for content in blobs.values():
-                m = re.search(cfg["url_re"], content or "")
+                m = re.search(str(cfg["url_re"]), content or "")
                 if not m:
                     continue
                 dep_slug = m.group(1).removesuffix(".git")
@@ -2401,7 +2462,7 @@ class CppSourcegraphPlugin(EcosystemPlugin):
         rest as declared-only consumers."""
         for rec in self._find_declared_dependents(aliases, log):
             rn = f"github.com/{rec['name']}"
-            entry = consumers.get(rn)
+            entry: DictTypes = consumers.get(rn)
             if entry is None:
                 entry = consumers[rn] = {
                     "name": rn,
@@ -2436,7 +2497,9 @@ class CppSourcegraphPlugin(EcosystemPlugin):
         search_id = curr_id if "github.com/" in curr_id else f"github.com/{curr_id}"
         idset = IdentifierSet()
 
-        interface = getattr(self.args, "interface", None) if self._is_root(curr_id) else None
+        interface = (
+            getattr(self.args, "interface", None) if self._is_root(curr_id) else None
+        )
         declared_ids = self._declared_interface_identifiers(interface, search_id, log)
         # Author-declared headers/consume supersede auto header extraction at the
         # root unless the author opted out (build/VCS auto-ID is unaffected).
@@ -3035,11 +3098,11 @@ class CppSourcegraphPlugin(EcosystemPlugin):
                             return
                     event, data_lines = None, []
                     continue
-                if raw.startswith(":"):
+                if isinstance(raw, str) and raw.startswith(":"):
                     continue  # keep-alive comment
-                if raw.startswith("event:"):
+                if isinstance(raw, str) and raw.startswith("event:"):
                     event = raw[len("event:") :].strip()
-                elif raw.startswith("data:"):
+                elif isinstance(raw, str) and raw.startswith("data:"):
                     data_lines.append(raw[len("data:") :].lstrip())
         except requests.exceptions.RequestException as e:
             log.warning(
@@ -3087,7 +3150,7 @@ class CppSourcegraphPlugin(EcosystemPlugin):
             time.sleep(self.args.sg_delay)
 
         log.info("Initiating Sourcegraph streaming dependency search")
-        consumers = {}
+        consumers: dict[str, DictTypes] = {}
         for match in self._stream_search(full_query, log):
             if match.get("type") != "content":
                 continue
@@ -3106,7 +3169,20 @@ class CppSourcegraphPlugin(EcosystemPlugin):
                     "provenance": set(),
                     "matchCount": 0,
                 }
-            entry = consumers[rn]
+            entry: DictTypes = consumers[rn]
+            if entry is None:
+                entry = consumers[rn] = {
+                    "name": rn,
+                    "url": rec["url"],
+                    "oid": "HEAD",
+                    "evidence": {},
+                    "identifiers": set(),
+                    "kindWeights": {},
+                    "matchedHeaders": set(),
+                    "provenance": set(),
+                    "matchCount": 0,
+                }
+
             # A match inside documentation is weaker evidence of real usage than
             # one in source/build files; scale its weight contribution down.
             ctx = 0.3 if self._is_doc_path(match.get("path", "")) else 1.0
@@ -3133,7 +3209,7 @@ class CppSourcegraphPlugin(EcosystemPlugin):
             score, tier = self._score_consumer(
                 entry["kindWeights"], entry["matchCount"]
             )
-            layers = self._evidence_layers(entry["kindWeights"])
+            layers: list[int] = self._evidence_layers(entry["kindWeights"])
             entry["confidenceScore"] = score
             entry["confidence"] = tier
             entry["layers"] = layers
@@ -3141,10 +3217,12 @@ class CppSourcegraphPlugin(EcosystemPlugin):
             entry["relationship"] = self._classify_relationship(
                 len(entry["matchedHeaders"]), provider_headers
             )
-            entry["identifiers"] = sorted(entry["identifiers"])
-            entry["provenance"] = sorted(entry["provenance"])
+            entry["identifiersSorted"] = sorted(entry["identifiers"])
+            entry["provenanceSorted"] = sorted(entry["provenance"])
             del entry["kindWeights"]
             del entry["matchedHeaders"]
+            del entry["identifiers"]
+            del entry["provenance"]
 
         log.info(
             f"Sourcegraph dependency search completed. Found {len(consumers)} total consumers."
@@ -3265,12 +3343,20 @@ class AuditOrchestrator:
         }
 
         if getattr(self.args, "no_citations", False):
-            papers, paper_diag = [], {"complete": True, "warnings": [],
-                                      "skipped": "no_citations"}
+            papers, paper_diag = (
+                [],
+                {"complete": True, "warnings": [], "skipped": "no_citations"},
+            )
         else:
             papers, paper_diag = self.citations.get_publications(
-                full_url, meta, target_urls, all_text, keywords, log,
-                citation_depth=citation_depth, profile=profile,
+                full_url,
+                meta,
+                target_urls,
+                all_text,
+                keywords,
+                log,
+                citation_depth=citation_depth,
+                profile=profile,
             )
         if not paper_diag.get("complete"):
             self.incomplete_nodes.append(repo_name)
@@ -3444,8 +3530,8 @@ class AuditOrchestrator:
                         "source": clean_child,
                         "target": curr_id.replace("github.com/", ""),
                         "evidence": child.get("evidence", {}),
-                        "identifiers": child.get("identifiers", []),
-                        "provenance": child.get("provenance", []),
+                        "identifiers": child.get("identifiersSorted", []),
+                        "provenance": child.get("provenanceSorted", []),
                         "evidenceLayer": child.get("evidenceLayer"),
                         "layers": child.get("layers", []),
                         "relationship": relationship,
@@ -3609,6 +3695,13 @@ if __name__ == "__main__":
         "so false positives stay scannable.",
     )
     parser.add_argument(
+        "--default-llm",
+        choices=["gemma", "phi", "llama"],
+        help="Use a supported default model to break ties on "
+        "borderline papers. Off unless set. See --relevance-llm-model and "
+        "--relevance-llm-url for custom model usage.",
+    )
+    parser.add_argument(
         "--relevance-llm-url",
         default=os.environ.get("RELEVANCE_LLM_URL"),
         help="Base URL of an OpenAI-compatible chat endpoint (llama.cpp / "
@@ -3617,8 +3710,9 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--relevance-llm-model",
-        default=os.environ.get("RELEVANCE_LLM_MODEL", "local-model"),
-        help="Model name passed to the relevance LLM endpoint.",
+        default=os.environ.get("RELEVANCE_LLM_MODEL", None),
+        help="Model name passed to the relevance LLM endpoint. "
+        "See --use-llm-model for using default models.",
     )
     parser.add_argument(
         "--paper-cache",
@@ -3715,7 +3809,13 @@ if __name__ == "__main__":
             parser.error(f"--config {args.config}: {e}")
         file_opts, file_interface = _split_config(raw_cfg)
         _apply_config_layer(
-            args, file_opts, claimed, known, coerce, store_true, base_logger,
+            args,
+            file_opts,
+            claimed,
+            known,
+            coerce,
+            store_true,
+            base_logger,
             secrets_ok=True,
         )
 
@@ -3726,7 +3826,13 @@ if __name__ == "__main__":
         if raw_repo:
             repo_opts, repo_interface = _split_config(raw_repo)
             _apply_config_layer(
-                args, repo_opts, claimed, known, coerce, store_true, base_logger,
+                args,
+                repo_opts,
+                claimed,
+                known,
+                coerce,
+                store_true,
+                base_logger,
                 secrets_ok=False,
             )
 

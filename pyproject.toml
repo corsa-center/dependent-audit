@@ -10,7 +10,7 @@ authors = [
 ]
 description = "A tool to map your software supply chain using Sourcegraph and GitHub GraphQL APIs."
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.11"
 classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",
@@ -23,6 +23,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "flask>=3.0.3",
     "pytest>=8.3.5",
     "ruff>=0.16.8",
     "ty>=0.0.83",
