@@ -49,6 +49,7 @@ class PaperInfo(TypedDict, total=False):
     openalex_id: int
     openalex_citations: int
 
+
 if sys.version_info < (3, 11):  # tomllib landed in 3.11; we rely on it for --config
     raise RuntimeError("audit_dependents requires Python 3.11 or newer.")
 
@@ -202,8 +203,9 @@ def _split_config(raw):
     return opts, (interface if isinstance(interface, dict) else None)
 
 
-def _apply_config_layer(args, opts, claimed, known, coerce, store_true, log,
-                        secrets_ok):
+def _apply_config_layer(
+    args, opts, claimed, known, coerce, store_true, log, secrets_ok
+):
     """Overlay one config layer onto `args`, lowest-precedence-last. A dest
     already `claimed` by a higher layer (CLI, or an earlier layer) is skipped;
     unknown keys warn; secret dests are skipped unless the layer is trusted."""
@@ -2495,7 +2497,9 @@ class CppSourcegraphPlugin(EcosystemPlugin):
         search_id = curr_id if "github.com/" in curr_id else f"github.com/{curr_id}"
         idset = IdentifierSet()
 
-        interface = getattr(self.args, "interface", None) if self._is_root(curr_id) else None
+        interface = (
+            getattr(self.args, "interface", None) if self._is_root(curr_id) else None
+        )
         declared_ids = self._declared_interface_identifiers(interface, search_id, log)
         # Author-declared headers/consume supersede auto header extraction at the
         # root unless the author opted out (build/VCS auto-ID is unaffected).
@@ -3339,12 +3343,20 @@ class AuditOrchestrator:
         }
 
         if getattr(self.args, "no_citations", False):
-            papers, paper_diag = [], {"complete": True, "warnings": [],
-                                      "skipped": "no_citations"}
+            papers, paper_diag = (
+                [],
+                {"complete": True, "warnings": [], "skipped": "no_citations"},
+            )
         else:
             papers, paper_diag = self.citations.get_publications(
-                full_url, meta, target_urls, all_text, keywords, log,
-                citation_depth=citation_depth, profile=profile,
+                full_url,
+                meta,
+                target_urls,
+                all_text,
+                keywords,
+                log,
+                citation_depth=citation_depth,
+                profile=profile,
             )
         if not paper_diag.get("complete"):
             self.incomplete_nodes.append(repo_name)
@@ -3797,7 +3809,13 @@ if __name__ == "__main__":
             parser.error(f"--config {args.config}: {e}")
         file_opts, file_interface = _split_config(raw_cfg)
         _apply_config_layer(
-            args, file_opts, claimed, known, coerce, store_true, base_logger,
+            args,
+            file_opts,
+            claimed,
+            known,
+            coerce,
+            store_true,
+            base_logger,
             secrets_ok=True,
         )
 
@@ -3808,7 +3826,13 @@ if __name__ == "__main__":
         if raw_repo:
             repo_opts, repo_interface = _split_config(raw_repo)
             _apply_config_layer(
-                args, repo_opts, claimed, known, coerce, store_true, base_logger,
+                args,
+                repo_opts,
+                claimed,
+                known,
+                coerce,
+                store_true,
+                base_logger,
                 secrets_ok=False,
             )
 

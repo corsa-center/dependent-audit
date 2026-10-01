@@ -1322,8 +1322,7 @@ def test_get_metadata_guards_and_null_repo(monkeypatch):
 # --------------------------------------------------------------------------
 
 
-def _iface_plugin(interface, repo="owner/repo", repo_checkout=None,
-                  no_defaults=True):
+def _iface_plugin(interface, repo="owner/repo", repo_checkout=None, no_defaults=True):
     """A plugin whose args carry a declared interface + root repo, for testing
     _compile_identifier_set's declared-interface path."""
     args = types.SimpleNamespace(
@@ -1375,7 +1374,10 @@ def test_interface_consume_identifiers():
     idset = plugin._compile_identifier_set("owner/repo", "drake", LOG)
     by_kind = {i.kind: i for i in idset}
     assert set(by_kind) == {
-        K.HEADER_PATH, K.CMAKE_PACKAGE, K.BAZEL_MODULE, K.EXECUTABLE
+        K.HEADER_PATH,
+        K.CMAKE_PACKAGE,
+        K.BAZEL_MODULE,
+        K.EXECUTABLE,
     }
     hp = by_kind[K.HEADER_PATH]
     assert hp.provenance == "declared:interface"
@@ -1397,8 +1399,12 @@ def test_interface_headers_local_checkout():
     """Declared header globs resolve against a local checkout, map to consumer
     include paths via include_prefix, and strip include/src markers."""
     with tempfile.TemporaryDirectory() as d:
-        for rel in ("common/foo.h", "systems/framework/sys.h",
-                    "pkg/include/proj/util.h", "README.md"):
+        for rel in (
+            "common/foo.h",
+            "systems/framework/sys.h",
+            "pkg/include/proj/util.h",
+            "README.md",
+        ):
             p = os.path.join(d, rel)
             os.makedirs(os.path.dirname(p), exist_ok=True)
             open(p, "w").close()
@@ -1414,7 +1420,8 @@ def test_interface_headers_local_checkout():
         assert {"foo.h", "sys.h", "util.h"} <= bases
         assert all(
             i.provenance == "declared:interface"
-            for i in idset if i.kind in (K.HEADER_PATH, K.HEADER_BASENAME)
+            for i in idset
+            if i.kind in (K.HEADER_PATH, K.HEADER_BASENAME)
         )
     print("PASS test_interface_headers_local_checkout")
 
@@ -1464,28 +1471,37 @@ def test_config_layer_precedence():
     """CLI-explicit > --config file > repo config; secrets never come from an
     auto-fetched repo config; unknown keys ignored; types coerced."""
     args = types.SimpleNamespace(
-        depth=1, no_citations=False, sg_count="5000",
-        sg_token="env-token", repo=None, name=None,
+        depth=1,
+        no_citations=False,
+        sg_count="5000",
+        sg_token="env-token",
+        repo=None,
+        name=None,
     )
     known = {"depth", "no_citations", "sg_count", "sg_token", "repo", "name"}
     coerce = {"depth": int}
     store_true = {"no_citations"}
     claimed = {"depth"}  # pretend --depth was explicit on the CLI
 
-    file_opts = {"depth": 5, "no_citations": True, "name": "drake",
-                 "bogus_key": 1}
-    A._apply_config_layer(args, file_opts, claimed, known, coerce, store_true,
-                          LOG, secrets_ok=True)
-    assert args.depth == 1          # CLI-explicit beat the file
+    file_opts = {"depth": 5, "no_citations": True, "name": "drake", "bogus_key": 1}
+    A._apply_config_layer(
+        args, file_opts, claimed, known, coerce, store_true, LOG, secrets_ok=True
+    )
+    assert args.depth == 1  # CLI-explicit beat the file
     assert args.no_citations is True
     assert args.name == "drake"
 
-    repo_opts = {"no_citations": False, "sg_count": "all", "repo": "o/r",
-                 "sg_token": "leaked"}
-    A._apply_config_layer(args, repo_opts, claimed, known, coerce, store_true,
-                          LOG, secrets_ok=False)
-    assert args.no_citations is True    # already claimed by the file layer
-    assert args.sg_count == "all"       # newly set from repo config
+    repo_opts = {
+        "no_citations": False,
+        "sg_count": "all",
+        "repo": "o/r",
+        "sg_token": "leaked",
+    }
+    A._apply_config_layer(
+        args, repo_opts, claimed, known, coerce, store_true, LOG, secrets_ok=False
+    )
+    assert args.no_citations is True  # already claimed by the file layer
+    assert args.sg_count == "all"  # newly set from repo config
     assert args.repo == "o/r"
     assert args.sg_token == "env-token"  # secret NOT taken from repo config
     print("PASS test_config_layer_precedence")
@@ -1493,14 +1509,15 @@ def test_config_layer_precedence():
 
 def test_split_config():
     raw = {
-        "repo": "o/r", "name": "drake",
+        "repo": "o/r",
+        "name": "drake",
         "options": {"depth": 2, "no-citations": True},
         "interface": {"include_prefix": "drake"},
     }
     opts, iface = A._split_config(raw)
     assert opts["repo"] == "o/r"
     assert opts["depth"] == 2
-    assert opts["no_citations"] is True   # hyphen normalized, [options] merged
+    assert opts["no_citations"] is True  # hyphen normalized, [options] merged
     assert "interface" not in opts
     assert iface == {"include_prefix": "drake"}
     assert A._split_config(None) == ({}, None)
