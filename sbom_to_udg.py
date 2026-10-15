@@ -1,5 +1,5 @@
-import json
 import argparse
+import json
 
 
 def convert(input_file, output_file):

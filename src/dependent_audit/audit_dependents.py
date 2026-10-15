@@ -1,18 +1,19 @@
+import argparse
+import concurrent.futures
+import glob as globlib
+import json
+import logging
+import math
 import os
+import re
 import sys
 import time
-import json
-import argparse
-import glob as globlib
-import tomllib  # stdlib on Python 3.11+ (the minimum this tool supports)
-import requests
-import re
-import concurrent.futures
-import math
 import uuid
-import logging
-from collections import deque, defaultdict
+from collections import defaultdict, deque
 from dataclasses import dataclass
+
+import requests
+import tomllib  # stdlib on Python 3.11+ (the minimum this tool supports)
 
 if sys.version_info < (3, 11):  # tomllib landed in 3.11; we rely on it for --config
     raise RuntimeError("audit_dependents requires Python 3.11 or newer.")
@@ -75,17 +76,7 @@ PROVENANCE_WEIGHT = {
 # Common English + academic-boilerplate tokens excluded from the repo "profile"
 # term set, so term-overlap measures topical similarity, not shared filler.
 PROFILE_STOPWORDS = frozenset(
-    """
-    the a an and or of to in for on with without by from as is are was were be been
-    being at this that these those it its into over under out up down off then than
-    but not no nor so such can may might will would should could must have has had do
-    does did done using use used via not we our you your they their he she his her
-    library software package tool toolkit framework project code source data file
-    files based provide provides provided support supports supported implementation
-    implements interface api version release build make cmake python cpp header
-    include https http github com www org io new open free general purpose simple fast
-    high performance easy also more most other some any all one two three
-    """.split()
+    ["the", "a", "an", "and", "or", "of", "to", "in", "for", "on", "with", "without", "by", "from", "as", "is", "are", "was", "were", "be", "been", "being", "at", "this", "that", "these", "those", "it", "its", "into", "over", "under", "out", "up", "down", "off", "then", "than", "but", "not", "no", "nor", "so", "such", "can", "may", "might", "will", "would", "should", "could", "must", "have", "has", "had", "do", "does", "did", "done", "using", "use", "used", "via", "not", "we", "our", "you", "your", "they", "their", "he", "she", "his", "her", "library", "software", "package", "tool", "toolkit", "framework", "project", "code", "source", "data", "file", "files", "based", "provide", "provides", "provided", "support", "supports", "supported", "implementation", "implements", "interface", "api", "version", "release", "build", "make", "cmake", "python", "cpp", "header", "include", "https", "http", "github", "com", "www", "org", "io", "new", "open", "free", "general", "purpose", "simple", "fast", "high", "performance", "easy", "also", "more", "most", "other", "some", "any", "all", "one", "two", "three"]
 )
 
 # Paper-relevance scorer weights / tiers (parallel to KIND_WEIGHTS + TIER_*).
@@ -171,8 +162,9 @@ def _split_config(raw):
     return opts, (interface if isinstance(interface, dict) else None)
 
 
-def _apply_config_layer(args, opts, claimed, known, coerce, store_true, log,
-                        secrets_ok):
+def _apply_config_layer(
+    args, opts, claimed, known, coerce, store_true, log, secrets_ok
+):
     """Overlay one config layer onto `args`, lowest-precedence-last. A dest
     already `claimed` by a higher layer (CLI, or an earlier layer) is skipped;
     unknown keys warn; secret dests are skipped unless the layer is trusted."""
@@ -547,7 +539,7 @@ class OpenAlexPublicationPlugin(PublicationPlugin):
     def _chunk(items, size):
         items = list(items)
         for i in range(0, len(items), size):
-            yield items[i:i + size]
+            yield items[i : i + size]
 
     @staticmethod
     def _bare_work_id(work_id):
@@ -622,11 +614,13 @@ class OpenAlexPublicationPlugin(PublicationPlugin):
             self._throttle()
             data = self._http_get_json(
                 OPENALEX_API_URL,
-                params=self._base_params({
-                    **params,
-                    "per-page": OPENALEX_PER_PAGE,
-                    "cursor": cursor,
-                }),
+                params=self._base_params(
+                    {
+                        **params,
+                        "per-page": OPENALEX_PER_PAGE,
+                        "cursor": cursor,
+                    }
+                ),
                 timeout=10,
                 log=log,
                 channel="openalex",
@@ -1128,8 +1122,7 @@ class CitationEngine:
         """Pre-fetch OpenAlex meta in OR'd batches for DOIs with no OpenAlex meta
         and no cache entry, persisting into `paper_cache` for the scoring loop."""
         missing = [
-            d for d in dois
-            if d and d not in doi_meta and d not in self.paper_cache
+            d for d in dois if d and d not in doi_meta and d not in self.paper_cache
         ]
         if not missing:
             return
@@ -2565,7 +2558,9 @@ class CppSourcegraphPlugin(EcosystemPlugin):
         search_id = curr_id if "github.com/" in curr_id else f"github.com/{curr_id}"
         idset = IdentifierSet()
 
-        interface = getattr(self.args, "interface", None) if self._is_root(curr_id) else None
+        interface = (
+            getattr(self.args, "interface", None) if self._is_root(curr_id) else None
+        )
         declared_ids = self._declared_interface_identifiers(interface, search_id, log)
         # Author-declared headers/consume supersede auto header extraction at the
         # root unless the author opted out (build/VCS auto-ID is unaffected).
@@ -3408,12 +3403,20 @@ class AuditOrchestrator:
             }
 
             if getattr(self.args, "no_citations", False):
-                papers, paper_diag = [], {"complete": True, "warnings": [],
-                                        "skipped": "no_citations"}
+                papers, paper_diag = (
+                    [],
+                    {"complete": True, "warnings": [], "skipped": "no_citations"},
+                )
             else:
                 papers, paper_diag = self.citations.get_publications(
-                    full_url, meta, target_urls, all_text, keywords, log,
-                    citation_depth=citation_depth, profile=profile,
+                    full_url,
+                    meta,
+                    target_urls,
+                    all_text,
+                    keywords,
+                    log,
+                    citation_depth=citation_depth,
+                    profile=profile,
                 )
             if not paper_diag.get("complete"):
                 self.incomplete_nodes.append(repo_name)
@@ -3881,7 +3884,13 @@ if __name__ == "__main__":
             parser.error(f"--config {args.config}: {e}")
         file_opts, file_interface = _split_config(raw_cfg)
         _apply_config_layer(
-            args, file_opts, claimed, known, coerce, store_true, base_logger,
+            args,
+            file_opts,
+            claimed,
+            known,
+            coerce,
+            store_true,
+            base_logger,
             secrets_ok=True,
         )
 
@@ -3892,7 +3901,13 @@ if __name__ == "__main__":
         if raw_repo:
             repo_opts, repo_interface = _split_config(raw_repo)
             _apply_config_layer(
-                args, repo_opts, claimed, known, coerce, store_true, base_logger,
+                args,
+                repo_opts,
+                claimed,
+                known,
+                coerce,
+                store_true,
+                base_logger,
                 secrets_ok=False,
             )
 
