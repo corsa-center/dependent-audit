@@ -21,10 +21,9 @@ import io
 import os
 import zipfile
 
-from flask import Flask, jsonify, request, send_file, url_for
-
 import auditlib
 from auditlib import JobStore
+from flask import Flask, jsonify, request, send_file, url_for
 
 app = Flask(__name__)
 

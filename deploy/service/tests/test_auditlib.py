@@ -15,7 +15,7 @@ import threading
 _SVC = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, _SVC)
 
-import auditlib  # noqa: E402
+import auditlib
 
 
 def test_normalize_and_truthy():

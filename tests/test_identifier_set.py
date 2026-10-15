@@ -80,7 +80,7 @@ def _by_kind(ids):
 
 def _include_patterns(plugin, idset, protected=frozenset()):
     return [
-        re.compile(p.regex, re.I)
+        re.compile(p.regex, re.IGNORECASE)
         for p in plugin._patterns_from(idset, LOG, protected)
         if p.evidence == "include"
     ]
@@ -138,7 +138,7 @@ def test_header_identifiers_fix_recall():
 def test_invariant_basename_pattern():
     plugin = _plugin(no_idf=True)
     idf = A.Identifier("zfp.h", HB, "x", 2)
-    rx = re.compile(plugin._patterns_for_identifier(idf)[0][0], re.I)
+    rx = re.compile(plugin._patterns_for_identifier(idf)[0][0], re.IGNORECASE)
     assert rx.search("#include <zfp.h>")
     assert rx.search("#include <foo/bar/zfp.h>")
     assert not rx.search("#include <libzfp.h>")
@@ -1251,8 +1251,7 @@ def test_get_metadata_guards_and_null_repo():
 # --------------------------------------------------------------------------
 
 
-def _iface_plugin(interface, repo="owner/repo", repo_checkout=None,
-                  no_defaults=True):
+def _iface_plugin(interface, repo="owner/repo", repo_checkout=None, no_defaults=True):
     """A plugin whose args carry a declared interface + root repo, for testing
     _compile_identifier_set's declared-interface path."""
     args = types.SimpleNamespace(
@@ -1304,7 +1303,10 @@ def test_interface_consume_identifiers():
     idset = plugin._compile_identifier_set("owner/repo", "drake", LOG)
     by_kind = {i.kind: i for i in idset}
     assert set(by_kind) == {
-        K.HEADER_PATH, K.CMAKE_PACKAGE, K.BAZEL_MODULE, K.EXECUTABLE
+        K.HEADER_PATH,
+        K.CMAKE_PACKAGE,
+        K.BAZEL_MODULE,
+        K.EXECUTABLE,
     }
     hp = by_kind[K.HEADER_PATH]
     assert hp.provenance == "declared:interface"
@@ -1326,8 +1328,12 @@ def test_interface_headers_local_checkout():
     """Declared header globs resolve against a local checkout, map to consumer
     include paths via include_prefix, and strip include/src markers."""
     with tempfile.TemporaryDirectory() as d:
-        for rel in ("common/foo.h", "systems/framework/sys.h",
-                    "pkg/include/proj/util.h", "README.md"):
+        for rel in (
+            "common/foo.h",
+            "systems/framework/sys.h",
+            "pkg/include/proj/util.h",
+            "README.md",
+        ):
             p = os.path.join(d, rel)
             os.makedirs(os.path.dirname(p), exist_ok=True)
             open(p, "w").close()
@@ -1343,7 +1349,8 @@ def test_interface_headers_local_checkout():
         assert {"foo.h", "sys.h", "util.h"} <= bases
         assert all(
             i.provenance == "declared:interface"
-            for i in idset if i.kind in (K.HEADER_PATH, K.HEADER_BASENAME)
+            for i in idset
+            if i.kind in (K.HEADER_PATH, K.HEADER_BASENAME)
         )
     print("PASS test_interface_headers_local_checkout")
 
@@ -1393,28 +1400,37 @@ def test_config_layer_precedence():
     """CLI-explicit > --config file > repo config; secrets never come from an
     auto-fetched repo config; unknown keys ignored; types coerced."""
     args = types.SimpleNamespace(
-        depth=1, no_citations=False, sg_count="5000",
-        sg_token="env-token", repo=None, name=None,
+        depth=1,
+        no_citations=False,
+        sg_count="5000",
+        sg_token="env-token",
+        repo=None,
+        name=None,
     )
     known = {"depth", "no_citations", "sg_count", "sg_token", "repo", "name"}
     coerce = {"depth": int}
     store_true = {"no_citations"}
     claimed = {"depth"}  # pretend --depth was explicit on the CLI
 
-    file_opts = {"depth": 5, "no_citations": True, "name": "drake",
-                 "bogus_key": 1}
-    A._apply_config_layer(args, file_opts, claimed, known, coerce, store_true,
-                          LOG, secrets_ok=True)
-    assert args.depth == 1          # CLI-explicit beat the file
+    file_opts = {"depth": 5, "no_citations": True, "name": "drake", "bogus_key": 1}
+    A._apply_config_layer(
+        args, file_opts, claimed, known, coerce, store_true, LOG, secrets_ok=True
+    )
+    assert args.depth == 1  # CLI-explicit beat the file
     assert args.no_citations is True
     assert args.name == "drake"
 
-    repo_opts = {"no_citations": False, "sg_count": "all", "repo": "o/r",
-                 "sg_token": "leaked"}
-    A._apply_config_layer(args, repo_opts, claimed, known, coerce, store_true,
-                          LOG, secrets_ok=False)
-    assert args.no_citations is True    # already claimed by the file layer
-    assert args.sg_count == "all"       # newly set from repo config
+    repo_opts = {
+        "no_citations": False,
+        "sg_count": "all",
+        "repo": "o/r",
+        "sg_token": "leaked",
+    }
+    A._apply_config_layer(
+        args, repo_opts, claimed, known, coerce, store_true, LOG, secrets_ok=False
+    )
+    assert args.no_citations is True  # already claimed by the file layer
+    assert args.sg_count == "all"  # newly set from repo config
     assert args.repo == "o/r"
     assert args.sg_token == "env-token"  # secret NOT taken from repo config
     print("PASS test_config_layer_precedence")
@@ -1422,14 +1438,15 @@ def test_config_layer_precedence():
 
 def test_split_config():
     raw = {
-        "repo": "o/r", "name": "drake",
+        "repo": "o/r",
+        "name": "drake",
         "options": {"depth": 2, "no-citations": True},
         "interface": {"include_prefix": "drake"},
     }
     opts, iface = A._split_config(raw)
     assert opts["repo"] == "o/r"
     assert opts["depth"] == 2
-    assert opts["no_citations"] is True   # hyphen normalized, [options] merged
+    assert opts["no_citations"] is True  # hyphen normalized, [options] merged
     assert "interface" not in opts
     assert iface == {"include_prefix": "drake"}
     assert A._split_config(None) == ({}, None)
@@ -1456,8 +1473,10 @@ def test_paginate_works_page_size_and_api_key():
     # No key -> no api_key param leaks in.
     plain = A.OpenAlexPublicationPlugin("e@x.com")
     seen = {}
-    plain._http_get_json = lambda url, params=None, timeout=None, log=None, channel=None: (
-        seen.update(params) or {"results": [], "meta": {"next_cursor": None}}
+    plain._http_get_json = (
+        lambda url, params=None, timeout=None, log=None, channel=None: (
+            seen.update(params) or {"results": [], "meta": {"next_cursor": None}}
+        )
     )
     plain._paginate_works({"filter": "x"}, "backfill", LOG)
     assert "api_key" not in seen
@@ -1475,9 +1494,12 @@ def test_discover_citing_batches_or_filters():
         calls.append(filt)
         if filt.startswith("doi:"):
             out = {}
-            for d in filt[len("doi:"):].split("|"):
+            for d in filt[len("doi:") :].split("|"):
                 # Unique OpenAlex id per seed DOI.
-                out[d] = {"doi": d, "openalex_id": "https://openalex.org/W" + d.split("/")[-1]}
+                out[d] = {
+                    "doi": d,
+                    "openalex_id": "https://openalex.org/W" + d.split("/")[-1],
+                }
             return out
         if filt.startswith("cites:"):
             return {"10.c/" + filt[-1:]: {"doi": "10.c/" + filt[-1:]}}
@@ -1544,22 +1566,29 @@ def test_batch_backfill_only_fetches_missing():
 def test_service_option_plumbing():
     # The queue/worker layer must forward the new knobs: graph-depth + throttle
     # on the CLI, and the api_key as a secret env var (never argv).
-    sys.path.insert(0, os.path.join(
-        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-        "deploy", "service",
-    ))
+    sys.path.insert(
+        0,
+        os.path.join(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+            "deploy",
+            "service",
+        ),
+    )
     import auditlib
 
     argv = auditlib.build_argv(
         {"repo": "r", "name": "n", "citation_graph_depth": 2, "openalex_delay": 0.5},
         out_path="/dev/null",
     )
-    assert "--citation-graph-depth" in argv and argv[argv.index("--citation-graph-depth") + 1] == "2"
-    assert "--openalex-delay" in argv and argv[argv.index("--openalex-delay") + 1] == "0.5"
-
-    env = auditlib.build_env(
-        {"openalex_api_key": "SECRET"}, base_env={}
+    assert (
+        "--citation-graph-depth" in argv
+        and argv[argv.index("--citation-graph-depth") + 1] == "2"
     )
+    assert (
+        "--openalex-delay" in argv and argv[argv.index("--openalex-delay") + 1] == "0.5"
+    )
+
+    env = auditlib.build_env({"openalex_api_key": "SECRET"}, base_env={})
     assert env["OPENALEX_API_KEY"] == "SECRET"
     # Secret is env-only, never on the command line (process table leak).
     assert not any("SECRET" in a for a in argv)
