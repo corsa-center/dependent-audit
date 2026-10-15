@@ -34,3 +34,13 @@ Source = "https://github.com/corsa-center/dependent-audit"
 
 [tool.uv]
 package = true
+
+[tool.ruff]
+fix = true
+indent-width = 2
+
+
+[tool.ruff.format]
+indent-style = "space"
+line-ending = "lf"
+
