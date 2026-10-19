@@ -26,12 +26,21 @@
     "nodes": {
       "type": "array",
       "items": {
+        "type": "object",
         "properties": {
           "id": {"type": "string"},
           "label": {"type": "string"},
           "type": {"type": "string"},
           "data": {
+            "type": "object",
             "properties": {
+              "packageName": {"type": "string"},
+              "packageOwner": {"type": "string"},
+              "originUrl": {"type": "string"},
+              "commitSha": {"type": "string", "description": "Exact commit the node was audited at (HEAD when unknown)."},
+              "depth": {"type": "integer", "description": "BFS hops from the root (0 = root)."},
+              "snippetPath": {"type": "string", "description": "Relative path of this node's SPDX snippet (consumers only)."},
+              "description": {"type": "string"},
               "stars": {"type": "integer"},
               "contributors": {"type": "integer"},
               "commits": {"type": "integer"},

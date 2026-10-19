@@ -31,8 +31,10 @@ All three run the same underlying engine.
 
 The output is a machine-readable **dependency graph** (which projects use which,
 with supporting evidence) plus standardized **bill-of-materials** files (a formal,
-tool-ingestible record of each dependency link). A separate dashboard, not part of
-this repository, renders the graph for browsing.
+tool-ingestible record of each dependency link). The web service includes a
+browser interface that runs audits with live progress and renders the graph for
+browsing — as a table, an interactive network, and a list of the papers found —
+and can also open any graph file produced by the command line or the Action.
 
 ---
 

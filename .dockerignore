@@ -1,0 +1,31 @@
+# The compose build context is the repo root. Keep secrets, generated output
+# and local tooling out of it (and out of every image layer).
+.git
+.github
+.claude
+.venv
+**/__pycache__
+**/*.pyc
+.ruff_cache
+
+# Local token files (see .gitignore)
+sg_*
+gh_*
+
+# Generated crawl output / local data
+spdx_snippets
+spdx_*
+example_data
+example_data.zip
+*.json
+!udg_schema.json
+!frontend/package.json
+!frontend/package-lock.json
+!frontend/tsconfig.json
+.idf_cache.json
+.paper_cache.json
+.jobs
+
+# Frontend build artifacts (rebuilt inside the image)
+frontend/node_modules
+frontend/dist

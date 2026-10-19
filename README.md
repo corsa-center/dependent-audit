@@ -84,11 +84,10 @@ Once the action generates your `spdx_snippets/` folder, you can push them to Git
 
 ## Add a Badge to Your README
 
-You can add a live badge to your project's README that links directly to your interactive dashboard. Replace `YOUR_ORG` and `YOUR_REPO` with your GitHub details assuming you've checked a dependency graph into source. Otherwise replace the `?url=<url>` section of the badge url with a publically accesible URI endpoint serving 
-your dependency graph json file.
+You can add a live badge to your project's README that opens your dependency graph in the audit service's viewer (`/view`). Replace `AUDIT_HOST` with wherever the service is deployed (see `deploy/README.md`), and `YOUR_ORG`/`YOUR_REPO` with your GitHub details, assuming you've checked a dependency graph into source. Otherwise point `?url=` at any publicly accessible URL serving your dependency graph JSON (the host must allow cross-origin reads, as `raw.githubusercontent.com` does).
 
 ```markdown
-[![Dependency Graph](https://img.shields.io/badge/dependencies-dashboard-007bff)](https://corsa-center.github.io/dashboard/explore/dependents/?url=https://raw.githubusercontent.com/YOUR_ORG/YOUR_REPO/main/dependency_graph.json)
+[![Dependency Graph](https://img.shields.io/badge/dependencies-graph-007bff)](https://AUDIT_HOST/view?url=https://raw.githubusercontent.com/YOUR_ORG/YOUR_REPO/main/dependency_graph.json)
 ```
 
 ### Local Execution

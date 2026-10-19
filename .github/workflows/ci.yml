@@ -9,33 +9,74 @@ on:
 
 jobs:
   tests:
-    name: Unit tests
+    name: Unit tests (py${{ matrix.python }})
     runs-on: ubuntu-latest
+    env:
+      UV_PYTHON: ${{ matrix.python }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # 3.11 is the crawler's minimum (tomllib); keep it first.
+        python: ['3.11', '3.12']
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
-      
+          python-version: ${{ matrix.python }}
+
       - uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
           version: "latest"
 
-      - name: Install runtime dep
-        # audit_dependents.py (imported by the identifier-set suite) needs requests.
-        run: |
-          uv sync 
+      - name: Install deps
+        # The crawler needs requests (project deps); the service HTTP tests
+        # add flask per-invocation via `--with flask`.
+        run: uv sync
 
       - name: Identifier-set / discovery tests
         run: uv run pytest tests/test_identifier_set.py
 
+      - name: Progress-event tests (crawler emitter + option-spec drift)
+        run: uv run pytest tests/test_progress_events.py
+
       - name: Service harness tests (mapping + job store)
         run: uv run pytest deploy/service/tests/test_auditlib.py
 
+      - name: Service event-log + worker tests
+        run: uv run pytest deploy/service/tests/test_events.py
+
+      - name: Service HTTP/SSE tests
+        run: uv run --with flask pytest deploy/service/tests/test_app.py
+
+  frontend:
+    name: Frontend (lint, types, tests, build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - run: npm ci --no-audit --no-fund
+
+      - name: Generated schema types are up to date
+        run: npm run gen:types && git diff --exit-code -- src/api/udg.generated.ts
+
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+
   docker-endpoint:
-    name: Docker endpoint (compose + nginx)
+    name: Docker endpoint (compose + nginx + UI)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

@@ -1,8 +1,9 @@
 # Deploying the dependent-audit service
 
-This guide covers standing up the async audit service (nginx → gunicorn/flask →
-worker) with Docker Compose, from a local trial to a single-host production
-deployment. For the request/response API itself, see [`README.md`](README.md).
+This guide covers standing up the audit service — web UI, API and live-progress
+stream (nginx → gunicorn/flask → worker) — with Docker Compose, from a local
+trial to a single-host production deployment. For the UI and API themselves,
+see [`README.md`](README.md).
 
 ---
 
@@ -43,17 +44,23 @@ Tuning knobs (safe defaults shown in `.env.example`):
 
 | Var | Tier | Meaning |
 |-----|------|---------|
-| `WEB_CONCURRENCY` / `WEB_THREADS` | web | gunicorn workers/threads (fast requests) |
+| `WEB_CONCURRENCY` / `WEB_THREADS` | web | gunicorn processes / threads per process (each open progress stream holds a thread) |
+| `SSE_MAX_STREAMS` | web | live-progress streams per process (keep below `WEB_THREADS`) |
+| `SSE_MAX_SECONDS` | web | lifetime of one stream; browsers then resume transparently |
+| `ALLOW_PAYLOAD_TOKENS` | web + worker | accept `sg_token`/`gh_token` in requests (`0` in production) |
 | `WORKER_CONCURRENCY` | worker | max audits running at once |
 | `AUDIT_TIMEOUT` | worker | per-audit hard limit (s); a slower crawl ends as `timeout` |
 | `POLL_INTERVAL` | worker | queue scan interval (s) |
 | `JOB_TTL` | worker | auto-delete finished jobs older than N seconds (`0` = keep) |
+| `STALE_AFTER` | worker | mark a `running` job `failed` when its worker stopped heart-beating (s) |
+| `RELEVANCE_LLM_*` | worker | optional paper-relevance LLM tie-breaker (server-side only) |
 
 > **Token handling:** tokens live in `.env` (git-ignored) and reach the worker
-> as environment variables — never on a command line. Callers *may* override
-> per-request by putting `sg_token`/`gh_token` in the JSON payload; those also
-> travel via the subprocess environment, not `argv`. Prefer the env default and
-> reserve per-request tokens for multi-tenant use.
+> as environment variables — never on a command line, and never in the browser.
+> The UI only learns *whether* tokens are configured (`/api/health`). API
+> callers may override per-request with `sg_token`/`gh_token` in the JSON
+> payload (also forwarded via env, masked in responses) while
+> `ALLOW_PAYLOAD_TOKENS=1`; set it to `0` to accept server tokens only.
 
 ---
 
@@ -63,31 +70,33 @@ Tuning knobs (safe defaults shown in `.env.example`):
 docker compose up --build -d
 ```
 
-This builds one image (the `audit` service) and starts three containers:
+This builds two images and starts three containers:
 
-| Container | Role | Exposed |
-|-----------|------|---------|
-| `nginx`   | reverse proxy | `:${HTTP_PORT}` on the host |
-| `audit`   | gunicorn/flask web API | internal `:8000` only |
-| `worker`  | drains the queue, runs crawls | none |
+| Container | Image | Role | Exposed |
+|-----------|-------|------|---------|
+| `nginx`   | `dependent-audit-nginx` (multi-stage: node builds `frontend/`, nginx serves it) | web UI + reverse proxy | `:${HTTP_PORT}` on the host |
+| `audit`   | `dependent-audit-service` | gunicorn/flask API + SSE | internal `:8000` only |
+| `worker`  | `dependent-audit-service` | drains the queue, runs crawls | none |
 
 The `audit` and `worker` share a Docker named volume (`jobs`) as the job
-store — that is the only channel between them, so there is no broker to run.
+store — that is the only channel between them (including live progress, via
+each job's `events.jsonl`), so there is no broker to run.
 
 Verify:
 
 ```bash
-curl -sS http://localhost:${HTTP_PORT:-8080}/health      # {"status":"ok"}
+curl -sS http://localhost:${HTTP_PORT:-8080}/api/health   # web ok + worker alive/tokens
 docker compose ps                                         # all Up / healthy
 ```
 
-Smoke-test a real audit (needs a valid Sourcegraph token):
+Then open `http://localhost:${HTTP_PORT:-8080}` and submit an audit (e.g.
+`dyninst/dyninst`, depth 1). The audit page streams progress live. From a shell:
 
 ```bash
-ID=$(curl -sS localhost:${HTTP_PORT:-8080}/audit -H 'Content-Type: application/json' \
+ID=$(curl -sS localhost:${HTTP_PORT:-8080}/api/jobs -H 'Content-Type: application/json' \
       -d '{"repo":"dyninst/dyninst","name":"dyninst","depth":1}' | jq -r .id)
-watch -n3 "curl -sS localhost:${HTTP_PORT:-8080}/jobs/$ID | jq .status"
-curl -sS localhost:${HTTP_PORT:-8080}/jobs/$ID/graph | jq '.meta, (.nodes|length), (.edges|length)'
+curl -sN localhost:${HTTP_PORT:-8080}/api/jobs/$ID/events    # live events until done
+curl -sS localhost:${HTTP_PORT:-8080}/api/jobs/$ID/graph | jq '.meta, (.nodes|length), (.edges|length)'
 ```
 
 ---
@@ -107,6 +116,16 @@ curl -sS localhost:${HTTP_PORT:-8080}/jobs/$ID/graph | jq '.meta, (.nodes|length
 
 - **More API throughput:** raise `WEB_CONCURRENCY`. The web tier only validates,
   enqueues, and serves results off the volume, so it is cheap.
+
+- **More live viewers:** every browser watching a running audit holds one
+  gunicorn thread for its progress stream. Capacity is roughly
+  `WEB_CONCURRENCY × SSE_MAX_STREAMS` concurrent streams (24 by default); past
+  that, browsers are told to retry in 10 s rather than failing, and ordinary
+  API requests keep `WEB_THREADS − SSE_MAX_STREAMS` threads per process. Raise
+  `WEB_THREADS` and `SSE_MAX_STREAMS` together for a few dozen viewers. Beyond
+  ~50 concurrent viewers, switch gunicorn to `worker_class = "gevent"` (add
+  `gevent` to `deploy/service/requirements.txt`), which makes idle streams
+  nearly free.
 
 - **Multi-host / HA** is out of scope for this compose setup: the filesystem job
   store is single-node by design. To go multi-host, replace `JobStore` with a
@@ -131,15 +150,22 @@ services:
       - /etc/letsencrypt/live/YOURHOST:/etc/nginx/certs:ro
 ```
 
-Base the `tls.conf` on `deploy/nginx/nginx.conf`, adding `listen 443 ssl;`,
-`ssl_certificate`/`ssl_certificate_key`, and a redirect from `:80`.
+Base the `tls.conf` on `deploy/nginx/nginx.conf` (baked into the nginx image;
+mounting a file over it overrides it), adding `listen 443 ssl;`,
+`ssl_certificate`/`ssl_certificate_key`, and a redirect from `:80`. Keep the
+`/api/jobs/<id>/events` location's `proxy_buffering off` / long
+`proxy_read_timeout` — without them live progress arrives in bursts or not at
+all. If a load balancer or CDN sits in front, disable response buffering and
+raise its idle timeout above `SSE_MAX_SECONDS` for that path as well.
 
-**Authentication.** The API has no built-in auth. Do **not** expose it to an
-untrusted network as-is — anyone who can reach it can spend your API-token quota
-and read any job's results. Put it behind one of: an nginx `auth_basic` /
-`auth_request`, an API gateway, a VPN, or firewall rules. If you support
-per-request tokens, require an auth layer so callers cannot read each other's
-jobs.
+**Authentication.** The UI and API have no built-in auth. Do **not** expose
+them to an untrusted network as-is — anyone who can reach the service can start
+audits that spend your token quota, and read or delete any job's results. Put
+the whole site (the UI, `/api/*`, and the legacy routes) behind one of: an
+nginx `auth_basic` / `auth_request`, an SSO proxy (e.g. oauth2-proxy), a VPN, or
+firewall rules. Browsers send basic-auth/cookie credentials on the progress
+stream automatically, so these work without UI changes. Set
+`ALLOW_PAYLOAD_TOKENS=0` so only the server's tokens are ever used.
 
 **Resource limits.** Cap the worker so a deep crawl can't exhaust the host:
 
@@ -152,7 +178,8 @@ services:
 ```
 
 **Retention.** Set `JOB_TTL` so finished jobs are swept automatically; otherwise
-they accumulate on the `jobs` volume until you `DELETE /jobs/<id>`.
+they accumulate on the `jobs` volume until deleted (UI, or
+`DELETE /api/jobs/<id>`).
 
 ---
 
@@ -173,7 +200,10 @@ docker compose up -d --build         # rebuilds image, recreates containers
 ```
 
 Jobs persist on the `jobs` volume across restarts. A job that was `running` when
-a worker was killed stays claimed and is **not** auto-retried — re-submit it.
+a worker was killed is **not** retried: once its per-job heartbeat is older than
+`STALE_AFTER` (default 300 s) the next worker marks it `failed` ("worker lost").
+Re-submit it. The frontend is rebuilt into the nginx image by the same
+`docker compose up -d --build`.
 
 **Back up / inspect the job store**
 
@@ -202,4 +232,7 @@ docker compose down -v         # also delete all jobs
 | Jobs stay `queued` forever | worker not running/healthy | `docker compose ps`; check `docker compose logs worker` |
 | Jobs end `timeout` | crawl slower than `AUDIT_TIMEOUT` | raise `AUDIT_TIMEOUT` (deep crawls) or lower `depth` |
 | `image ... already exists` during build | building the shared image twice | already handled — only `audit` declares `build:`; run `docker compose build` first if customizing |
-| `/jobs/<id>/graph` returns 409 | job not `succeeded` yet | poll `/jobs/<id>` until terminal |
+| `/api/jobs/<id>/graph` returns 409 | job not `succeeded` yet | follow `/api/jobs/<id>/events` (or poll `/api/jobs/<id>`) until terminal |
+| Audit page shows "reconnecting…" or progress arrives in bursts | a proxy/LB in front buffers or times out the SSE stream | disable buffering and raise the idle timeout for `/api/jobs/*/events` (see §5 TLS) |
+| UI banner "No audit worker has checked in recently" | worker down, or it can't write the shared volume | `docker compose ps`; `docker compose logs worker` |
+| Running job ends `failed` with "worker lost" | its worker container was killed/restarted mid-crawl | re-submit; give the worker more memory (see Resource limits) |

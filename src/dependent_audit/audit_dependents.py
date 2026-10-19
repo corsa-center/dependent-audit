@@ -7,6 +7,7 @@ import math
 import os
 import re
 import sys
+import threading
 import time
 import uuid
 from collections import defaultdict, deque
@@ -187,6 +188,111 @@ def _apply_config_layer(
                 continue
         setattr(args, dest, val)
         claimed.add(dest)
+
+
+def _jsonable(obj):
+    if isinstance(obj, (set, frozenset)):
+        return sorted(obj, key=str)
+    return str(obj)
+
+
+class ProgressEmitter:
+    """Structured progress events for live status (``--events-file``).
+
+    Appends one JSON object per line — ``{seq, ts, type, src, data}`` — to a
+    file the audit service tails and streams to the browser. Without a path it
+    is a no-op, so the CLI/Action behave exactly as before. It must NEVER raise
+    into the crawl: an unwritable file just disables it. ``seq`` continues from
+    the lines already present (the service writes lifecycle events into the
+    same file before and after the crawler runs). Event catalogue: see
+    deploy/README.md."""
+
+    EVENTS_VERSION = 1
+
+    def __init__(self, path=None):
+        self._fd = None
+        self._seq = 0
+        self._lock = threading.Lock()
+        if not path:
+            return
+        try:
+            with open(path, "rb") as f:
+                self._seq = sum(
+                    c.count(b"\n") for c in iter(lambda: f.read(65536), b"")
+                )
+        except OSError:
+            self._seq = 0
+        try:
+            self._fd = os.open(path, os.O_WRONLY | os.O_APPEND | os.O_CREAT, 0o644)
+        except OSError:
+            self._fd = None
+
+    @property
+    def enabled(self):
+        return self._fd is not None
+
+    def emit(self, type_, **data):
+        if self._fd is None:
+            return
+        try:
+            with self._lock:
+                line = (
+                    json.dumps(
+                        {
+                            "seq": self._seq,
+                            "ts": round(time.time(), 3),
+                            "type": type_,
+                            "src": "crawler",
+                            "data": data,
+                        },
+                        default=_jsonable,
+                        separators=(",", ":"),
+                    )
+                    + "\n"
+                )
+                buf = line.encode()
+                while buf:
+                    buf = buf[os.write(self._fd, buf) :]
+                self._seq += 1
+        except Exception:
+            self.close()
+
+    def close(self):
+        fd, self._fd = self._fd, None
+        if fd is not None:
+            try:
+                os.close(fd)
+            except OSError:
+                pass
+
+
+class EventLogHandler(logging.Handler):
+    """Mirrors WARNING+ log records into the progress event stream, so every
+    existing warning/error surfaces live without touching its call site."""
+
+    def __init__(self, events, level=logging.WARNING):
+        super().__init__(level)
+        self.events = events
+
+    def emit(self, record):
+        try:
+            extra = getattr(record, "extra_meta", None)
+            if extra is not None:
+                # Keep structured context only when small; drop, never truncate
+                # (a sliced JSON document would be invalid).
+                encoded = json.dumps(extra, default=_jsonable)
+                extra = json.loads(encoded) if len(encoded) <= 1024 else None
+            chain = getattr(record, "chain", None) or []
+            self.events.emit(
+                "log",
+                level=record.levelname,
+                message=record.getMessage(),
+                repo=chain[-1] if chain else None,
+                depth=getattr(record, "depth", None),
+                extra=extra,
+            )
+        except Exception:
+            pass
 
 
 class CitationDiagnostics:
@@ -1858,6 +1964,8 @@ class SpecificityService:
         self.probe_cap = max(1, probe_cap)
         self.cache_path = cache_path or None
         self.cache = {}
+        self.probes = 0  # live frequency probes issued (progress reporting)
+        self.cache_hits = 0
         self._load()
 
     def _load(self):
@@ -1879,7 +1987,9 @@ class SpecificityService:
 
     def _frequency(self, regex, log):
         if regex in self.cache:
+            self.cache_hits += 1
             return self.cache[regex]
+        self.probes += 1
         count = self._probe(regex, log)
         self.cache[regex] = count
         return count
@@ -1897,6 +2007,8 @@ class SpecificityService:
 class EcosystemPlugin:
     def __init__(self, args):
         self.args = args
+        # Replaced by the orchestrator's emitter; a no-op until then.
+        self.events = ProgressEmitter()
 
     def discover_dependents(self, curr_id, curr_name, curr_sha, log):
         raise NotImplementedError()
@@ -2055,6 +2167,7 @@ class CppSourcegraphPlugin(EcosystemPlugin):
         self.search_incomplete = True
         if reason not in self.search_warnings:
             self.search_warnings.append(reason)
+            self.events.emit("incomplete", scope="discovery", reason=reason)
 
     def _probe_frequency(self, regex, log):
         """Bounded global match count for a pattern, used as an IDF proxy."""
@@ -3177,15 +3290,47 @@ class CppSourcegraphPlugin(EcosystemPlugin):
             resp.close()
 
     def discover_dependents(self, curr_id, curr_name, curr_sha, log):
-        declared_aliases = (
-            self._resolve_declared_aliases(curr_id, log)
-            if self._enabled_registries()
-            else {}
-        )
+        repo = curr_id.replace("github.com/", "")
+        ev = self.events
+        declared_aliases = {}
+        if self._enabled_registries():
+            ev.emit("phase", phase="declared", state="start", repo=repo)
+            declared_aliases = self._resolve_declared_aliases(curr_id, log)
+            ev.emit(
+                "phase",
+                phase="declared",
+                state="end",
+                repo=repo,
+                detail={"aliases": len(declared_aliases)},
+            )
+        ev.emit("phase", phase="identifiers", state="start", repo=repo)
         idset = self._compile_identifier_set(curr_id, curr_name, log, declared_aliases)
+        by_kind = defaultdict(int)
+        for idf in idset:
+            by_kind[idf.kind] += 1
+        ev.emit(
+            "phase",
+            phase="identifiers",
+            state="end",
+            repo=repo,
+            detail={"count": len(idset), "byKind": dict(sorted(by_kind.items()))},
+        )
         protected_stems = {curr_name.lower()}
+        probes0, hits0 = self.specificity.probes, self.specificity.cache_hits
+        ev.emit("phase", phase="specificity", state="start", repo=repo)
         patterns = self._patterns_from(idset, log, protected_stems)
         self.specificity.save()
+        ev.emit(
+            "phase",
+            phase="specificity",
+            state="end",
+            repo=repo,
+            detail={
+                "patterns": len(patterns),
+                "probes": self.specificity.probes - probes0,
+                "cacheHits": self.specificity.cache_hits - hits0,
+            },
+        )
         if not patterns:
             log.info("No search heuristics determined. Skipping.")
             return []
@@ -3211,13 +3356,33 @@ class CppSourcegraphPlugin(EcosystemPlugin):
             time.sleep(self.args.sg_delay)
 
         log.info("Initiating Sourcegraph streaming dependency search")
+        ev.emit("phase", phase="search", state="start", repo=repo)
         consumers = {}
+        t_search = last_progress = time.monotonic()
+        n_matches = n_lines = 0
+
+        def _progress(final=False):
+            ev.emit(
+                "search_progress",
+                repo=repo,
+                matches=n_matches,
+                lines=n_lines,
+                consumers=len(consumers),
+                elapsedSec=round(time.monotonic() - t_search, 1),
+                final=final,
+            )
+
         for match in self._stream_search(full_query, log):
             if match.get("type") != "content":
                 continue
             rn = match.get("repository")
             if not rn:
                 continue
+            n_matches += 1
+            # Throttled live counter: at most one event per second.
+            if ev.enabled and time.monotonic() - last_progress >= 1.0:
+                last_progress = time.monotonic()
+                _progress()
             if rn not in consumers:
                 consumers[rn] = {
                     "name": rn,
@@ -3236,6 +3401,7 @@ class CppSourcegraphPlugin(EcosystemPlugin):
             ctx = 0.3 if self._is_doc_path(match.get("path", "")) else 1.0
             for preview in self._match_lines(match):
                 entry["matchCount"] += 1
+                n_lines += 1
                 for pattern in self._classify(preview, compiled_patterns):
                     idf = pattern.identifier
                     entry["evidence"][pattern.evidence] = (
@@ -3248,10 +3414,19 @@ class CppSourcegraphPlugin(EcosystemPlugin):
                     entry["provenance"].add(idf.provenance)
                     if idf.kind in self.HEADER_KINDS:
                         entry["matchedHeaders"].add(idf.value)
+        _progress(final=True)
+        ev.emit(
+            "phase",
+            phase="search",
+            state="end",
+            repo=repo,
+            detail={"matches": n_matches, "consumers": len(consumers)},
+        )
 
         if declared_aliases:
             self._merge_declared_dependents(consumers, declared_aliases, log)
 
+        ev.emit("phase", phase="scoring", state="start", repo=repo)
         provider_headers = sum(1 for i in idset if i.kind in self.HEADER_KINDS)
         for entry in consumers.values():
             score, tier = self._score_consumer(
@@ -3270,6 +3445,13 @@ class CppSourcegraphPlugin(EcosystemPlugin):
             del entry["kindWeights"]
             del entry["matchedHeaders"]
 
+        ev.emit(
+            "phase",
+            phase="scoring",
+            state="end",
+            repo=repo,
+            detail={"consumers": len(consumers)},
+        )
         log.info(
             f"Sourcegraph dependency search completed. Found {len(consumers)} total consumers."
         )
@@ -3277,9 +3459,11 @@ class CppSourcegraphPlugin(EcosystemPlugin):
 
 
 class AuditOrchestrator:
-    def __init__(self, args, plugin: EcosystemPlugin, base_logger):
+    def __init__(self, args, plugin: EcosystemPlugin, base_logger, events=None):
         self.args = args
         self.plugin = plugin
+        self.events = events or ProgressEmitter()
+        plugin.events = self.events
         self.citations = CitationEngine(args.email, args)
         self.github = GitHubEnricher(args.gh_token)
         self.spdx = SPDXManager()
@@ -3420,6 +3604,12 @@ class AuditOrchestrator:
                 )
             if not paper_diag.get("complete"):
                 self.incomplete_nodes.append(repo_name)
+                self.events.emit(
+                    "incomplete",
+                    scope="citations",
+                    repo=repo_name,
+                    reason="; ".join(paper_diag.get("warnings", [])[:5]),
+                )
 
         return {
             "id": repo_name,
@@ -3461,6 +3651,20 @@ class AuditOrchestrator:
     def run(self):
         root_repo = self.args.repo.replace("github.com/", "")
         self.visited.add(root_repo)
+        t_run = time.monotonic()
+        ev = self.events
+        # Whitelisted fields only: never forward tokens into the event stream.
+        ev.emit(
+            "run_started",
+            runId=self.run_id,
+            root=root_repo,
+            name=self.args.name,
+            depth=self.args.depth,
+            ecosystem=self.args.ecosystem,
+            citations=not getattr(self.args, "no_citations", False),
+            sgCount=str(self.args.sg_count),
+            eventsVersion=ProgressEmitter.EVENTS_VERSION,
+        )
 
         root_log = ContextAdapter(
             self.base_logger,
@@ -3475,6 +3679,7 @@ class AuditOrchestrator:
         root_log.info("Booting Ecosystem Audit Engine")
 
         root_owner, r_name = self.github.parse_repo_info(root_repo)
+        ev.emit("phase", phase="root_metadata", state="start", repo=root_repo)
         root_node = self._build_node_data(
             root_repo,
             r_name,
@@ -3486,6 +3691,9 @@ class AuditOrchestrator:
             root_log,
         )
         self.nodes_map[root_repo] = root_node
+        ev.emit("phase", phase="root_metadata", state="end", repo=root_repo)
+        ev.emit("node", **self._node_summary(root_node))
+        processed = 0
 
         queue = deque(
             [
@@ -3529,16 +3737,42 @@ class AuditOrchestrator:
                 },
             )
             node_log.info("Evaluating dependent connections")
+            parent = curr_id.replace("github.com/", "")
+            processed += 1
+            ev.emit(
+                "node_start",
+                repo=parent,
+                depth=depth,
+                chain=chain,
+                processed=processed,
+                queued=len(queue),
+            )
 
             consumers = self.plugin.discover_dependents(
                 curr_id, curr_name, curr_sha, node_log
             )
+            consumers = [
+                c for c in consumers if c["name"].replace("github.com/", "") != parent
+            ]
+            self._emit_candidates(parent, depth + 1, consumers)
+            ev.emit(
+                "phase",
+                phase="enrich",
+                state="start",
+                repo=parent,
+                detail={"total": len(consumers)},
+            )
 
-            for child in consumers:
+            for done, child in enumerate(consumers, 1):
                 child_full, child_sha = child["name"], child["oid"]
                 clean_child = child_full.replace("github.com/", "")
-                if clean_child == curr_id.replace("github.com/", ""):
-                    continue
+                ev.emit(
+                    "enrich_progress",
+                    parent=parent,
+                    done=done,
+                    total=len(consumers),
+                    repo=clean_child,
+                )
 
                 child_chain = chain + [clean_child]
                 child_log = ContextAdapter(
@@ -3575,6 +3809,7 @@ class AuditOrchestrator:
                         rel_path,
                         discovery=child,
                     )
+                    ev.emit("node", **self._node_summary(self.nodes_map[clean_child]))
 
                 # A GitHub-flagged fork of the provider is a MIRROR regardless of
                 # how many headers it reproduces; otherwise use the discovery-time
@@ -3600,12 +3835,21 @@ class AuditOrchestrator:
                         "matchCount": child.get("matchCount", 0),
                     }
                 )
+                ev.emit("edge", **self._edge_summary(self.edges_list[-1]))
                 if clean_child not in self.visited:
                     self.visited.add(clean_child)
                     queue.append(
                         (child_full, child_name, depth + 1, child_sha, child_chain)
                     )
+            ev.emit(
+                "phase",
+                phase="enrich",
+                state="end",
+                repo=parent,
+                detail={"total": len(consumers)},
+            )
 
+        ev.emit("phase", phase="write", state="start", repo=root_repo)
         completeness = self._build_completeness()
         with open(self.args.out, "w") as f:
             json.dump(
@@ -3623,6 +3867,16 @@ class AuditOrchestrator:
                 indent=2,
             )
         self.citations.save()
+        ev.emit("phase", phase="write", state="end", repo=root_repo)
+        ev.emit(
+            "result",
+            complete=completeness["complete"],
+            warnings=completeness["warnings"],
+            nodes=len(self.nodes_map),
+            edges=len(self.edges_list),
+            elapsedSec=round(time.monotonic() - t_run, 1),
+            completeness=completeness,
+        )
         if completeness["complete"]:
             root_log.info(
                 "Audit graph generation completed successfully (COMPLETE).",
@@ -3638,6 +3892,97 @@ class AuditOrchestrator:
                     "warnings": completeness["warnings"],
                 },
             )
+
+    CANDIDATE_BATCH = 500
+
+    def _emit_candidates(self, parent, depth, consumers):
+        """Announce a node's scored consumers before the slow enrichment pass,
+        so a live UI can list them immediately (strongest first)."""
+        if not self.events.enabled:
+            return
+        rows = sorted(
+            (
+                {
+                    "id": c["name"].replace("github.com/", ""),
+                    "confidence": c.get("confidence"),
+                    "confidenceScore": c.get("confidenceScore", 0),
+                    "relationship": c.get("relationship", "DEPENDS_ON"),
+                    "evidenceLayer": c.get("evidenceLayer"),
+                    "matchCount": c.get("matchCount", 0),
+                }
+                for c in consumers
+            ),
+            key=lambda r: (-(r["confidenceScore"] or 0), r["id"]),
+        )
+        size = self.CANDIDATE_BATCH
+        batches = [rows[i : i + size] for i in range(0, len(rows), size)] or [[]]
+        for i, batch in enumerate(batches):
+            self.events.emit(
+                "candidates",
+                parent=parent,
+                depth=depth,
+                total=len(rows),
+                batchIndex=i,
+                batchCount=len(batches),
+                batch=batch,
+            )
+
+    @staticmethod
+    def _node_summary(node):
+        """Slim node record for the event stream (full records, with papers,
+        come from the final graph)."""
+        d = node.get("data", {})
+        tiers = defaultdict(int)
+        seminal = 0
+        for p in d.get("papers") or []:
+            if p.get("relation") == "seminal" or "seminal" in (
+                p.get("provenance") or []
+            ):
+                seminal += 1
+            if p.get("relevanceTier"):
+                tiers[p["relevanceTier"]] += 1
+        return {
+            "id": node.get("id"),
+            "label": node.get("label"),
+            "type": node.get("type"),
+            "depth": d.get("depth"),
+            "stars": d.get("stars", 0),
+            "contributors": d.get("contributors", 0),
+            "license": d.get("license"),
+            "isFork": d.get("isFork", False),
+            "lastUpdate": d.get("lastUpdate"),
+            "latestRelease": d.get("latestRelease"),
+            "description": (d.get("description") or "")[:280],
+            "confidence": d.get("confidence"),
+            "confidenceScore": d.get("confidenceScore", 0),
+            "relationship": d.get("relationship"),
+            "evidenceLayer": d.get("evidenceLayer"),
+            "matchCount": d.get("matchCount", 0),
+            "snippetPath": d.get("snippetPath"),
+            "papers": {
+                "total": len(d.get("papers") or []),
+                "seminal": seminal,
+                **dict(tiers),
+            },
+            "papersComplete": (d.get("paperDiagnostics") or {}).get("complete", True),
+        }
+
+    @staticmethod
+    def _edge_summary(edge):
+        idents = edge.get("identifiers") or []
+        return {
+            "source": edge["source"],
+            "target": edge["target"],
+            "relationship": edge.get("relationship"),
+            "confidence": edge.get("confidence"),
+            "confidenceScore": edge.get("confidenceScore", 0),
+            "evidenceLayer": edge.get("evidenceLayer"),
+            "layers": edge.get("layers", []),
+            "matchCount": edge.get("matchCount", 0),
+            "evidence": edge.get("evidence", {}),
+            "identifiers": idents[:20],
+            "identifiersTotal": len(idents),
+        }
 
     def _build_completeness(self):
         """Aggregate every partial-search signal into one run-level verdict, so
@@ -3689,7 +4034,7 @@ class AuditOrchestrator:
         }
 
 
-if __name__ == "__main__":
+def build_parser():
     parser = argparse.ArgumentParser()
     # repo/name may be supplied via --config or a checked-in repo config, so they
     # are validated after config merge rather than by argparse's `required`.
@@ -3849,9 +4194,23 @@ if __name__ == "__main__":
     parser.add_argument("--custom-string")
     parser.add_argument("--custom-file")
     parser.add_argument("--no-defaults", action="store_true")
+    parser.add_argument(
+        "--events-file",
+        default=None,
+        help="Append structured progress events (JSON Lines) to this file, for "
+        "live status in the audit service. Off unless set.",
+    )
+    return parser
+
+
+if __name__ == "__main__":
+    parser = build_parser()
     args = parser.parse_args()
 
     base_logger = setup_logger(args.verbose)
+    events = ProgressEmitter(args.events_file)
+    if events.enabled:
+        base_logger.addHandler(EventLogHandler(events))
 
     # --- Config merge: CLI explicit > --config file > repo config > default/env.
     # Introspect the parser so the config surface stays in lockstep with the
@@ -3932,14 +4291,24 @@ if __name__ == "__main__":
 
     if args.ecosystem == "cpp":
         if not args.sg_token and args.depth > 0:
-            parser.error(
-                "Sourcegraph token required for C++ searches (unless using depth 0)."
-            )
+            msg = "Sourcegraph token required for C++ searches (unless using depth 0)."
+            events.emit("error", message=msg, excType="UsageError")
+            parser.error(msg)
         plugin = CppSourcegraphPlugin(args)
     else:
         raise NotImplementedError(
             f"Plugin for {args.ecosystem} is not yet implemented."
         )
 
-    auditor = AuditOrchestrator(args, plugin, base_logger)
-    auditor.run()
+    auditor = AuditOrchestrator(args, plugin, base_logger, events=events)
+    try:
+        auditor.run()
+    except BaseException as exc:
+        events.emit(
+            "error",
+            message=str(exc) or exc.__class__.__name__,
+            excType=exc.__class__.__name__,
+        )
+        raise
+    finally:
+        events.close()

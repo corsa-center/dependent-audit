@@ -4,17 +4,23 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A GitHub Action (and standalone Python CLI) that discovers public repositories depending on a target C/C++ project. It searches Sourcegraph's global code index for `#include`/`#pragma comment(lib)`/`find_package` references, enriches each hit with GitHub metadata, mines academic citations, and emits a **Universal Dependency Graph** (`dependency_graph.json`) plus version-pinned **SPDX 2.3** SBOM snippets (`spdx_snippets/`). Those artifacts feed a separate frontend dashboard (not in this repo).
+A GitHub Action (and standalone Python CLI) that discovers public repositories depending on a target C/C++ project. It searches Sourcegraph's global code index for `#include`/`#pragma comment(lib)`/`find_package` references, enriches each hit with GitHub metadata, mines academic citations, and emits a **Universal Dependency Graph** (`dependency_graph.json`) plus version-pinned **SPDX 2.3** SBOM snippets (`spdx_snippets/`). The same engine runs as a **web service** (`deploy/` + `frontend/`): a React UI to submit audits, watch them run live over Server-Sent Events, and render/download the results. That UI (including a `/view?url=` viewer for any graph JSON) replaces the old external CORSA dashboard.
 
 Read `OVERVIEW.md` for the full methodology and `usage.md` for the operator-facing workflow. The near-entirety of the logic lives in one file: `audit_dependents.py`.
 
 ## Commands
 
-There is no build step or CI lint gate. A **plain-assert unit suite** covers the
-identifier-set / discovery layer (no external test deps):
+The crawler has no build step. **Plain-assert unit suites** (no test framework)
+cover the crawler and the service; the frontend has lint/typecheck/vitest. CI
+(`.github/workflows/ci.yml`) runs all of them plus a compose smoke test.
 
 ```bash
-python tests/test_identifier_set.py          # or: pytest tests/
+python tests/test_identifier_set.py          # identifier-set / discovery
+python tests/test_progress_events.py         # --events-file emitter + OPTION_SPEC drift
+python deploy/service/tests/test_auditlib.py # payload mapping + job store
+python deploy/service/tests/test_events.py   # event log tailing + worker lifecycle
+python deploy/service/tests/test_app.py      # HTTP/SSE routes (needs flask)
+cd frontend && npm ci && npm run lint && npm run typecheck && npm test && npm run build
 ```
 
 Development beyond that is running the crawler directly.
@@ -143,6 +149,16 @@ This returns a `complete` (untruncated) graph — ~190 dependents, ~130 `high` �
 
 Logging goes through `ContextAdapter`, carrying `run_id`/`root_repo`/`depth`/`chain` on every record; `--verbose` selects `JSONFormatter`, otherwise `TerseFormatter`.
 
+**Progress events (`--events-file`).** `ProgressEmitter` appends JSON-Lines events (`{seq, ts, type, src, data}`) that the service streams to the UI: `run_started`, `phase` start/end (emitted in `run()` and `CppSourcegraphPlugin.discover_dependents`), `node_start`, throttled `search_progress` (≤1/s in the stream loop), `candidates` (scored consumers before enrichment), `enrich_progress`, slim `node`/`edge` summaries (`_node_summary`/`_edge_summary` — never full records), `incomplete`, `log` (every WARNING+ record, via `EventLogHandler`), `result`, `error`. Catalogue: `deploy/README.md`. Invariants: without the flag it is a **no-op** (CLI/Action output unchanged); it must **never raise** into the crawl (write errors disable it); `seq` continues after lines the service wrote first; event payloads are whitelisted — **never put tokens or args wholesale into an event**. The plugin gets the orchestrator's emitter as `plugin.events` (a null emitter by default, so plugins/tests constructed standalone still work).
+
+## Service & frontend (`deploy/`, `frontend/`)
+
+- **Web tier** `deploy/service/app.py` (Flask under gunicorn `gthread`): `/api/jobs…` routes, `GET /api/jobs/<id>/events` = SSE that tails the job's `events.jsonl` (`auditlib.tail_events`), resumable by `Last-Event-ID` (the SSE id is the **line index**), bounded by `SSE_MAX_SECONDS` and capped per process by `SSE_MAX_STREAMS`; `204` once a finished job is fully replayed. Legacy `/audit`, `/jobs/…` routes are deprecated aliases.
+- **Worker** `deploy/service/worker.py`: claims jobs (atomic sentinel rename), runs the crawler with `Popen` in its own session with `--events-file`, streams its log to `stderr.log`, handles cancel/timeout by killing the process group, and writes the terminal `job` event **after** `update_meta` (so `/graph` is ready when the UI sees `succeeded`). Writers of `events.jsonl` (web `queued` → worker `running` → crawler → worker terminal) never overlap in time, so there is no locking.
+- **Payload spec** `deploy/service/auditlib.py:OPTION_SPEC` is the single declaration of which crawler flags the service accepts; it drives `GET /api/options` and the UI's advanced form. `tests/test_progress_events.py::test_option_spec_matches_parser` fails when a crawler flag is added/renamed without classifying it here (`OPTION_SPEC`, `TOKEN_ENV`, `SERVER_ONLY`, or service-owned `out`/`events_file`). **Filesystem paths and outbound URLs are `SERVER_ONLY`** and are also passed explicitly by `_pinned_argv()`, because the crawler merges an auto-fetched `.dependent-audit.toml` from the *audited* repo into any flag left implicit.
+- **Frontend** `frontend/` (Vite + React + TS, no UI kit, tiny in-house router in `src/lib/router.tsx`): `useJobEvents` (EventSource + manual resume, rAF-batched) → pure `state/progressReducer.ts` → `LiveProgress`; finished graphs render through `GraphResults` (TanStack table, lazy Cytoscape `GraphView`, `PapersTable`, `NodeDrawer`), shared by the job page and `/view?url=`. `src/api/udg.generated.ts` is generated from `udg_schema.json` (`npm run gen:types`; CI fails if stale); the event union in `src/api/events.ts` mirrors the catalogue by hand. Dev: run `app.py` + `worker.py` with `AUDIT_SCRIPT=deploy/ci/fake_audit.py` and `npm run dev` (proxies `/api` to :8000) — see `deploy/README.md`.
+- **nginx** image (`deploy/nginx/Dockerfile`) builds the SPA and serves it; the SSE location must keep `proxy_buffering off`.
+
 ## Determinism & completeness (why two runs agree, or say why they don't)
 
 Two users running the same audit should get the same graph *except* as the live data changes. The threats to that are (a) **set-iteration order** feeding bounded caps/slices, and (b) **silently swallowed failures** (a rate-limited 429 that shrinks one user's graph with no signal). Both are handled so a partial run is *reported*, never disguised as a complete one:
@@ -166,6 +182,7 @@ Weights live in `KIND_WEIGHTS` (per identifier kind); gating exemptions in `_is_
 
 - **`create.sh` is a stale bootstrap generator**, not part of the runtime. It embeds an *old, diverged* copy of `audit_dependents.py` and `action.yml` via heredocs. Do not treat it as source of truth and do not edit it to change behavior — edit `audit_dependents.py` directly. It will drift from the real files.
 - **`sbom_to_udg.py` is an unfinished stub** (its `convert()` parses but does nothing).
-- `udg_schema.json` is kept in sync with the emitted `{meta, nodes, edges}` (schemaVersion `2.0`: per-node/edge `evidence`/`identifiers`/`provenance`/`relationship`/`confidence*`). Update it when the output shape changes.
+- `udg_schema.json` is kept in sync with the emitted `{meta, nodes, edges}` (schemaVersion `2.0`: per-node/edge `evidence`/`identifiers`/`provenance`/`relationship`/`confidence*`). Update it when the output shape changes — then run `npm run gen:types` in `frontend/` and commit the regenerated `src/api/udg.generated.ts`.
+- `deploy/ci/fake_audit.py` mirrors the crawler's CLI contract and event catalogue for CI/UI development; when you add an event type or change a payload, update it, `frontend/src/api/events.ts`, and the catalogue in `deploy/README.md` together.
 - Secrets: `gh_pat`, `sg_pat`, `sg_pat_header` are local token files ignored via `.gitignore` (`sg_*`, `gh_*`). `example_data/` and `spdx_*/` are also git-ignored; the ~550 checked-in `spdx_snippets/` are generated output from prior runs.
 - Network calls have broad `try/except` and fixed retry/backoff; failures degrade to empty metadata rather than aborting the crawl.

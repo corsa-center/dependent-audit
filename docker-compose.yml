@@ -1,14 +1,17 @@
-# Dependent-audit tool as an async HTTP API behind nginx.
+# Dependent-audit service: web UI + HTTP API + crawler worker.
 #
-#   client ──▶ nginx (:8080) ──▶ gunicorn/flask web API ──┐
-#                                                          ├── shared jobs volume
-#                                    worker (crawler) ─────┘
+#   browser ──▶ nginx (:8080) ── static SPA (built into the nginx image)
+#                     │
+#                     ├── /api/*            ──▶ gunicorn/flask web API ──┐
+#                     └── /api/jobs/*/events ─▶ (same, unbuffered SSE)    ├── shared jobs volume
+#                                                worker (crawler) ────────┘
 #
-#   POST /audit returns a job id immediately; the worker runs the crawl and the
-#   client polls GET /jobs/<id> for the result. Deep searches never hold a
-#   connection open. See deploy/README.md for the payload schema.
+#   POST /api/jobs returns a job id immediately; the worker runs the crawl and
+#   appends progress events to the job's events.jsonl, which the web tier
+#   streams to the browser over Server-Sent Events. Deep searches never hold a
+#   request thread for the crawl. See deploy/README.md for the API.
 #
-# Bring it up with:  docker compose up --build
+# Bring it up with:  docker compose up --build   then open http://localhost:8080
 
 services:
   audit:
@@ -21,8 +24,13 @@ services:
     environment:
       JOBS_DIR: /data/jobs
       WEB_CONCURRENCY: "${WEB_CONCURRENCY:-2}"
-      WEB_THREADS: "${WEB_THREADS:-4}"
+      # Each open live-progress stream holds a thread; see gunicorn.conf.py.
+      WEB_THREADS: "${WEB_THREADS:-16}"
+      SSE_MAX_STREAMS: "${SSE_MAX_STREAMS:-12}"
+      SSE_MAX_SECONDS: "${SSE_MAX_SECONDS:-60}"
       GUNICORN_TIMEOUT: "${GUNICORN_TIMEOUT:-120}"
+      # Per-request sg_token/gh_token in payloads; set 0 in production.
+      ALLOW_PAYLOAD_TOKENS: "${ALLOW_PAYLOAD_TOKENS:-1}"
       LOG_LEVEL: "${LOG_LEVEL:-info}"
     volumes:
       - jobs:/data/jobs
@@ -45,14 +53,26 @@ services:
     command: ["python", "worker.py"]
     environment:
       JOBS_DIR: /data/jobs
-      # Tokens default from the shell / .env; requests may override per-call.
+      # Tokens default from the shell / .env; requests may override per-call
+      # when ALLOW_PAYLOAD_TOKENS=1.
       SG_TOKEN: "${SG_TOKEN:-}"
       GH_TOKEN: "${GH_TOKEN:-}"
+      ALLOW_PAYLOAD_TOKENS: "${ALLOW_PAYLOAD_TOKENS:-1}"
       AUDIT_EMAIL: "${AUDIT_EMAIL:-audit-bot@example.com}"
+      # OpenAlex: API key (secret; a request may override when
+      # ALLOW_PAYLOAD_TOKENS=1) and worker-wide defaults for its knobs.
+      OPENALEX_API_KEY: "${OPENALEX_API_KEY:-}"
+      OPENALEX_DELAY: "${OPENALEX_DELAY:-0}"
+      CITATION_GRAPH_DEPTH: "${CITATION_GRAPH_DEPTH:-1}"
+      # Optional paper-relevance LLM tie-breaker (server-side only).
+      RELEVANCE_LLM_URL: "${RELEVANCE_LLM_URL:-}"
+      RELEVANCE_LLM_MODEL: "${RELEVANCE_LLM_MODEL:-local-model}"
+      RELEVANCE_LLM_TOKEN: "${RELEVANCE_LLM_TOKEN:-}"
       WORKER_CONCURRENCY: "${WORKER_CONCURRENCY:-2}"
       AUDIT_TIMEOUT: "${AUDIT_TIMEOUT:-3600}"
       POLL_INTERVAL: "${POLL_INTERVAL:-2.0}"
       JOB_TTL: "${JOB_TTL:-0}"
+      STALE_AFTER: "${STALE_AFTER:-300}"
       LOG_LEVEL: "${LOG_LEVEL:-info}"
     volumes:
       - jobs:/data/jobs
@@ -67,13 +87,15 @@ services:
     restart: unless-stopped
 
   nginx:
-    image: nginx:1.27-alpine
+    # Multi-stage: builds frontend/ with node, then serves dist/ + nginx.conf.
+    build:
+      context: .
+      dockerfile: deploy/nginx/Dockerfile
+    image: dependent-audit-nginx
     depends_on:
       - audit
     ports:
       - "${HTTP_PORT:-8080}:80"
-    volumes:
-      - ./deploy/nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
     restart: unless-stopped
 
 volumes:

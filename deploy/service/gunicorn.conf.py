@@ -10,10 +10,16 @@ import os
 bind = f"0.0.0.0:{os.environ.get('PORT', '8000')}"
 
 workers = int(os.environ.get("WEB_CONCURRENCY", "2"))
-threads = int(os.environ.get("WEB_THREADS", "4"))
+# Each open Server-Sent Events stream (GET /api/jobs/<id>/events) holds one
+# thread. app.py caps streams per process at SSE_MAX_STREAMS (default 12) and
+# bounds each stream's lifetime (SSE_MAX_SECONDS; browsers resume via
+# Last-Event-ID), so keep threads comfortably above that cap. For many
+# concurrent viewers (~50+) switch to worker_class = "gevent" instead.
+threads = int(os.environ.get("WEB_THREADS", "16"))
 worker_class = "gthread"
 
-# Requests are quick (enqueue / poll / stream a result file). A large SPDX zip
+# Requests are quick (enqueue / poll / stream a result file). With gthread the
+# timeout does not kill a long-lived SSE response running in a thread. A large SPDX zip
 # download is the slowest path; 120s is ample headroom.
 timeout = int(os.environ.get("GUNICORN_TIMEOUT", "120"))
 graceful_timeout = 30

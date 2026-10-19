@@ -4,7 +4,8 @@
 #   docker compose -f docker-compose.yml -f deploy/ci/docker-compose.ci.yml up -d --build
 #
 # The fake script is mounted in and selected via AUDIT_SCRIPT; everything else
-# (nginx, gunicorn, the worker, the shared volume) runs exactly as in prod.
+# (nginx + SPA, gunicorn, the worker, the shared volume, SSE) runs exactly as in
+# prod. FAKE_AUDIT_DELAY paces its progress events so streaming is observable.
 
 services:
   audit:
@@ -16,6 +17,8 @@ services:
   worker:
     environment:
       AUDIT_SCRIPT: /app/fake_audit.py
+      FAKE_AUDIT_DELAY: "0.25"
       POLL_INTERVAL: "0.5"
+      SG_TOKEN: "ci-fake-token"
     volumes:
       - ./deploy/ci/fake_audit.py:/app/fake_audit.py:ro
